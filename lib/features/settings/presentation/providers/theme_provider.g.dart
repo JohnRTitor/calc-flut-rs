@@ -52,7 +52,7 @@ abstract class _$ThemeModeNotifier extends $Notifier<AppThemeMode> {
   AppThemeMode build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<AppThemeMode, AppThemeMode>;
     final element =
         ref.element
@@ -62,7 +62,7 @@ abstract class _$ThemeModeNotifier extends $Notifier<AppThemeMode> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }
 
@@ -110,7 +110,7 @@ abstract class _$AppColorNotifier extends $Notifier<AppColorOption> {
   AppColorOption build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<AppColorOption, AppColorOption>;
     final element =
         ref.element
@@ -120,7 +120,7 @@ abstract class _$AppColorNotifier extends $Notifier<AppColorOption> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }
 
@@ -168,7 +168,7 @@ abstract class _$UiStyleNotifier extends $Notifier<UiStyle> {
   UiStyle build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<UiStyle, UiStyle>;
     final element =
         ref.element
@@ -178,6 +178,6 @@ abstract class _$UiStyleNotifier extends $Notifier<UiStyle> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }

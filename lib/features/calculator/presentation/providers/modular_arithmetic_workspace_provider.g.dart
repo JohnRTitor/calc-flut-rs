@@ -49,14 +49,14 @@ final class ModularArithmeticWorkspaceProvider
 }
 
 String _$modularArithmeticWorkspaceHash() =>
-    r'f4af1e8f310a63cf442fb258c1df2c9df2f6e97e';
+    r'3c9d8467253898447896633eff3c2b10b7e99d05';
 
 abstract class _$ModularArithmeticWorkspace
     extends $Notifier<ModularArithmeticWorkspaceState> {
   ModularArithmeticWorkspaceState build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref =
         this.ref
             as $Ref<
@@ -74,6 +74,6 @@ abstract class _$ModularArithmeticWorkspace
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }

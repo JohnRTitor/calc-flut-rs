@@ -47,7 +47,7 @@ abstract class _$FunctionEvaluator extends $Notifier<FunctionEvaluatorState> {
   FunctionEvaluatorState build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref =
         this.ref as $Ref<FunctionEvaluatorState, FunctionEvaluatorState>;
     final element =
@@ -58,6 +58,6 @@ abstract class _$FunctionEvaluator extends $Notifier<FunctionEvaluatorState> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }
