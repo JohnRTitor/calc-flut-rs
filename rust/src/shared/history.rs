@@ -1,8 +1,12 @@
-use crate::calculator::error::CalcError;
-use serde::{Deserialize, Serialize};
-use std::fs;
-use std::sync::Mutex;
-use std::time::{SystemTime, UNIX_EPOCH};
+use {
+    crate::calculator::error::CalcError,
+    serde::{Deserialize, Serialize},
+    std::{
+        fs,
+        sync::Mutex,
+        time::{SystemTime, UNIX_EPOCH},
+    },
+};
 
 /// Represents a single calculation in the application history.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -35,15 +39,17 @@ impl HistoryManager {
     pub fn add(&self, category: String, preview: String, snapshot: String) {
         if let Ok(mut history) = self.history.lock() {
             if let Some(last) = history.last()
-                && last.category == category && last.preview == preview {
-                    return; // Avoid duplicate consecutive history entries
-                }
+                && last.category == category
+                && last.preview == preview
+            {
+                return; // Avoid duplicate consecutive history entries
+            }
 
             let timestamp = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap_or_default()
                 .as_millis() as i64;
-            
+
             // Generate a simple unique ID using timestamp + a random-like counter
             // Since this is local, timestamp-based is fine. We append length just to avoid collisions in the exact same ms.
             let id = format!("{}_{}", timestamp, history.len());
@@ -69,7 +75,11 @@ impl HistoryManager {
 
     pub fn get_by_category(&self, category: &str) -> Vec<HistoryEntry> {
         if let Ok(history) = self.history.lock() {
-            history.iter().filter(|e| e.category == category).cloned().collect()
+            history
+                .iter()
+                .filter(|e| e.category == category)
+                .cloned()
+                .collect()
         } else {
             Vec::new()
         }
@@ -108,12 +118,13 @@ impl HistoryManager {
         }
         let json = fs::read_to_string(path)
             .map_err(|e| CalcError::IoError(format!("File read error: {}", e)))?;
-        
+
         // Attempt to deserialize, ignoring failure to allow clean wipe on bad schema
         if let Ok(loaded_history) = serde_json::from_str::<Vec<HistoryEntry>>(&json)
-            && let Ok(mut history) = self.history.lock() {
-                *history = loaded_history;
-            }
+            && let Ok(mut history) = self.history.lock()
+        {
+            *history = loaded_history;
+        }
         Ok(())
     }
 }

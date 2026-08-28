@@ -1,7 +1,4 @@
-use crate::modular_arithmetic::error::ModError;
-use crate::modular_arithmetic::mod_arith;
-use crate::modular_arithmetic::number_theory;
-use crate::modular_arithmetic::parser::ModExpr;
+use crate::modular_arithmetic::{error::ModError, mod_arith, number_theory, parser::ModExpr};
 
 pub struct ModResult {
     pub value: String,

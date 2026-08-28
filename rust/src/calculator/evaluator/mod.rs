@@ -1,14 +1,13 @@
 pub mod basic_evaluator;
 pub mod function_evaluator;
 
-use crate::calculator::error::CalcError;
-use crate::calculator::parser::Expr;
-use crate::calculator::rational::CalcValue;
-use std::collections::HashSet;
+use {
+    crate::calculator::{error::CalcError, parser::Expr, rational::CalcValue},
+    std::collections::HashSet,
+};
 
-pub use basic_evaluator::BasicEvaluator;
-pub use function_evaluator::FunctionEvaluator;
 use num_traits::{One, Zero};
+pub use {basic_evaluator::BasicEvaluator, function_evaluator::FunctionEvaluator};
 
 /// Defines the capabilities of an evaluator, specifically how it resolves variables.
 pub trait Evaluator {
@@ -76,24 +75,24 @@ pub fn evaluate_expr(expr: &Expr, evaluator: &dyn Evaluator) -> Result<CalcValue
                 if let (CalcValue::Rational(b), CalcValue::Rational(e), CalcValue::Rational(m)) =
                     (&base, &exp, &modulus)
                     && b.is_integer()
-                        && e.is_integer()
-                        && m.is_integer()
-                        && m.numer() > &num_bigint::BigInt::zero()
-                    {
-                        use num_traits::ToPrimitive;
-                        if let (Some(b_i128), Some(e_i128), Some(m_i128)) = (
-                            b.numer().to_i128(),
-                            e.numer().to_i128(),
-                            m.numer().to_i128(),
-                        ) {
-                            // Use modular arithmetic engine
-                            if let Ok(res) = crate::modular_arithmetic::mod_arith::mod_pow(
-                                b_i128, e_i128, m_i128,
-                            ) {
-                                return Ok(CalcValue::from_i128(res, 1));
-                            }
+                    && e.is_integer()
+                    && m.is_integer()
+                    && m.numer() > &num_bigint::BigInt::zero()
+                {
+                    use num_traits::ToPrimitive;
+                    if let (Some(b_i128), Some(e_i128), Some(m_i128)) = (
+                        b.numer().to_i128(),
+                        e.numer().to_i128(),
+                        m.numer().to_i128(),
+                    ) {
+                        // Use modular arithmetic engine
+                        if let Ok(res) =
+                            crate::modular_arithmetic::mod_arith::mod_pow(b_i128, e_i128, m_i128)
+                        {
+                            return Ok(CalcValue::from_i128(res, 1));
                         }
                     }
+                }
 
                 // Fallback to regular evaluation if not exact integers or modulus is negative/zero
                 return base
@@ -115,23 +114,25 @@ pub fn evaluate_expr(expr: &Expr, evaluator: &dyn Evaluator) -> Result<CalcValue
         Expr::Factorial(e) => {
             let val = evaluate_expr(e, evaluator)?;
             if let CalcValue::Rational(r) = val
-                && r.is_integer() && r.numer() >= &num_bigint::BigInt::zero() {
-                    let mut result = num_bigint::BigInt::one();
-                    let mut i = num_bigint::BigInt::one();
-                    let n = r.numer();
-                    // Arbitrary limit to prevent DOS from user putting 99999999999!
-                    use num_traits::ToPrimitive;
-                    if n.to_u32().unwrap_or(u32::MAX) > 10000 {
-                        return Err(CalcError::Overflow);
-                    }
-                    while &i <= n {
-                        result *= &i;
-                        i += num_bigint::BigInt::one();
-                    }
-                    return Ok(CalcValue::Rational(
-                        num_rational::BigRational::from_integer(result),
-                    ));
+                && r.is_integer()
+                && r.numer() >= &num_bigint::BigInt::zero()
+            {
+                let mut result = num_bigint::BigInt::one();
+                let mut i = num_bigint::BigInt::one();
+                let n = r.numer();
+                // Arbitrary limit to prevent DOS from user putting 99999999999!
+                use num_traits::ToPrimitive;
+                if n.to_u32().unwrap_or(u32::MAX) > 10000 {
+                    return Err(CalcError::Overflow);
                 }
+                while &i <= n {
+                    result *= &i;
+                    i += num_bigint::BigInt::one();
+                }
+                return Ok(CalcValue::Rational(
+                    num_rational::BigRational::from_integer(result),
+                ));
+            }
             Err(CalcError::DomainError(
                 "Factorial requires positive integer".to_string(),
             ))

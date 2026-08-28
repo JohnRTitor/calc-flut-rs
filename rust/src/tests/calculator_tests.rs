@@ -1,7 +1,10 @@
-use crate::calculator::evaluator;
-use crate::calculator::parser;
-use std::collections::HashMap;
-use std::f64::consts::{E, PI};
+use {
+    crate::calculator::{evaluator, parser},
+    std::{
+        collections::HashMap,
+        f64::consts::{E, PI},
+    },
+};
 
 // Base evaluation function that returns the raw Result
 fn evaluate_core(

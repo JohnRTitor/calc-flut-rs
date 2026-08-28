@@ -1,5 +1,7 @@
-use crate::modular_arithmetic::{evaluator, parser};
-use flutter_rust_bridge::frb;
+use {
+    crate::modular_arithmetic::{evaluator, parser},
+    flutter_rust_bridge::frb,
+};
 
 /// Represents the result of a modular calculation
 #[frb]
@@ -210,8 +212,9 @@ pub fn analyze_structure(
         }
         "group" => {
             let units = crate::modular_arithmetic::number_theory_ext::unit_group(modulus);
-            let generators =
-                crate::modular_arithmetic::number_theory_ext::primitive_roots(modulus).ok().unwrap_or_default();
+            let generators = crate::modular_arithmetic::number_theory_ext::primitive_roots(modulus)
+                .ok()
+                .unwrap_or_default();
 
             let mut element_orders = Vec::new();
             if units.len() <= limit {
@@ -281,7 +284,7 @@ pub fn analyze_structure(
                 ),
                 generators: generators.iter().map(|x| x.to_string()).collect(),
                 units_count: units.len().to_string(),
-                units: Vec::new(),         // Itself
+                units: Vec::new(), // Itself
                 zero_divisors_count: "0".to_string(),
                 zero_divisors: Vec::new(), // None in a group
                 idempotents_count: "0".to_string(),
@@ -326,8 +329,9 @@ pub fn analyze_structure(
             }
 
             let elements = format!("{{0, 1, ..., {}}}", modulus - 1);
-            let generators =
-                crate::modular_arithmetic::number_theory_ext::primitive_roots(modulus).ok().unwrap_or_default();
+            let generators = crate::modular_arithmetic::number_theory_ext::primitive_roots(modulus)
+                .ok()
+                .unwrap_or_default();
 
             StructureAnalysis {
                 label: parsed.canonical_notation.clone(),
@@ -372,4 +376,3 @@ pub fn analyze_structure(
         interpreted_as: parsed.interpreted_as,
     })
 }
-

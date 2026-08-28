@@ -56,10 +56,18 @@ impl From<crate::shared::error::CommonError> for ModError {
             }
             crate::shared::error::CommonError::InvalidToken(msg) => ModError::InvalidToken(msg),
             crate::shared::error::CommonError::MissingOperand(msg) => ModError::MissingOperand(msg),
-            crate::shared::error::CommonError::MissingClosingParenthesis => ModError::MissingClosingParenthesis,
-            crate::shared::error::CommonError::InvalidFunction(msg) => ModError::InvalidFunction(msg),
-            crate::shared::error::CommonError::UnknownVariable(msg) => ModError::UnknownVariable(msg),
-            crate::shared::error::CommonError::InvalidArgumentCount(msg) => ModError::InvalidArgumentCount(msg),
+            crate::shared::error::CommonError::MissingClosingParenthesis => {
+                ModError::MissingClosingParenthesis
+            }
+            crate::shared::error::CommonError::InvalidFunction(msg) => {
+                ModError::InvalidFunction(msg)
+            }
+            crate::shared::error::CommonError::UnknownVariable(msg) => {
+                ModError::UnknownVariable(msg)
+            }
+            crate::shared::error::CommonError::InvalidArgumentCount(msg) => {
+                ModError::InvalidArgumentCount(msg)
+            }
             crate::shared::error::CommonError::DivisionByZero => ModError::DivisionByZero,
             crate::shared::error::CommonError::Overflow => ModError::Overflow,
             crate::shared::error::CommonError::DomainError(msg) => {

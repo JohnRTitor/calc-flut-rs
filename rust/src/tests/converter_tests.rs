@@ -1,5 +1,7 @@
-use crate::bridge::converter::{calculate_bmi, calculate_date_difference};
-use crate::converter::converter::{convert_numeral, convert_standard, get_all_categories};
+use crate::{
+    bridge::converter::{calculate_bmi, calculate_date_difference},
+    converter::converter::{convert_numeral, convert_standard, get_all_categories},
+};
 
 #[test]
 fn test_length_conversion() {

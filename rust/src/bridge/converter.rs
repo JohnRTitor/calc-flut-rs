@@ -1,5 +1,4 @@
-use crate::converter::converter;
-use flutter_rust_bridge::frb;
+use {crate::converter::converter, flutter_rust_bridge::frb};
 
 /// FFI representation of a physical unit of measurement.
 #[frb]

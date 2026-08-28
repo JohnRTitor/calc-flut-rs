@@ -44,11 +44,21 @@ impl From<crate::shared::error::CommonError> for CalcError {
                 CalcError::InvalidExpression(msg)
             }
             crate::shared::error::CommonError::InvalidToken(msg) => CalcError::InvalidToken(msg),
-            crate::shared::error::CommonError::MissingOperand(msg) => CalcError::MissingOperand(msg),
-            crate::shared::error::CommonError::MissingClosingParenthesis => CalcError::MissingClosingParenthesis,
-            crate::shared::error::CommonError::InvalidFunction(msg) => CalcError::InvalidFunction(msg),
-            crate::shared::error::CommonError::UnknownVariable(msg) => CalcError::UnknownVariable(msg),
-            crate::shared::error::CommonError::InvalidArgumentCount(msg) => CalcError::InvalidArgumentCount(msg),
+            crate::shared::error::CommonError::MissingOperand(msg) => {
+                CalcError::MissingOperand(msg)
+            }
+            crate::shared::error::CommonError::MissingClosingParenthesis => {
+                CalcError::MissingClosingParenthesis
+            }
+            crate::shared::error::CommonError::InvalidFunction(msg) => {
+                CalcError::InvalidFunction(msg)
+            }
+            crate::shared::error::CommonError::UnknownVariable(msg) => {
+                CalcError::UnknownVariable(msg)
+            }
+            crate::shared::error::CommonError::InvalidArgumentCount(msg) => {
+                CalcError::InvalidArgumentCount(msg)
+            }
             crate::shared::error::CommonError::DivisionByZero => CalcError::DivisionByZero,
             crate::shared::error::CommonError::Overflow => CalcError::Overflow,
             crate::shared::error::CommonError::DomainError(msg) => CalcError::DomainError(msg),

@@ -159,9 +159,10 @@ pub fn parse(tokens: &[ModToken]) -> Result<ModExpr, ModError> {
     }
     let expr = parse_expression(tokens, &mut pos)?;
     if pos < tokens.len() {
-        return Err(ModError::InvalidToken(
-            format!("Unexpected tokens at the end: {:?}", tokens[pos]),
-        ));
+        return Err(ModError::InvalidToken(format!(
+            "Unexpected tokens at the end: {:?}",
+            tokens[pos]
+        )));
     }
     Ok(expr)
 }
@@ -401,9 +402,7 @@ fn parse_primary(tokens: &[ModToken], pos: &mut usize) -> Result<ModExpr, ModErr
                 _ => unreachable!(),
             }
         }
-        _ => Err(ModError::InvalidToken(format!(
-            "{:?}", tokens[*pos]
-        ))),
+        _ => Err(ModError::InvalidToken(format!("{:?}", tokens[*pos]))),
     }
 }
 

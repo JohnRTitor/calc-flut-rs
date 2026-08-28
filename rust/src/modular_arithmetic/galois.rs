@@ -1,5 +1,7 @@
-use crate::modular_arithmetic::error::ModError;
-use crate::modular_arithmetic::mod_arith::{is_prime, mod_add, mod_div, mod_inv, mod_mul, mod_sub};
+use crate::modular_arithmetic::{
+    error::ModError,
+    mod_arith::{is_prime, mod_add, mod_div, mod_inv, mod_mul, mod_sub},
+};
 
 /// Represents an element in the Galois Field GF(p) where p is a prime.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

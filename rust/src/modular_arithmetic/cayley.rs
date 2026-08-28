@@ -1,6 +1,8 @@
-use crate::modular_arithmetic::error::ModError;
-use crate::modular_arithmetic::mod_arith::{mod_add, mod_mul};
-use crate::modular_arithmetic::number_theory_ext::unit_group;
+use crate::modular_arithmetic::{
+    error::ModError,
+    mod_arith::{mod_add, mod_mul},
+    number_theory_ext::unit_group,
+};
 
 const MAX_CAYLEY_N: i128 = 25;
 

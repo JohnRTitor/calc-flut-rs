@@ -1,7 +1,9 @@
-use bigdecimal::{BigDecimal, ToPrimitive};
-use num_bigint::BigInt;
-use num_rational::BigRational;
-use num_traits::{One, Zero};
+use {
+    bigdecimal::{BigDecimal, ToPrimitive},
+    num_bigint::BigInt,
+    num_rational::BigRational,
+    num_traits::{One, Zero},
+};
 
 /// Represents the evaluated value of an expression.
 /// Can be a precise Rational, a multiple of Pi, or a fallback decimal value.

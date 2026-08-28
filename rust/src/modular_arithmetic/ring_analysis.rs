@@ -1,6 +1,7 @@
-use crate::modular_arithmetic::mod_arith::{is_prime, mod_pow};
-use crate::modular_arithmetic::number_theory::gcd;
-
+use crate::modular_arithmetic::{
+    mod_arith::{is_prime, mod_pow},
+    number_theory::gcd,
+};
 
 #[derive(Debug, Clone)]
 pub struct RingInfo {
@@ -138,10 +139,10 @@ pub fn ring_classify(n: i128) -> RingInfo {
     let idempotents = idempotents_limited(n, limit);
     let nilpotents = nilpotents_limited(n, limit);
 
-    let is_truncated = units_count > limit as i128 ||
-        zero_divisors_count > limit as i128 ||
-        idempotents_count > limit as i128 ||
-        nilpotents_count > limit as i128;
+    let is_truncated = units_count > limit as i128
+        || zero_divisors_count > limit as i128
+        || idempotents_count > limit as i128
+        || nilpotents_count > limit as i128;
 
     RingInfo {
         n,

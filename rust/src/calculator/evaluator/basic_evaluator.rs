@@ -1,6 +1,4 @@
-use crate::calculator::error::CalcError;
-use crate::calculator::evaluator::Evaluator;
-use crate::calculator::rational::CalcValue;
+use crate::calculator::{error::CalcError, evaluator::Evaluator, rational::CalcValue};
 
 use flutter_rust_bridge::frb;
 

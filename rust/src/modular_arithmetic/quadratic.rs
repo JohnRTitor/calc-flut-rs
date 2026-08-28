@@ -1,5 +1,7 @@
-use crate::modular_arithmetic::error::ModError;
-use crate::modular_arithmetic::mod_arith::{is_prime, mod_pow, mod_reduce};
+use crate::modular_arithmetic::{
+    error::ModError,
+    mod_arith::{is_prime, mod_pow, mod_reduce},
+};
 
 /// Returns the quadratic residues modulo n.
 pub fn quadratic_residues(n: i128) -> Vec<i128> {
@@ -140,7 +142,9 @@ pub fn sqrt_mod(a: i128, p: i128) -> Result<Vec<i128>, ModError> {
         }
 
         if i == 0 {
-            return Err(ModError::NoSolution("Failed to find modular square root".to_string()));
+            return Err(ModError::NoSolution(
+                "Failed to find modular square root".to_string(),
+            ));
         }
 
         let b = mod_pow(c, 1_i128 << (m - i - 1), p)?;

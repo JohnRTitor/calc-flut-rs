@@ -1,7 +1,7 @@
-use crate::calculator::error::CalcError;
-use crate::calculator::evaluator::Evaluator;
-use crate::calculator::rational::CalcValue;
-use std::collections::HashMap;
+use {
+    crate::calculator::{error::CalcError, evaluator::Evaluator, rational::CalcValue},
+    std::collections::HashMap,
+};
 
 use flutter_rust_bridge::frb;
 

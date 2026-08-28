@@ -1,7 +1,11 @@
-use crate::modular_arithmetic::error::ModError;
-use crate::modular_arithmetic::mod_arith::{mod_pow, mod_reduce};
-use crate::modular_arithmetic::number_theory::{extended_gcd, gcd};
-use std::collections::HashMap;
+use {
+    crate::modular_arithmetic::{
+        error::ModError,
+        mod_arith::{mod_pow, mod_reduce},
+        number_theory::{extended_gcd, gcd},
+    },
+    std::collections::HashMap,
+};
 
 /// Returns the prime factorization of n as a list of (prime, exponent).
 pub fn prime_factorization(mut n: i128) -> Vec<(i128, u32)> {
@@ -128,11 +132,10 @@ pub fn primitive_roots(n: i128) -> Result<Vec<i128>, ModError> {
     // Find the first primitive root
     let mut g = -1;
     for i in 2..n {
-        if gcd(i, n) == 1
-            && is_primitive_root(i, n)? {
-                g = i;
-                break;
-            }
+        if gcd(i, n) == 1 && is_primitive_root(i, n)? {
+            g = i;
+            break;
+        }
     }
 
     if g == -1 {

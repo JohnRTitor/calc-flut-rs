@@ -1,6 +1,8 @@
-use crate::calculator::{evaluator, memory, parser};
 pub use crate::shared::history::HistoryEntry;
-use flutter_rust_bridge::frb;
+use {
+    crate::calculator::{evaluator, memory, parser},
+    flutter_rust_bridge::frb,
+};
 
 /// Represents the result of a calculation to be returned to Flutter.
 #[frb]
@@ -112,7 +114,6 @@ pub fn memory_clear() {
     memory::clear();
 }
 
-
 /// Extracts variables from an expression string.
 #[frb(sync)]
 pub fn extract_variables(expression: String) -> Result<Vec<String>, String> {
@@ -147,7 +148,25 @@ pub fn extract_variables(expression: String) -> Result<Vec<String>, String> {
 fn is_variable(ident: &str) -> bool {
     !matches!(
         ident.to_lowercase().as_str(),
-        "mod" | "sin" | "cos" | "tan" | "asin" | "acos" | "atan" | "sinh" | "cosh" | "tanh"
-            | "asinh" | "acosh" | "atanh" | "log" | "log_" | "ln" | "sqrt" | "pi" | "e" | "ans"
+        "mod"
+            | "sin"
+            | "cos"
+            | "tan"
+            | "asin"
+            | "acos"
+            | "atan"
+            | "sinh"
+            | "cosh"
+            | "tanh"
+            | "asinh"
+            | "acosh"
+            | "atanh"
+            | "log"
+            | "log_"
+            | "ln"
+            | "sqrt"
+            | "pi"
+            | "e"
+            | "ans"
     )
 }

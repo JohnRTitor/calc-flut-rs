@@ -10,7 +10,10 @@ mod tests {
         assert_eq!(analysis.order, "|Z_12| = 12");
         assert_eq!(analysis.is_cyclic, true);
         assert_eq!(analysis.units, vec!["1", "5", "7", "11"]);
-        assert_eq!(analysis.zero_divisors, vec!["2", "3", "4", "6", "8", "9", "10"]);
+        assert_eq!(
+            analysis.zero_divisors,
+            vec!["2", "3", "4", "6", "8", "9", "10"]
+        );
         assert_eq!(analysis.idempotents, vec!["0", "1", "4", "9"]);
         assert_eq!(analysis.nilpotents, vec!["0", "6"]);
     }

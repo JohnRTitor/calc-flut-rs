@@ -155,9 +155,9 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, CalcError> {
                     }
                 }
 
-                let num = num_str.parse::<f64>().map_err(|_| {
-                    CalcError::InvalidToken(format!("Invalid number: {}", num_str))
-                })?;
+                let num = num_str
+                    .parse::<f64>()
+                    .map_err(|_| CalcError::InvalidToken(format!("Invalid number: {}", num_str)))?;
                 tokens.push(Token::Number(num));
             }
             c if c.is_alphabetic() => {
@@ -218,7 +218,7 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, CalcError> {
                     | Token::Percentage
                     | Token::Factorial
             );
-            
+
             let right_is_start = matches!(
                 tokens[i + 1],
                 Token::Number(_)
@@ -332,9 +332,10 @@ impl<'a> Parser<'a> {
         }
         let expr = self.parse_expression()?;
         if self.pos < self.tokens.len() {
-            return Err(CalcError::InvalidToken(
-                format!("Unexpected token at end of expression: {:?}", self.tokens[self.pos]),
-            ));
+            return Err(CalcError::InvalidToken(format!(
+                "Unexpected token at end of expression: {:?}",
+                self.tokens[self.pos]
+            )));
         }
         Ok(expr)
     }
@@ -521,9 +522,7 @@ impl<'a> Parser<'a> {
             }
             Token::Ans => Ok(Expr::Ans),
             Token::Variable(name) => Ok(Expr::Variable(name)),
-            _ => Err(CalcError::InvalidToken(format!(
-                "{:?}", token
-            ))),
+            _ => Err(CalcError::InvalidToken(format!("{:?}", token))),
         }
     }
 
