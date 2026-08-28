@@ -47,7 +47,12 @@ class CurrencyHomeScreen extends ConsumerWidget {
 
     return Scaffold(
       body: GridView.builder(
-        padding: const EdgeInsets.all(24.0),
+        padding: EdgeInsets.only(
+          left: 24.0,
+          right: 24.0,
+          top: 24.0,
+          bottom: 24.0 + MediaQuery.paddingOf(context).bottom,
+        ),
         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
           maxCrossAxisExtent: 150.0,
           crossAxisSpacing: 16.0,

@@ -36,7 +36,12 @@ class SettingsScreen extends ConsumerWidget {
         final isDynamicColorSupported = lightDynamic != null;
 
         Widget body = ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 8,
+            bottom: 8 + MediaQuery.paddingOf(context).bottom,
+          ),
           children:
               [
                     // ── Theme Section ──
