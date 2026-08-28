@@ -36,7 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   rust_calc_core:
     path: rust_builder
-  flutter_rust_bridge: 2.12.0
+  flutter_rust_bridge: 2.13.0
   flutter_riverpod: ^3.0.0
   riverpod_annotation: ^4.0.2
   dynamic_color: ^1.7.0
