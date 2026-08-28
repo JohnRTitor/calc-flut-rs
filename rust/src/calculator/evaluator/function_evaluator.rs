@@ -34,10 +34,7 @@ impl Evaluator for FunctionEvaluator {
                 Ok(CalcValue::from_f64(val))
             }
         } else {
-            Err(CalcError::InvalidExpression(format!(
-                "Undefined variable: {}",
-                name
-            )))
+            Err(CalcError::UnknownVariable(name.to_string()))
         }
     }
 

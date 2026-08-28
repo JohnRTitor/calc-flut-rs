@@ -23,10 +23,7 @@ impl BasicEvaluator {
 
 impl Evaluator for BasicEvaluator {
     fn resolve_variable(&self, name: &str) -> Result<CalcValue, CalcError> {
-        Err(CalcError::InvalidExpression(format!(
-            "Variables are not supported in standard mode: {}",
-            name
-        )))
+        Err(CalcError::UnknownVariable(name.to_string()))
     }
 
     fn is_degree(&self) -> bool {

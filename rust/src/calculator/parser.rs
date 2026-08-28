@@ -156,7 +156,7 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, CalcError> {
                 }
 
                 let num = num_str.parse::<f64>().map_err(|_| {
-                    CalcError::InvalidExpression(format!("Invalid number: {}", num_str))
+                    CalcError::InvalidToken(format!("Invalid number: {}", num_str))
                 })?;
                 tokens.push(Token::Number(num));
             }
@@ -198,10 +198,7 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, CalcError> {
                 }
             }
             _ => {
-                return Err(CalcError::InvalidExpression(format!(
-                    "Unknown character: {}",
-                    c
-                )));
+                return Err(CalcError::InvalidToken(c.to_string()));
             }
         }
     }
@@ -210,73 +207,45 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, CalcError> {
     let mut i = 0;
     while i < tokens.len() {
         if i + 1 < tokens.len() {
-            let insert = matches!(
-                (&tokens[i], &tokens[i + 1]),
-                (Token::Number(_), Token::Pi)
-                    | (Token::Number(_), Token::E)
-                    | (Token::Number(_), Token::Sin)
-                    | (Token::Number(_), Token::Cos)
-                    | (Token::Number(_), Token::Tan)
-                    | (Token::Number(_), Token::Asin)
-                    | (Token::Number(_), Token::Acos)
-                    | (Token::Number(_), Token::Atan)
-                    | (Token::Number(_), Token::Sinh)
-                    | (Token::Number(_), Token::Cosh)
-                    | (Token::Number(_), Token::Tanh)
-                    | (Token::Number(_), Token::Acosh)
-                    | (Token::Number(_), Token::Atanh)
-                    | (Token::Number(_), Token::Log)
-                    | (Token::Number(_), Token::LogBase)
-                    | (Token::Number(_), Token::Ln)
-                    | (Token::Number(_), Token::Sqrt)
-                    | (Token::Number(_), Token::Ans)
-                    | (Token::Number(_), Token::LParen)
-                    | (Token::Pi, Token::Number(_))
-                    | (Token::E, Token::Number(_))
-                    | (Token::Ans, Token::Number(_))
-                    | (Token::RParen, Token::LParen)
-                    | (Token::RParen, Token::Number(_))
-                    | (Token::RParen, Token::Sin)
-                    | (Token::RParen, Token::Cos)
-                    | (Token::RParen, Token::Tan)
-                    | (Token::RParen, Token::Asin)
-                    | (Token::RParen, Token::Acos)
-                    | (Token::RParen, Token::Atan)
-                    | (Token::RParen, Token::Sinh)
-                    | (Token::RParen, Token::Cosh)
-                    | (Token::RParen, Token::Tanh)
-                    | (Token::RParen, Token::Asinh)
-                    | (Token::RParen, Token::Acosh)
-                    | (Token::RParen, Token::Atanh)
-                    | (Token::RParen, Token::Log)
-                    | (Token::RParen, Token::LogBase)
-                    | (Token::RParen, Token::Ln)
-                    | (Token::RParen, Token::Sqrt)
-                    | (Token::RParen, Token::E)
-                    | (Token::RParen, Token::Ans)
-                    | (Token::Percentage, Token::Number(_))
-                    | (Token::Percentage, Token::LParen)
-                    | (Token::Percentage, Token::Sin)
-                    | (Token::Percentage, Token::Cos)
-                    | (Token::Percentage, Token::Tan)
-                    | (Token::Percentage, Token::Asin)
-                    | (Token::Percentage, Token::Acos)
-                    | (Token::Percentage, Token::Atan)
-                    | (Token::Percentage, Token::Sinh)
-                    | (Token::Percentage, Token::Cosh)
-                    | (Token::Percentage, Token::Tanh)
-                    | (Token::Percentage, Token::Asinh)
-                    | (Token::Percentage, Token::Acosh)
-                    | (Token::Percentage, Token::Atanh)
-                    | (Token::Percentage, Token::Log)
-                    | (Token::Percentage, Token::LogBase)
-                    | (Token::Percentage, Token::Ln)
-                    | (Token::Percentage, Token::Sqrt)
-                    | (Token::Percentage, Token::Pi)
-                    | (Token::Percentage, Token::E)
-                    | (Token::Percentage, Token::Ans)
+            let left_is_value = matches!(
+                tokens[i],
+                Token::Number(_)
+                    | Token::Pi
+                    | Token::E
+                    | Token::Ans
+                    | Token::Variable(_)
+                    | Token::RParen
+                    | Token::Percentage
+                    | Token::Factorial
             );
-            if insert {
+            
+            let right_is_start = matches!(
+                tokens[i + 1],
+                Token::Number(_)
+                    | Token::Pi
+                    | Token::E
+                    | Token::Ans
+                    | Token::Variable(_)
+                    | Token::LParen
+                    | Token::Sin
+                    | Token::Cos
+                    | Token::Tan
+                    | Token::Asin
+                    | Token::Acos
+                    | Token::Atan
+                    | Token::Sinh
+                    | Token::Cosh
+                    | Token::Tanh
+                    | Token::Asinh
+                    | Token::Acosh
+                    | Token::Atanh
+                    | Token::Log
+                    | Token::LogBase
+                    | Token::Ln
+                    | Token::Sqrt
+            );
+
+            if left_is_value && right_is_start {
                 tokens.insert(i + 1, Token::Multiply);
                 i += 1; // skip the newly inserted token
             }
@@ -359,12 +328,12 @@ impl<'a> Parser<'a> {
     /// is not a valid mathematical expression.
     pub fn parse(&mut self) -> Result<Expr, CalcError> {
         if self.tokens.is_empty() {
-            return Err(CalcError::InvalidExpression("Empty expression".to_string()));
+            return Err(CalcError::MissingOperand("Empty expression".to_string()));
         }
         let expr = self.parse_expression()?;
         if self.pos < self.tokens.len() {
-            return Err(CalcError::InvalidExpression(
-                "Unexpected tokens at end of expression".to_string(),
+            return Err(CalcError::InvalidToken(
+                format!("Unexpected token at end of expression: {:?}", self.tokens[self.pos]),
             ));
         }
         Ok(expr)
@@ -397,38 +366,27 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_factor(&mut self) -> Result<Expr, CalcError> {
-        let mut left = self.parse_power()?;
+        let mut left = self.parse_unary()?;
 
         while let Some(op) = self.peek() {
             match op {
                 Token::Multiply => {
                     self.consume();
-                    let right = self.parse_power()?;
+                    let right = self.parse_unary()?;
                     left = Expr::Multiply(Box::new(left), Box::new(right));
                 }
                 Token::Divide => {
                     self.consume();
-                    let right = self.parse_power()?;
+                    let right = self.parse_unary()?;
                     left = Expr::Divide(Box::new(left), Box::new(right));
                 }
                 Token::Modulo => {
                     self.consume();
-                    let right = self.parse_power()?;
+                    let right = self.parse_unary()?;
                     left = Expr::Modulo(Box::new(left), Box::new(right));
                 }
                 _ => break,
             }
-        }
-
-        Ok(left)
-    }
-
-    fn parse_power(&mut self) -> Result<Expr, CalcError> {
-        let left = self.parse_unary()?;
-
-        if self.match_token(&Token::Power) {
-            let right = self.parse_power()?; // Right-associative
-            return Ok(Expr::Power(Box::new(left), Box::new(right)));
         }
 
         Ok(left)
@@ -441,8 +399,19 @@ impl<'a> Parser<'a> {
             let expr = self.parse_unary()?;
             Ok(Expr::Negate(Box::new(expr)))
         } else {
-            self.parse_postfix()
+            self.parse_power()
         }
+    }
+
+    fn parse_power(&mut self) -> Result<Expr, CalcError> {
+        let left = self.parse_postfix()?;
+
+        if self.match_token(&Token::Power) {
+            let right = self.parse_power()?; // Right-associative
+            return Ok(Expr::Power(Box::new(left), Box::new(right)));
+        }
+
+        Ok(left)
     }
 
     fn parse_postfix(&mut self) -> Result<Expr, CalcError> {
@@ -464,7 +433,7 @@ impl<'a> Parser<'a> {
     fn parse_primary(&mut self) -> Result<Expr, CalcError> {
         let token = self
             .consume()
-            .ok_or_else(|| CalcError::InvalidExpression("Unexpected end of input".to_string()))?
+            .ok_or_else(|| CalcError::MissingOperand("Unexpected end of input".to_string()))?
             .clone();
 
         match token {
@@ -474,9 +443,7 @@ impl<'a> Parser<'a> {
             Token::LParen => {
                 let expr = self.parse_expression()?;
                 if !self.match_token(&Token::RParen) {
-                    return Err(CalcError::InvalidExpression(
-                        "Missing closing parenthesis".to_string(),
-                    ));
+                    return Err(CalcError::MissingClosingParenthesis);
                 }
                 Ok(expr)
             }
@@ -554,9 +521,8 @@ impl<'a> Parser<'a> {
             }
             Token::Ans => Ok(Expr::Ans),
             Token::Variable(name) => Ok(Expr::Variable(name)),
-            _ => Err(CalcError::InvalidExpression(format!(
-                "Unexpected token: {:?}",
-                token
+            _ => Err(CalcError::InvalidToken(format!(
+                "{:?}", token
             ))),
         }
     }

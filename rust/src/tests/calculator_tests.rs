@@ -9,9 +9,9 @@ fn evaluate_core(
     is_degree: bool,
     ans_value: f64,
 ) -> Result<crate::calculator::rational::CalcValue, crate::calculator::error::CalcError> {
-    let tokens = parser::tokenize(expr).unwrap();
+    let tokens = parser::tokenize(expr)?;
     let mut p = parser::Parser::new(&tokens);
-    let ast = p.parse().unwrap();
+    let ast = p.parse()?;
     let evaluator = evaluator::BasicEvaluator::new(is_degree, ans_value);
     evaluator::evaluate_expr(&ast, &evaluator)
 }
@@ -49,6 +49,16 @@ fn test_basic_arithmetic() {
 }
 
 #[test]
+fn test_operator_precedence() {
+    assert_eq!(eval("-2^2"), -4.0); // Unary negation is lower precedence than exponentiation
+    assert_eq!(eval("2^3^2"), 512.0); // Right-associativity of exponentiation
+    assert_eq!(eval("10+2*3-4/2"), 14.0);
+    assert_eq!(eval("5+5!"), 125.0);
+    assert_eq!(eval("3!+2"), 8.0);
+    assert_eq!(eval("-(2+3)"), -5.0);
+}
+
+#[test]
 fn test_modular_exponentiation() {
     assert_eq!(eval("17^22 mod 21"), 4.0);
     assert_eq!(eval("2^10 mod 1000"), 24.0);
@@ -83,6 +93,8 @@ fn test_implicit_multiplication() {
     assert_eq!(eval("(2+3)(4+5)"), 45.0);
     assert_eq!(eval("2π"), 2.0 * PI);
     assert_eq!(eval("3e"), 3.0 * E);
+    assert_eq!(eval("2sqrt(16)"), 8.0);
+    assert_eq!(eval("3sin(π/2)"), 3.0);
 }
 
 #[test]
@@ -94,7 +106,6 @@ fn test_scientific() {
     assert_eq!(eval("sqrt(16)"), 4.0);
     assert_eq!(eval("5!"), 120.0);
     assert_eq!(eval("2^3"), 8.0);
-    assert_eq!(eval("3!+2"), 8.0);
     assert!((eval("tan(π/4)") - 1.0).abs() < 1e-10);
 }
 
@@ -211,7 +222,7 @@ fn test_variables() {
         .unwrap();
     assert!(matches!(
         evaluator::evaluate_expr(&expr_err, &func_eval),
-        Err(crate::calculator::error::CalcError::InvalidExpression(_))
+        Err(crate::calculator::error::CalcError::UnknownVariable(_))
     ));
 }
 
@@ -227,4 +238,24 @@ fn test_variable_extraction() {
     assert!(vars.contains("z"));
     assert!(!vars.contains("e"));
     assert!(!vars.contains("sin"));
+}
+
+#[test]
+fn test_structured_errors() {
+    assert!(matches!(
+        eval_result("2 + ", false),
+        Err(crate::calculator::error::CalcError::MissingOperand(_))
+    ));
+    assert!(matches!(
+        eval_result("(2 + 3", false),
+        Err(crate::calculator::error::CalcError::MissingClosingParenthesis)
+    ));
+    assert!(matches!(
+        eval_result("2 & 3", false),
+        Err(crate::calculator::error::CalcError::InvalidToken(_))
+    ));
+    assert!(matches!(
+        eval_result("", false),
+        Err(crate::calculator::error::CalcError::MissingOperand(_))
+    ));
 }

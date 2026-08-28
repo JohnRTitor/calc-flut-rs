@@ -127,10 +127,7 @@ pub fn tokenize(input: &str) -> Result<Vec<ModToken>, ModError> {
                 "cayley_add" => tokens.push(ModToken::CayleyAdd),
                 "cayley_mul" => tokens.push(ModToken::CayleyMul),
                 _ => {
-                    return Err(ModError::InvalidExpression(format!(
-                        "Unknown function or operator: {}",
-                        ident
-                    )));
+                    return Err(ModError::InvalidFunction(ident));
                 }
             }
             continue;
@@ -146,10 +143,7 @@ pub fn tokenize(input: &str) -> Result<Vec<ModToken>, ModError> {
             '(' => tokens.push(ModToken::LParen),
             ')' => tokens.push(ModToken::RParen),
             _ => {
-                return Err(ModError::InvalidExpression(format!(
-                    "Unexpected character: {}",
-                    c
-                )));
+                return Err(ModError::InvalidToken(c.to_string()));
             }
         }
         i += 1;
@@ -160,10 +154,13 @@ pub fn tokenize(input: &str) -> Result<Vec<ModToken>, ModError> {
 
 pub fn parse(tokens: &[ModToken]) -> Result<ModExpr, ModError> {
     let mut pos = 0;
+    if tokens.is_empty() {
+        return Err(ModError::MissingOperand("Empty expression".to_string()));
+    }
     let expr = parse_expression(tokens, &mut pos)?;
     if pos < tokens.len() {
-        return Err(ModError::InvalidExpression(
-            "Unexpected tokens at the end".to_string(),
+        return Err(ModError::InvalidToken(
+            format!("Unexpected tokens at the end: {:?}", tokens[pos]),
         ));
     }
     Ok(expr)
@@ -201,34 +198,22 @@ fn parse_term(tokens: &[ModToken], pos: &mut usize) -> Result<ModExpr, ModError>
 }
 
 fn parse_factor(tokens: &[ModToken], pos: &mut usize) -> Result<ModExpr, ModError> {
-    let mut expr = parse_power(tokens, pos)?;
+    let mut expr = parse_unary(tokens, pos)?;
 
     while *pos < tokens.len() {
         match tokens[*pos] {
             ModToken::Multiply => {
                 *pos += 1;
-                let right = parse_power(tokens, pos)?;
+                let right = parse_unary(tokens, pos)?;
                 expr = ModExpr::Multiply(Box::new(expr), Box::new(right));
             }
             ModToken::Divide => {
                 *pos += 1;
-                let right = parse_power(tokens, pos)?;
+                let right = parse_unary(tokens, pos)?;
                 expr = ModExpr::Divide(Box::new(expr), Box::new(right));
             }
             _ => break,
         }
-    }
-
-    Ok(expr)
-}
-
-fn parse_power(tokens: &[ModToken], pos: &mut usize) -> Result<ModExpr, ModError> {
-    let mut expr = parse_unary(tokens, pos)?;
-
-    if *pos < tokens.len() && tokens[*pos] == ModToken::Power {
-        *pos += 1;
-        let right = parse_power(tokens, pos)?; // Right-associative
-        expr = ModExpr::Power(Box::new(expr), Box::new(right));
     }
 
     Ok(expr)
@@ -240,13 +225,25 @@ fn parse_unary(tokens: &[ModToken], pos: &mut usize) -> Result<ModExpr, ModError
         let expr = parse_unary(tokens, pos)?;
         Ok(ModExpr::Negate(Box::new(expr)))
     } else {
-        parse_primary(tokens, pos)
+        parse_power(tokens, pos)
     }
+}
+
+fn parse_power(tokens: &[ModToken], pos: &mut usize) -> Result<ModExpr, ModError> {
+    let mut expr = parse_primary(tokens, pos)?;
+
+    if *pos < tokens.len() && tokens[*pos] == ModToken::Power {
+        *pos += 1;
+        let right = parse_power(tokens, pos)?; // Right-associative
+        expr = ModExpr::Power(Box::new(expr), Box::new(right));
+    }
+
+    Ok(expr)
 }
 
 fn parse_primary(tokens: &[ModToken], pos: &mut usize) -> Result<ModExpr, ModError> {
     if *pos >= tokens.len() {
-        return Err(ModError::InvalidExpression(
+        return Err(ModError::MissingOperand(
             "Unexpected end of expression".to_string(),
         ));
     }
@@ -260,7 +257,7 @@ fn parse_primary(tokens: &[ModToken], pos: &mut usize) -> Result<ModExpr, ModErr
             *pos += 1;
             let expr = parse_expression(tokens, pos)?;
             if *pos >= tokens.len() || tokens[*pos] != ModToken::RParen {
-                return Err(ModError::InvalidExpression("Expected ')'".to_string()));
+                return Err(ModError::MissingClosingParenthesis);
             }
             *pos += 1;
             Ok(expr)
@@ -404,9 +401,8 @@ fn parse_primary(tokens: &[ModToken], pos: &mut usize) -> Result<ModExpr, ModErr
                 _ => unreachable!(),
             }
         }
-        _ => Err(ModError::InvalidExpression(format!(
-            "Unexpected token: {:?}",
-            tokens[*pos]
+        _ => Err(ModError::InvalidToken(format!(
+            "{:?}", tokens[*pos]
         ))),
     }
 }
@@ -422,7 +418,7 @@ fn expect_token(tokens: &[ModToken], pos: &mut usize, expected: ModToken) -> Res
         *pos += 1;
         Ok(())
     } else {
-        Err(ModError::InvalidExpression(format!(
+        Err(ModError::InvalidToken(format!(
             "Expected {:?}, found {:?}",
             expected, tokens[*pos]
         )))
