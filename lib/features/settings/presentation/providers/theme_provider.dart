@@ -1,6 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:calculator_flutter_app/app/theme/ui_style.dart';
+import 'package:calc_flut_rs/app/theme/ui_style.dart';
 
 part 'theme_provider.g.dart';
 

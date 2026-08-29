@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:calculator_flutter_app/app/theme/ui_style.dart';
-import 'package:calculator_flutter_app/shared/widgets/pill_switcher.dart';
+import 'package:calc_flut_rs/app/theme/ui_style.dart';
+import 'package:calc_flut_rs/shared/widgets/pill_switcher.dart';
 
 class ModularArithmeticWorkspaceSwitcher extends StatelessWidget {
   final UiStyle uiStyle;

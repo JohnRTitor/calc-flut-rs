@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:calculator_flutter_app/features/calculator/presentation/providers/function_evaluator_provider.dart';
-import 'package:calculator_flutter_app/shared/widgets/glass_utils.dart';
-import 'package:calculator_flutter_app/app/theme/ui_style.dart';
-import 'package:calculator_flutter_app/features/settings/presentation/providers/theme_provider.dart';
+import 'package:calc_flut_rs/features/calculator/presentation/providers/function_evaluator_provider.dart';
+import 'package:calc_flut_rs/shared/widgets/glass_utils.dart';
+import 'package:calc_flut_rs/app/theme/ui_style.dart';
+import 'package:calc_flut_rs/features/settings/presentation/providers/theme_provider.dart';
 
 class VariableBottomSheet extends ConsumerWidget {
   const VariableBottomSheet({super.key});

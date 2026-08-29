@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:calculator_flutter_app/shared/widgets/app_dialog.dart'
+import 'package:calc_flut_rs/shared/widgets/app_dialog.dart'
     as import_app_dialog;
-import 'package:calculator_flutter_app/app/theme/ui_style.dart';
+import 'package:calc_flut_rs/app/theme/ui_style.dart';
 
 class SupportedOperationsDialog extends StatefulWidget {
   const SupportedOperationsDialog({super.key});

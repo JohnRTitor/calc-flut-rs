@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:calculator_flutter_app/generated/rust/bridge/converter.dart';
+import 'package:calc_flut_rs/generated/rust/bridge/converter.dart';
 import '../../../../app/theme/ui_style.dart';
 import '../../../../shared/widgets/glass_utils.dart';
 

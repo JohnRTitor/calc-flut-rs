@@ -9,8 +9,8 @@ list(APPEND FLUTTER_PLUGIN_LIST
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
+  calc_flut_core
   jni
-  rust_calc_core
 )
 
 set(PLUGIN_BUNDLED_LIBRARIES)

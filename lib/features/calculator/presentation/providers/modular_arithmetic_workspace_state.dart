@@ -1,4 +1,4 @@
-import 'package:calculator_flutter_app/generated/rust/bridge/modular_arithmetic.dart';
+import 'package:calc_flut_rs/generated/rust/bridge/modular_arithmetic.dart';
 
 enum ModularMode { ring, field, crt }
 

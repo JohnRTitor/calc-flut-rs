@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:calculator_flutter_app/app/theme/ui_style.dart';
-import 'package:calculator_flutter_app/features/settings/presentation/providers/theme_provider.dart';
-import 'package:calculator_flutter_app/shared/widgets/glass_utils.dart';
-import 'package:calculator_flutter_app/app/navigation/route_transitions.dart';
-import 'package:calculator_flutter_app/generated/rust/bridge/converter.dart';
-import 'package:calculator_flutter_app/features/converter/presentation/providers/converter_provider.dart';
-import 'package:calculator_flutter_app/features/converter/presentation/screens/converter_detail_screen.dart';
+import 'package:calc_flut_rs/app/theme/ui_style.dart';
+import 'package:calc_flut_rs/features/settings/presentation/providers/theme_provider.dart';
+import 'package:calc_flut_rs/shared/widgets/glass_utils.dart';
+import 'package:calc_flut_rs/app/navigation/route_transitions.dart';
+import 'package:calc_flut_rs/generated/rust/bridge/converter.dart';
+import 'package:calc_flut_rs/features/converter/presentation/providers/converter_provider.dart';
+import 'package:calc_flut_rs/features/converter/presentation/screens/converter_detail_screen.dart';
 
-import 'package:calculator_flutter_app/features/currency/presentation/screens/loan_calculator_screen.dart';
-import 'package:calculator_flutter_app/features/currency/presentation/screens/investment_screen.dart';
+import 'package:calc_flut_rs/features/currency/presentation/screens/loan_calculator_screen.dart';
+import 'package:calc_flut_rs/features/currency/presentation/screens/investment_screen.dart';
 import 'package:toastification/toastification.dart';
 
 class CurrencyItem {

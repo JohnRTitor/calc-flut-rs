@@ -1,5 +1,5 @@
 [package]
-name = "rust_calc_core"
+name = "calc_flut_core"
 version = "0.1.0"
 edition = "2024"
 

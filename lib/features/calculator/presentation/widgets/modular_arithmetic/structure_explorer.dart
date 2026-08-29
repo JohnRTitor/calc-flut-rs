@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:calculator_flutter_app/features/calculator/presentation/providers/modular_arithmetic_workspace_provider.dart';
-import 'package:calculator_flutter_app/features/calculator/presentation/providers/modular_arithmetic_workspace_state.dart';
-import 'package:calculator_flutter_app/app/theme/ui_style.dart';
-import 'package:calculator_flutter_app/features/settings/presentation/providers/theme_provider.dart';
-import 'package:calculator_flutter_app/shared/widgets/app_dropdown_menu.dart';
-import 'package:calculator_flutter_app/shared/widgets/app_button.dart';
+import 'package:calc_flut_rs/features/calculator/presentation/providers/modular_arithmetic_workspace_provider.dart';
+import 'package:calc_flut_rs/features/calculator/presentation/providers/modular_arithmetic_workspace_state.dart';
+import 'package:calc_flut_rs/app/theme/ui_style.dart';
+import 'package:calc_flut_rs/features/settings/presentation/providers/theme_provider.dart';
+import 'package:calc_flut_rs/shared/widgets/app_dropdown_menu.dart';
+import 'package:calc_flut_rs/shared/widgets/app_button.dart';
 
-import 'package:calculator_flutter_app/features/calculator/presentation/widgets/modular_arithmetic/modular_context_card.dart';
-import 'package:calculator_flutter_app/features/calculator/presentation/widgets/modular_arithmetic/modular_arithmetic_explorer_empty_state.dart';
-import 'package:calculator_flutter_app/features/calculator/presentation/widgets/modular_arithmetic/modular_arithmetic_analysis_grid.dart';
+import 'package:calc_flut_rs/features/calculator/presentation/widgets/modular_arithmetic/modular_context_card.dart';
+import 'package:calc_flut_rs/features/calculator/presentation/widgets/modular_arithmetic/modular_arithmetic_explorer_empty_state.dart';
+import 'package:calc_flut_rs/features/calculator/presentation/widgets/modular_arithmetic/modular_arithmetic_analysis_grid.dart';
 
 class StructureExplorer extends ConsumerStatefulWidget {
   const StructureExplorer({super.key});

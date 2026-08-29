@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:calculator_flutter_app/features/calculator/presentation/providers/function_evaluator_state.dart';
-import 'package:calculator_flutter_app/generated/rust/bridge/calculator.dart'
+import 'package:calc_flut_rs/features/calculator/presentation/providers/function_evaluator_state.dart';
+import 'package:calc_flut_rs/generated/rust/bridge/calculator.dart'
     as rust;
-import 'package:calculator_flutter_app/generated/rust/bridge/history.dart'
+import 'package:calc_flut_rs/generated/rust/bridge/history.dart'
     as rust_history;
-import 'package:calculator_flutter_app/features/history/presentation/providers/history_provider.dart';
+import 'package:calc_flut_rs/features/history/presentation/providers/history_provider.dart';
 
 part 'function_evaluator_provider.g.dart';
 

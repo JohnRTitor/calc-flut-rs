@@ -2,17 +2,17 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:calculator_flutter_app/features/history/domain/history_category.dart';
-import 'package:calculator_flutter_app/features/history/presentation/providers/history_provider.dart';
-import 'package:calculator_flutter_app/features/calculator/presentation/providers/calculator_provider.dart';
-import 'package:calculator_flutter_app/features/calculator/presentation/providers/function_evaluator_provider.dart';
-import 'package:calculator_flutter_app/features/calculator/presentation/providers/modular_arithmetic_workspace_provider.dart';
-import 'package:calculator_flutter_app/features/settings/presentation/providers/theme_provider.dart';
-import 'package:calculator_flutter_app/app/theme/ui_style.dart';
-import 'package:calculator_flutter_app/shared/widgets/multi_pill_switcher.dart';
-import 'package:calculator_flutter_app/shared/widgets/app_dialog.dart';
-import 'package:calculator_flutter_app/shared/widgets/glass_utils.dart';
-import 'package:calculator_flutter_app/generated/rust/shared/history.dart';
+import 'package:calc_flut_rs/features/history/domain/history_category.dart';
+import 'package:calc_flut_rs/features/history/presentation/providers/history_provider.dart';
+import 'package:calc_flut_rs/features/calculator/presentation/providers/calculator_provider.dart';
+import 'package:calc_flut_rs/features/calculator/presentation/providers/function_evaluator_provider.dart';
+import 'package:calc_flut_rs/features/calculator/presentation/providers/modular_arithmetic_workspace_provider.dart';
+import 'package:calc_flut_rs/features/settings/presentation/providers/theme_provider.dart';
+import 'package:calc_flut_rs/app/theme/ui_style.dart';
+import 'package:calc_flut_rs/shared/widgets/multi_pill_switcher.dart';
+import 'package:calc_flut_rs/shared/widgets/app_dialog.dart';
+import 'package:calc_flut_rs/shared/widgets/glass_utils.dart';
+import 'package:calc_flut_rs/generated/rust/shared/history.dart';
 
 class HistoryScreen extends ConsumerStatefulWidget {
   final HistoryCategory initialCategory;

@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:calculator_flutter_app/features/converter/presentation/providers/converter_provider.dart';
-import 'package:calculator_flutter_app/app/theme/ui_style.dart';
-import 'package:calculator_flutter_app/shared/widgets/glass_utils.dart';
-import 'package:calculator_flutter_app/features/settings/presentation/providers/theme_provider.dart';
+import 'package:calc_flut_rs/features/converter/presentation/providers/converter_provider.dart';
+import 'package:calc_flut_rs/app/theme/ui_style.dart';
+import 'package:calc_flut_rs/shared/widgets/glass_utils.dart';
+import 'package:calc_flut_rs/features/settings/presentation/providers/theme_provider.dart';
 import 'package:toastification/toastification.dart';
-import 'package:calculator_flutter_app/features/currency/presentation/widgets/utilities_keypad.dart';
-import 'package:calculator_flutter_app/features/converter/presentation/widgets/converter_result_card.dart';
-import 'package:calculator_flutter_app/features/converter/presentation/widgets/unit_selector_bottom_sheet.dart';
-import 'package:calculator_flutter_app/generated/rust/bridge/converter.dart';
-import 'package:calculator_flutter_app/shared/widgets/screenshot_share_wrapper.dart';
-import 'package:calculator_flutter_app/shared/layouts/responsive_keypad_layout.dart';
-import 'package:calculator_flutter_app/shared/widgets/app_dialog.dart';
+import 'package:calc_flut_rs/features/currency/presentation/widgets/utilities_keypad.dart';
+import 'package:calc_flut_rs/features/converter/presentation/widgets/converter_result_card.dart';
+import 'package:calc_flut_rs/features/converter/presentation/widgets/unit_selector_bottom_sheet.dart';
+import 'package:calc_flut_rs/generated/rust/bridge/converter.dart';
+import 'package:calc_flut_rs/shared/widgets/screenshot_share_wrapper.dart';
+import 'package:calc_flut_rs/shared/layouts/responsive_keypad_layout.dart';
+import 'package:calc_flut_rs/shared/widgets/app_dialog.dart';
 
 /// The detail screen for a specific converter category.
 ///

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:calculator_flutter_app/app/theme/ui_style.dart';
-import 'package:calculator_flutter_app/generated/rust/bridge/modular_arithmetic.dart';
-import 'package:calculator_flutter_app/shared/widgets/glass_utils.dart';
-import 'package:calculator_flutter_app/shared/widgets/app_dialog.dart';
-import 'package:calculator_flutter_app/features/calculator/presentation/widgets/modular_arithmetic/cayley_table_view.dart';
+import 'package:calc_flut_rs/app/theme/ui_style.dart';
+import 'package:calc_flut_rs/generated/rust/bridge/modular_arithmetic.dart';
+import 'package:calc_flut_rs/shared/widgets/glass_utils.dart';
+import 'package:calc_flut_rs/shared/widgets/app_dialog.dart';
+import 'package:calc_flut_rs/features/calculator/presentation/widgets/modular_arithmetic/cayley_table_view.dart';
 
 class ModularArithmeticAnalysisGrid extends StatefulWidget {
   final UiStyle uiStyle;

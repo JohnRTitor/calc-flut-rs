@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:calculator_flutter_app/app/theme/ui_style.dart';
-import 'package:calculator_flutter_app/features/settings/presentation/providers/theme_provider.dart';
-import 'package:calculator_flutter_app/app/theme/app_theme_extension.dart';
+import 'package:calc_flut_rs/app/theme/ui_style.dart';
+import 'package:calc_flut_rs/features/settings/presentation/providers/theme_provider.dart';
+import 'package:calc_flut_rs/app/theme/app_theme_extension.dart';
 
 /// Defines the core theme configurations and visual properties for the application.
 class AppTheme {

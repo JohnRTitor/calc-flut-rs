@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:calculator_flutter_app/app/theme/ui_style.dart';
-import 'package:calculator_flutter_app/shared/widgets/glass_utils.dart';
-import 'package:calculator_flutter_app/app/theme/app_theme_extension.dart';
+import 'package:calc_flut_rs/app/theme/ui_style.dart';
+import 'package:calc_flut_rs/shared/widgets/glass_utils.dart';
+import 'package:calc_flut_rs/app/theme/app_theme_extension.dart';
 
 /// A generic pill switcher that acts as a two-option segmented control.
 ///

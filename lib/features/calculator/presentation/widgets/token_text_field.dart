@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:calculator_flutter_app/features/calculator/presentation/providers/calculator_provider.dart';
+import 'package:calc_flut_rs/features/calculator/presentation/providers/calculator_provider.dart';
 
 /// A specialized read-only text field that displays the current mathematical expression.
 ///

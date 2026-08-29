@@ -1,6 +1,6 @@
 {
-    "name": "calculator_flutter_app",
-    "short_name": "calculator_flutter_app",
+    "name": "CalcFlut",
+    "short_name": "CalcFlut",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:calculator_flutter_app/features/calculator/presentation/providers/modular_arithmetic_workspace_state.dart';
-import 'package:calculator_flutter_app/generated/rust/bridge/modular_arithmetic.dart'
+import 'package:calc_flut_rs/features/calculator/presentation/providers/modular_arithmetic_workspace_state.dart';
+import 'package:calc_flut_rs/generated/rust/bridge/modular_arithmetic.dart'
     as rust;
-import 'package:calculator_flutter_app/generated/rust/bridge/history.dart'
+import 'package:calc_flut_rs/generated/rust/bridge/history.dart'
     as rust_history;
-import 'package:calculator_flutter_app/features/history/presentation/providers/history_provider.dart';
-import 'package:calculator_flutter_app/features/settings/presentation/providers/settings_provider.dart';
+import 'package:calc_flut_rs/features/history/presentation/providers/history_provider.dart';
+import 'package:calc_flut_rs/features/settings/presentation/providers/settings_provider.dart';
 
 part 'modular_arithmetic_workspace_provider.g.dart';
 

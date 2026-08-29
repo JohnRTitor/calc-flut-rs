@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:path/path.dart' as path;
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
-import 'package:calculator_flutter_app/generated/rust/frb_generated.dart';
+import 'package:calc_flut_rs/generated/rust/frb_generated.dart';
 
 Future<void> initializeRust() async {
   ExternalLibrary? externalLibrary;
@@ -10,7 +10,7 @@ Future<void> initializeRust() async {
     final libPath = path.join(
       path.dirname(executable),
       'lib',
-      'librust_calc_core.so',
+      'libcalc_flut_core.so',
     );
     if (File(libPath).existsSync()) {
       externalLibrary = ExternalLibrary.open(libPath);

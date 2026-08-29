@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:calculator_flutter_app/generated/rust/bridge/converter.dart';
+import 'package:calc_flut_rs/generated/rust/bridge/converter.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 class DateCalculatorState {

@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:calculator_flutter_app/generated/rust/bridge/currency.dart';
+import 'package:calc_flut_rs/generated/rust/bridge/currency.dart';
 
 enum InvestmentMode { oneTime, sip }
 

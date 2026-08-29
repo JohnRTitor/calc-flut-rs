@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:calculator_flutter_app/app/theme/ui_style.dart';
+import 'package:calc_flut_rs/app/theme/ui_style.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:calculator_flutter_app/features/calculator/presentation/screens/calculator_screen.dart';
-import 'package:calculator_flutter_app/features/converter/presentation/screens/converter_home_screen.dart';
-import 'package:calculator_flutter_app/features/currency/presentation/screens/currency_home_screen.dart';
+import 'package:calc_flut_rs/features/calculator/presentation/screens/calculator_screen.dart';
+import 'package:calc_flut_rs/features/converter/presentation/screens/converter_home_screen.dart';
+import 'package:calc_flut_rs/features/currency/presentation/screens/currency_home_screen.dart';
 
-import 'package:calculator_flutter_app/features/settings/presentation/screens/settings_screen.dart';
-import 'package:calculator_flutter_app/features/settings/presentation/providers/theme_provider.dart';
-import 'package:calculator_flutter_app/shared/widgets/app_tab_bar.dart';
-import 'package:calculator_flutter_app/app/navigation/route_transitions.dart';
+import 'package:calc_flut_rs/features/settings/presentation/screens/settings_screen.dart';
+import 'package:calc_flut_rs/features/settings/presentation/providers/theme_provider.dart';
+import 'package:calc_flut_rs/shared/widgets/app_tab_bar.dart';
+import 'package:calc_flut_rs/app/navigation/route_transitions.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:calculator_flutter_app/shared/widgets/app_dialog.dart';
-import 'package:calculator_flutter_app/shared/widgets/app_dropdown_menu.dart';
+import 'package:calc_flut_rs/shared/widgets/app_dialog.dart';
+import 'package:calc_flut_rs/shared/widgets/app_dropdown_menu.dart';
 
 /// The primary navigation scaffold of the application.
 ///
@@ -171,7 +171,7 @@ class _MainScreenState extends ConsumerState<MainScreen>
       primaryButtonText: 'View Source Code',
       onPrimaryButtonPressed: () async {
         final url = Uri.parse(
-          'https://github.com/JohnRTitor/calculator_flutter_app',
+          'https://github.com/JohnRTitor/calc_flut_rs',
         );
         if (await canLaunchUrl(url)) {
           await launchUrl(url, mode: LaunchMode.externalApplication);

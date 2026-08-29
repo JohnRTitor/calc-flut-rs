@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:calculator_flutter_app/shared/layouts/breakpoints.dart';
+import 'package:calc_flut_rs/shared/layouts/breakpoints.dart';
 
 /// A standardized layout engine for screens that contain a top display area
 /// and a bottom keypad area (e.g., calculators, converters).

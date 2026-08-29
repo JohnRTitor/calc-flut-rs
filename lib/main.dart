@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:calculator_flutter_app/app/app.dart';
+import 'package:calc_flut_rs/app/app.dart';
 import 'package:flutter/services.dart';
-import 'package:calculator_flutter_app/init/rust_init.dart';
+import 'package:calc_flut_rs/init/rust_init.dart';
 
 /// The main entry point for the Calculator application.
 ///

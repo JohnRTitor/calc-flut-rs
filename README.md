@@ -55,7 +55,7 @@ flutter run -d chrome
 Or you can build it manually.
 
 ```bash
-wasm-pack build -t no-modules -d web/pkg --no-typescript --out-name rust_lib_calculator_flutter_app --dev rust
+wasm-pack build -t no-modules -d web/pkg --no-typescript --out-name rust_lib_calc_flut_rs --dev rust
 ```
 
 ## License
