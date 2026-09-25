@@ -342,18 +342,21 @@ List<AppSection> buildAppSections() {
       id: 'history',
       label: 'History',
       icon: Icons.history,
-      builder: (_) => const HistoryScreen(),
+      // Hosted inside the shell, which already shows the section title.
+      builder: (_) => const HistoryScreen(embedded: true),
     ),
     const AppSection(
       id: 'settings',
       label: 'Settings',
       icon: Icons.settings_outlined,
-      builder: _buildSettingsScreen,
+      // Hosted inside the shell, which already shows the section title.
+      builder: _buildSettingsSection,
     ),
   ];
 }
 
-Widget _buildSettingsScreen(BuildContext context) => const SettingsScreen();
+Widget _buildSettingsSection(BuildContext context) =>
+    const SettingsScreen(embedded: true);
 
 /// The single source of truth for every section and tool in the application.
 ///

@@ -392,6 +392,29 @@ Pick by tool count, not by feature:
    hub card label.
 4. Do not touch `AppShell` — the drawer, rail and search pick it up automatically.
 
+### Screens That Are Both a Section and a Pushed Destination
+
+`HistoryScreen` and `SettingsScreen` are reachable two ways: as a top level
+section (hosted in the shell's `IndexedStack`) and as a pushed screen (History
+from the calculator's history button, Settings from the ⋮ menu).
+
+The shell already renders the section title in its `AppBar`, so an
+unconditional app bar on the screen shows the title twice. Such a screen takes
+an `embedded` flag:
+
+- `embedded: true` (set by the section's `builder` in `tool_registry.dart`) —
+  no app bar; the shell owns the title and the back action.
+- `embedded: false` (default, used when pushed) — full `Scaffold` + `AppBar`
+  with the title and a working back action.
+
+Any app bar action that a screen needs must therefore be reachable in **both**
+modes. `HistoryScreen` extracts its clear-history button into
+`_buildClearButton` and places it in the app bar when pushed, or beside the
+category filter when embedded.
+
+Only hub screens and single-screen sections (`CalculatorScreen`) should be
+app bar-free outright.
+
 ### Notes
 
 - Modular Arithmetic is reached from the **Symbolic Math** hub, not the

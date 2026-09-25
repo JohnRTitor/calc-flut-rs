@@ -13,7 +13,12 @@ import 'package:flutter_animate/flutter_animate.dart';
 /// app accent colors (including Material You dynamic color support if available),
 /// and the overall visual style (Standard Material vs. Liquid Glass).
 class SettingsScreen extends ConsumerWidget {
-  const SettingsScreen({super.key});
+  /// When true the screen is hosted as a top level section inside `AppShell`,
+  /// which already renders the title in its app bar. Suppresses this screen's
+  /// own app bar so the title is not shown twice.
+  final bool embedded;
+
+  const SettingsScreen({super.key, this.embedded = false});
 
   static const _themeLabels = {
     AppThemeMode.system: ('System', Icons.brightness_auto),
@@ -172,7 +177,7 @@ class SettingsScreen extends ConsumerWidget {
         );
 
         return Scaffold(
-          appBar: AppBar(title: const Text('Settings')),
+          appBar: embedded ? null : AppBar(title: const Text('Settings')),
           body: body,
         );
       },

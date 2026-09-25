@@ -17,7 +17,16 @@ import 'package:calc_flut_rs/generated/rust/shared/history.dart';
 class HistoryScreen extends ConsumerStatefulWidget {
   final HistoryCategory initialCategory;
 
-  const HistoryScreen({super.key, this.initialCategory = HistoryCategory.calculator});
+  /// When true the screen is hosted as a top level section inside `AppShell`,
+  /// which already renders the title in its app bar. Suppresses this screen's
+  /// own app bar so the title is not shown twice.
+  final bool embedded;
+
+  const HistoryScreen({
+    super.key,
+    this.initialCategory = HistoryCategory.calculator,
+    this.embedded = false,
+  });
 
   @override
   ConsumerState<HistoryScreen> createState() => _HistoryScreenState();
@@ -39,56 +48,53 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('History'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.delete_sweep_outlined),
-            tooltip: 'Clear history for current category',
-            onPressed: () async {
-              final historyList = ref.read(historyProvider).value ?? [];
-              final filteredList = historyList.where((e) => e.category == _selectedCategory.name).toList();
-              
-              if (filteredList.isEmpty) return;
-
-              final confirm = await _showClearHistoryDialog(
-                context,
-                filteredList.length,
-                uiStyle,
-                _selectedCategory.label,
-              );
-              if (confirm == true) {
-                ref.read(historyProvider.notifier).clearCategory(_selectedCategory.name);
-              }
-            },
-          ),
-        ],
-      ),
+      appBar: widget.embedded
+          ? null
+          : AppBar(
+              title: const Text('History'),
+              actions: [_buildClearButton(uiStyle)],
+            ),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12),
-            child: MultiPillSwitcher(
-              uiStyle: uiStyle,
-              labels: HistoryCategory.values.map((c) => c.label).toList(),
-              tooltips: const [
-                'Basic calculator history',
-                'Function evaluator history',
-                'Modular arithmetic history'
+            child: Row(
+              children: [
+                Expanded(
+                  child: MultiPillSwitcher(
+                    uiStyle: uiStyle,
+                    labels: HistoryCategory.values.map((c) => c.label).toList(),
+                    tooltips: const [
+                      'Basic calculator history',
+                      'Function evaluator history',
+                      'Modular arithmetic history',
+                    ],
+                    selectedIndex: HistoryCategory.values.indexOf(
+                      _selectedCategory,
+                    ),
+                    onChanged: (index) {
+                      setState(() {
+                        _selectedCategory = HistoryCategory.values[index];
+                      });
+                    },
+                  ),
+                ),
+                // In embedded mode the shell owns the app bar, so the clear
+                // action lives here beside the category filter instead.
+                if (widget.embedded) ...[
+                  const SizedBox(width: 4),
+                  _buildClearButton(uiStyle),
+                ],
               ],
-              selectedIndex: HistoryCategory.values.indexOf(_selectedCategory),
-              onChanged: (index) {
-                setState(() {
-                  _selectedCategory = HistoryCategory.values[index];
-                });
-              },
             ),
           ),
           Expanded(
             child: historyAsync.when(
               data: (history) {
-                final filteredHistory = history.where((e) => e.category == _selectedCategory.name).toList();
-                
+                final filteredHistory = history
+                    .where((e) => e.category == _selectedCategory.name)
+                    .toList();
+
                 if (filteredHistory.isEmpty) {
                   return Center(
                     child: Column(
@@ -97,20 +103,23 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                         Icon(
                           _selectedCategory.icon,
                           size: 48,
-                          color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                          color: theme.colorScheme.onSurfaceVariant.withValues(
+                            alpha: 0.3,
+                          ),
                         ),
                         const SizedBox(height: 12),
                         Text(
                           'No ${_selectedCategory.label} history',
                           style: theme.textTheme.bodyLarge?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                            color: theme.colorScheme.onSurfaceVariant
+                                .withValues(alpha: 0.5),
                           ),
                         ),
                       ],
                     ),
                   );
                 }
-                
+
                 return ListView.separated(
                   padding: EdgeInsets.only(
                     left: 12,
@@ -135,9 +144,40 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     );
   }
 
-  Widget _buildHistoryCard(BuildContext context, HistoryEntry entry, UiStyle uiStyle) {
+  Widget _buildClearButton(UiStyle uiStyle) {
+    return IconButton(
+      icon: const Icon(Icons.delete_sweep_outlined),
+      tooltip: 'Clear history for current category',
+      onPressed: () async {
+        final historyList = ref.read(historyProvider).value ?? [];
+        final filteredList = historyList
+            .where((e) => e.category == _selectedCategory.name)
+            .toList();
+
+        if (filteredList.isEmpty) return;
+
+        final confirm = await _showClearHistoryDialog(
+          context,
+          filteredList.length,
+          uiStyle,
+          _selectedCategory.label,
+        );
+        if (confirm == true) {
+          ref
+              .read(historyProvider.notifier)
+              .clearCategory(_selectedCategory.name);
+        }
+      },
+    );
+  }
+
+  Widget _buildHistoryCard(
+    BuildContext context,
+    HistoryEntry entry,
+    UiStyle uiStyle,
+  ) {
     final theme = Theme.of(context);
-    
+
     // Parse the preview JSON
     Map<String, dynamic> previewData = {};
     try {
@@ -195,7 +235,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     );
   }
 
-  List<Widget> _buildPreviewContent(Map<String, dynamic> previewData, ThemeData theme) {
+  List<Widget> _buildPreviewContent(
+    Map<String, dynamic> previewData,
+    ThemeData theme,
+  ) {
     switch (_selectedCategory) {
       case HistoryCategory.calculator:
         return [
@@ -279,10 +322,14 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         ref.read(calculatorProvider.notifier).restoreSnapshot(entry.snapshot);
         break;
       case HistoryCategory.functionEvaluator:
-        ref.read(functionEvaluatorProvider.notifier).restoreSnapshot(entry.snapshot);
+        ref
+            .read(functionEvaluatorProvider.notifier)
+            .restoreSnapshot(entry.snapshot);
         break;
       case HistoryCategory.modularArithmetic:
-        ref.read(modularArithmeticWorkspaceProvider.notifier).restoreSnapshot(entry.snapshot);
+        ref
+            .read(modularArithmeticWorkspaceProvider.notifier)
+            .restoreSnapshot(entry.snapshot);
         break;
     }
     Navigator.pop(context, _selectedCategory);
