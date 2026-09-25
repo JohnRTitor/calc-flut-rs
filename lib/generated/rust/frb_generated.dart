@@ -8,6 +8,7 @@ import 'bridge/converter.dart';
 import 'bridge/currency.dart';
 import 'bridge/history.dart';
 import 'bridge/modular_arithmetic.dart';
+import 'bridge/symbolic.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'frb_generated.dart';
@@ -69,7 +70,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.13.0';
 
   @override
-  int get rustContentHash => 894277077;
+  int get rustContentHash => 574047861;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -198,6 +199,15 @@ abstract class RustLibApi extends BaseApi {
     required String expression,
     String? contextModulus,
     required String mode,
+    required bool showSteps,
+  });
+
+  List<String> crateBridgeSymbolicSymbolicOperations();
+
+  Future<SymbolicResult> crateBridgeSymbolicSymbolicTransform({
+    required String expression,
+    required String operation,
+    String? variable,
     required bool showSteps,
   });
 }
@@ -1031,6 +1041,67 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         argNames: ["expression", "contextModulus", "mode", "showSteps"],
       );
 
+  @override
+  List<String> crateBridgeSymbolicSymbolicOperations() {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 30)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_String,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateBridgeSymbolicSymbolicOperationsConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateBridgeSymbolicSymbolicOperationsConstMeta =>
+      const TaskConstMeta(debugName: "symbolic_operations", argNames: []);
+
+  @override
+  Future<SymbolicResult> crateBridgeSymbolicSymbolicTransform({
+    required String expression,
+    required String operation,
+    String? variable,
+    required bool showSteps,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(expression, serializer);
+          sse_encode_String(operation, serializer);
+          sse_encode_opt_String(variable, serializer);
+          sse_encode_bool(showSteps, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 31,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_symbolic_result,
+          decodeErrorData: sse_decode_symbolic_error_info,
+        ),
+        constMeta: kCrateBridgeSymbolicSymbolicTransformConstMeta,
+        argValues: [expression, operation, variable, showSteps],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateBridgeSymbolicSymbolicTransformConstMeta =>
+      const TaskConstMeta(
+        debugName: "symbolic_transform",
+        argNames: ["expression", "operation", "variable", "showSteps"],
+      );
+
   @protected
   Map<String, double> dco_decode_Map_String_f_64_None(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
@@ -1043,6 +1114,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   String dco_decode_String(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as String;
+  }
+
+  @protected
+  AlternateForm dco_decode_alternate_form(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return AlternateForm(
+      label: dco_decode_String(arr[0]),
+      expression: dco_decode_String(arr[1]),
+    );
   }
 
   @protected
@@ -1261,6 +1344,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<AlternateForm> dco_decode_list_alternate_form(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_alternate_form).toList();
+  }
+
+  @protected
   List<ElementOrderPair> dco_decode_list_element_order_pair(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return (raw as List<dynamic>).map(dco_decode_element_order_pair).toList();
@@ -1422,6 +1511,33 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  SymbolicErrorInfo dco_decode_symbolic_error_info(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return SymbolicErrorInfo(
+      kind: dco_decode_String(arr[0]),
+      message: dco_decode_String(arr[1]),
+      suggestion: dco_decode_opt_String(arr[2]),
+    );
+  }
+
+  @protected
+  SymbolicResult dco_decode_symbolic_result(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return SymbolicResult(
+      value: dco_decode_String(arr[0]),
+      alternateForms: dco_decode_list_alternate_form(arr[1]),
+      details: dco_decode_opt_String(arr[2]),
+      steps: dco_decode_opt_String(arr[3]),
+    );
+  }
+
+  @protected
   int dco_decode_u_32(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as int;
@@ -1453,6 +1569,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var inner = sse_decode_list_prim_u_8_strict(deserializer);
     return utf8.decoder.convert(inner);
+  }
+
+  @protected
+  AlternateForm sse_decode_alternate_form(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_label = sse_decode_String(deserializer);
+    var var_expression = sse_decode_String(deserializer);
+    return AlternateForm(label: var_label, expression: var_expression);
   }
 
   @protected
@@ -1674,6 +1798,20 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var ans_ = <String>[];
     for (var idx_ = 0; idx_ < len_; ++idx_) {
       ans_.add(sse_decode_String(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<AlternateForm> sse_decode_list_alternate_form(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <AlternateForm>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_alternate_form(deserializer));
     }
     return ans_;
   }
@@ -1930,6 +2068,36 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  SymbolicErrorInfo sse_decode_symbolic_error_info(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_kind = sse_decode_String(deserializer);
+    var var_message = sse_decode_String(deserializer);
+    var var_suggestion = sse_decode_opt_String(deserializer);
+    return SymbolicErrorInfo(
+      kind: var_kind,
+      message: var_message,
+      suggestion: var_suggestion,
+    );
+  }
+
+  @protected
+  SymbolicResult sse_decode_symbolic_result(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_value = sse_decode_String(deserializer);
+    var var_alternateForms = sse_decode_list_alternate_form(deserializer);
+    var var_details = sse_decode_opt_String(deserializer);
+    var var_steps = sse_decode_opt_String(deserializer);
+    return SymbolicResult(
+      value: var_value,
+      alternateForms: var_alternateForms,
+      details: var_details,
+      steps: var_steps,
+    );
+  }
+
+  @protected
   int sse_decode_u_32(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getUint32();
@@ -1962,6 +2130,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   void sse_encode_String(String self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_list_prim_u_8_strict(utf8.encoder.convert(self), serializer);
+  }
+
+  @protected
+  void sse_encode_alternate_form(AlternateForm self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.label, serializer);
+    sse_encode_String(self.expression, serializer);
   }
 
   @protected
@@ -2140,6 +2315,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_i_32(self.length, serializer);
     for (final item in self) {
       sse_encode_String(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_alternate_form(
+    List<AlternateForm> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_alternate_form(item, serializer);
     }
   }
 
@@ -2345,6 +2532,29 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_opt_String(self.errorMessage, serializer);
     sse_encode_opt_String(self.suggestion, serializer);
     sse_encode_opt_String(self.interpretedAs, serializer);
+  }
+
+  @protected
+  void sse_encode_symbolic_error_info(
+    SymbolicErrorInfo self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.kind, serializer);
+    sse_encode_String(self.message, serializer);
+    sse_encode_opt_String(self.suggestion, serializer);
+  }
+
+  @protected
+  void sse_encode_symbolic_result(
+    SymbolicResult self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.value, serializer);
+    sse_encode_list_alternate_form(self.alternateForms, serializer);
+    sse_encode_opt_String(self.details, serializer);
+    sse_encode_opt_String(self.steps, serializer);
   }
 
   @protected

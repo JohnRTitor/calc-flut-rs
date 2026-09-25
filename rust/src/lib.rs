@@ -6,4 +6,5 @@ pub mod converter;
 mod frb_generated;
 pub mod modular_arithmetic;
 pub mod shared;
+pub mod symbolic;
 mod tests;

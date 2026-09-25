@@ -5,6 +5,7 @@ import 'package:calc_flut_rs/app/theme/ui_style.dart';
 import 'package:calc_flut_rs/features/calculator/presentation/providers/calculator_provider.dart';
 import 'package:calc_flut_rs/features/calculator/presentation/providers/calculator_state.dart';
 import 'package:calc_flut_rs/shared/widgets/app_button.dart';
+import 'package:calc_flut_rs/shared/widgets/app_chip.dart';
 import 'package:calc_flut_rs/features/calculator/presentation/widgets/animated_equals_button.dart';
 import 'package:calc_flut_rs/features/settings/presentation/providers/theme_provider.dart';
 import 'package:calc_flut_rs/features/calculator/presentation/screens/calculator_screen.dart';
@@ -638,6 +639,11 @@ class _DropdownChipRow extends StatelessWidget {
     );
   }
 
+  /// Builds one scientific-mode chip.
+  ///
+  /// Delegates to the shared [AppChip] so this row and the symbolic action row
+  /// share a single chip implementation. The trailing caret stays owned here
+  /// because only this row has something to expand.
   Widget _buildChip(
     BuildContext context, {
     required String label,
@@ -646,78 +652,16 @@ class _DropdownChipRow extends StatelessWidget {
     required VoidCallback onTap,
     required bool isExpanded,
   }) {
-    if (uiStyle == UiStyle.liquidGlass) {
-      // Lightweight frosted chip — no shader
-      return Material(
-        color: bgColor.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(20),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: fgColor,
-                    ),
-                  ),
-                  const SizedBox(width: 2),
-                  AnimatedRotation(
-                    duration: const Duration(milliseconds: 200),
-                    turns: isExpanded ? 0.5 : 0.0,
-                    child: Icon(Icons.expand_more, size: 18, color: fgColor),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Material(
-      color: bgColor,
-      borderRadius: BorderRadius.circular(20),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: fgColor,
-                  ),
-                ),
-                const SizedBox(width: 2),
-                AnimatedRotation(
-                  duration: const Duration(milliseconds: 200),
-                  turns: isExpanded ? 0.5 : 0.0,
-                  child: Icon(Icons.expand_more, size: 18, color: fgColor),
-                ),
-              ],
-            ),
-          ),
-        ),
+    return AppChip(
+      uiStyle: uiStyle,
+      label: label,
+      backgroundColor: bgColor,
+      foregroundColor: fgColor,
+      onTap: onTap,
+      trailing: AnimatedRotation(
+        duration: const Duration(milliseconds: 200),
+        turns: isExpanded ? 0.5 : 0.0,
+        child: Icon(Icons.expand_more, size: 18, color: fgColor),
       ),
     );
   }

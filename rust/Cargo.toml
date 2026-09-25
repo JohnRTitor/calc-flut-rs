@@ -17,6 +17,9 @@ num-bigint = "0.4"
 num-rational = "0.4"
 num-traits = "0.2"
 bigdecimal = "0.4"
+# Exact symbolic mathematics: expression trees, simplification, expansion,
+# factorisation, calculus and equation solving over Ratio<BigInt>.
+symplex = "0.28"
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }

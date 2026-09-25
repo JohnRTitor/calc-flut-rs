@@ -8,6 +8,7 @@ import 'bridge/converter.dart';
 import 'bridge/currency.dart';
 import 'bridge/history.dart';
 import 'bridge/modular_arithmetic.dart';
+import 'bridge/symbolic.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi' as ffi;
@@ -28,6 +29,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   String dco_decode_String(dynamic raw);
+
+  @protected
+  AlternateForm dco_decode_alternate_form(dynamic raw);
 
   @protected
   BmiResult dco_decode_bmi_result(dynamic raw);
@@ -93,6 +97,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<String> dco_decode_list_String(dynamic raw);
 
   @protected
+  List<AlternateForm> dco_decode_list_alternate_form(dynamic raw);
+
+  @protected
   List<ElementOrderPair> dco_decode_list_element_order_pair(dynamic raw);
 
   @protected
@@ -146,6 +153,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   StructureAnalysisResponse dco_decode_structure_analysis_response(dynamic raw);
 
   @protected
+  SymbolicErrorInfo dco_decode_symbolic_error_info(dynamic raw);
+
+  @protected
+  SymbolicResult dco_decode_symbolic_result(dynamic raw);
+
+  @protected
   int dco_decode_u_32(dynamic raw);
 
   @protected
@@ -161,6 +174,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   String sse_decode_String(SseDeserializer deserializer);
+
+  @protected
+  AlternateForm sse_decode_alternate_form(SseDeserializer deserializer);
 
   @protected
   BmiResult sse_decode_bmi_result(SseDeserializer deserializer);
@@ -230,6 +246,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<String> sse_decode_list_String(SseDeserializer deserializer);
 
   @protected
+  List<AlternateForm> sse_decode_list_alternate_form(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<ElementOrderPair> sse_decode_list_element_order_pair(
     SseDeserializer deserializer,
   );
@@ -295,6 +316,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  SymbolicErrorInfo sse_decode_symbolic_error_info(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  SymbolicResult sse_decode_symbolic_result(SseDeserializer deserializer);
+
+  @protected
   int sse_decode_u_32(SseDeserializer deserializer);
 
   @protected
@@ -311,6 +340,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_String(String self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_alternate_form(AlternateForm self, SseSerializer serializer);
 
   @protected
   void sse_encode_bmi_result(BmiResult self, SseSerializer serializer);
@@ -397,6 +429,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_list_String(List<String> self, SseSerializer serializer);
 
   @protected
+  void sse_encode_list_alternate_form(
+    List<AlternateForm> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_element_order_pair(
     List<ElementOrderPair> self,
     SseSerializer serializer,
@@ -480,6 +518,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_structure_analysis_response(
     StructureAnalysisResponse self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_symbolic_error_info(
+    SymbolicErrorInfo self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_symbolic_result(
+    SymbolicResult self,
     SseSerializer serializer,
   );
 
