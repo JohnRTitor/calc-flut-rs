@@ -17,37 +17,38 @@ void main() {
   // The shell now builds every section eagerly, so Settings is built at
   // startup and the warning fired on every hot restart.
   for (final uiStyle in UiStyle.values) {
-    testWidgets('settings switches render without ListTile warnings ($uiStyle)', (
-      tester,
-    ) async {
-      SharedPreferences.setMockInitialValues({});
+    testWidgets(
+      'settings switches render without ListTile warnings ($uiStyle)',
+      (tester) async {
+        SharedPreferences.setMockInitialValues({});
 
-      // The settings body is a ListView, so the switches are only built when
-      // they are within the viewport. Use a tall surface so they are actually
-      // laid out, otherwise this test proves nothing.
-      tester.view.physicalSize = const Size(500, 8000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.reset);
+        // The settings body is a ListView, so the switches are only built when
+        // they are within the viewport. Use a tall surface so they are actually
+        // laid out, otherwise this test proves nothing.
+        tester.view.physicalSize = const Size(500, 8000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
 
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            theme: AppTheme.lightTheme(
-              null,
-              uiStyle,
-              AppColorOption.defaultColor,
+        await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(
+              theme: AppTheme.lightTheme(
+                null,
+                uiStyle,
+                AppColorOption.defaultColor,
+              ),
+              home: const SettingsScreen(),
             ),
-            home: const SettingsScreen(),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      // Guard the guard: the switches must have been built for this to mean
-      // anything.
-      expect(find.byType(SwitchListTile), findsWidgets);
+        // Guard the guard: the switches must have been built for this to mean
+        // anything.
+        expect(find.byType(SwitchListTile), findsWidgets);
 
-      expect(tester.takeException(), isNull);
-    });
+        expect(tester.takeException(), isNull);
+      },
+    );
   }
 }

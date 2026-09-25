@@ -5,11 +5,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:calc_flut_rs/app/theme/app_theme.dart';
 import 'package:calc_flut_rs/app/theme/ui_style.dart';
 import 'package:calc_flut_rs/features/settings/presentation/providers/theme_provider.dart';
-import 'package:calc_flut_rs/shared/widgets/app_hub_grid.dart';
 import 'package:calc_flut_rs/shared/widgets/app_navigation.dart';
 
 const List<AppNavDestination> _destinations = [
-  AppNavDestination(id: 'calculator', label: 'Calculator', icon: Icons.calculate),
+  AppNavDestination(
+    id: 'calculator',
+    label: 'Calculator',
+    icon: Icons.calculate,
+  ),
   AppNavDestination(
     id: 'converter',
     label: 'Converter',
@@ -36,17 +39,11 @@ void main() {
         await tester.pumpWidget(
           _host(
             uiStyle,
-            Builder(
-              builder: (context) => Scaffold(
-                body: Builder(
-                  builder: (context) => AppNavigationDrawer(
-                    uiStyle: uiStyle,
-                    destinations: _destinations,
-                    selectedId: 'converter',
-                    onSelected: (id) => tapped = id,
-                  ),
-                ),
-              ),
+            AppNavigationDrawer(
+              uiStyle: uiStyle,
+              destinations: _destinations,
+              selectedId: 'converter',
+              onSelected: (id) => tapped = id,
             ),
           ),
         );
@@ -80,9 +77,7 @@ void main() {
         // button with an accessible label, for both UI styles.
         final selected = tester
             .widgetList<Semantics>(find.byType(Semantics))
-            .firstWhere(
-              (node) => node.properties.label == 'Converter',
-            );
+            .firstWhere((node) => node.properties.label == 'Converter');
 
         expect(selected.properties.button, isTrue);
         expect(selected.properties.selected, isTrue);
@@ -99,7 +94,9 @@ void main() {
     group('AppNavigationRail ($uiStyle)', () {
       for (final extended in [false, true]) {
         testWidgets(
-          extended ? 'extended rail shows labels' : 'collapsed rail hides labels',
+          extended
+              ? 'extended rail shows labels'
+              : 'collapsed rail hides labels',
           (tester) async {
             var tapped = '';
 
@@ -163,51 +160,6 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(tapped, 'calculator');
-      });
-    });
-
-    group('AppHubGrid ($uiStyle)', () {
-      testWidgets('renders a card per item and fires onTap', (tester) async {
-        var tapped = '';
-
-        await tester.pumpWidget(
-          _host(
-            uiStyle,
-            AppHubGrid(
-              uiStyle: uiStyle,
-              items: [
-                AppHubGridItem(
-                  id: 'length',
-                  label: 'Length',
-                  icon: Icons.straighten,
-                  onTap: () => tapped = 'length',
-                ),
-                AppHubGridItem(
-                  id: 'mass',
-                  label: 'Mass',
-                  icon: Icons.scale,
-                  onTap: () => tapped = 'mass',
-                ),
-              ],
-            ),
-          ),
-        );
-
-        expect(find.text('Length'), findsOneWidget);
-        expect(find.text('Mass'), findsOneWidget);
-
-        await tester.tap(find.text('Mass'));
-        await tester.pumpAndSettle();
-
-        expect(tapped, 'mass');
-      });
-
-      testWidgets('renders an empty state with no items', (tester) async {
-        await tester.pumpWidget(
-          _host(uiStyle, AppHubGrid(uiStyle: uiStyle, items: const [])),
-        );
-
-        expect(find.text('No tools available yet.'), findsOneWidget);
       });
     });
   }

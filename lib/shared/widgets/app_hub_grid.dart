@@ -47,7 +47,16 @@ class AppHubGrid extends StatelessWidget {
   });
 
   /// Smallest window in which a card can be shown without overflowing.
-  static const double _minimumExtent = 96.0;
+  ///
+  /// Derived from the card's own content, not guessed. A card needs room for
+  /// the icon disc (16 padding + 32 icon = 64), an 8 gap, and a two-line
+  /// label (~32) — about 104 tall and 64 wide. With `childAspectRatio: 0.8` a
+  /// tile is 1.25x taller than it is wide, so the tile must be at least ~83
+  /// wide to fit 104 tall. Adding the grid's 24pt gutters each side puts the
+  /// floor near 131; this uses 200 to leave margin for larger system font
+  /// scales. No real device is this narrow, so the guard only ever suppresses
+  /// the degenerate first-frame layout it exists for.
+  static const double _minimumExtent = 200.0;
 
   @override
   Widget build(BuildContext context) {
