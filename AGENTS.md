@@ -275,8 +275,13 @@ A task is not complete until:
 │   │   │   ├── app_theme.dart   # Light/Dark/AMOLED theme builders
 │   │   │   ├── app_theme_extension.dart  # AppThemeExtension
 │   │   │   └── ui_style.dart    # UiStyle enum (material, liquidGlass)
-│   │   ├── navigation/          # Main tab navigation
+│   │   ├── navigation/          # Adaptive shell + tool registry
+│   │   │   ├── app_shell.dart   # AppShell (drawer/rail + IndexedStack)
+│   │   │   ├── tool_registry.dart # AppTool/AppSection + appSections (single source of truth)
+│   │   │   ├── tool_search_delegate.dart # Search over appSections tools
+│   │   │   └── route_transitions.dart # FadePageRoute
 │   │   └── providers/           # App-level providers
+│   │       └── section_provider.dart # Persisted last-selected top-level section
 │   ├── features/                # Feature modules (clean architecture)
 │   │   ├── calculator/          # Calculator feature
 │   │   │   ├── data/
@@ -286,6 +291,9 @@ A task is not complete until:
 │   │   │       ├── providers/   # Riverpod notifiers + state classes
 │   │   │       ├── widgets/     # Feature-specific widgets
 │   │   │       └── state/
+│   │   ├── symbolic_math/       # Symbolic Math hub (growing tool family)
+│   │   │   └── presentation/
+│   │   │       └── screens/     # symbolic_math_home_screen (Hub Grid)
 │   │   ├── converter/
 │   │   ├── currency/
 │   │   ├── history/
@@ -296,6 +304,9 @@ A task is not complete until:
 │   │   │   ├── app_dialog.dart  # showAppDialog() (dual-theme dialog system)
 │   │   │   ├── app_dropdown_menu.dart  # AppDropdownMenu (dual-theme dropdown)
 │   │   │   ├── app_tab_bar.dart # AppTabBar (dual-theme tab bar)
+│   │   │   ├── app_hub_grid.dart # AppHubGrid (Hub Grid pattern) + AppHubGridItem
+│   │   │   ├── app_navigation.dart # AppNavigationDrawer + AppNavigationRail + AppNavigationTile
+│   │   │   ├── app_notice.dart  # AppNotice + showAppNotice (toast notice)
 │   │   │   ├── glass_utils.dart # SharedSurface, GlassSurfaceRole, resolveGlassStyle()
 │   │   │   ├── pill_switcher.dart
 │   │   │   ├── multi_pill_switcher.dart
@@ -320,6 +331,74 @@ A task is not complete until:
 - **History Bridge Macro:** `history_bridge!()` generates FRB-compatible history CRUD functions for any `HistoryManager` instance. Use it for new calculator modes.
 - **SharedSurface Widget:** The unified surface for both Material and Liquid Glass. All UI surfaces should use `SharedSurface` instead of raw `Container` or `Material` widgets.
 - **UiStyle Enum:** `material | liquidGlass`. Every visual component receives this and must render correctly in both modes.
+- **Tool Registry:** `lib/app/navigation/tool_registry.dart` is the single source of truth for every section and tool. The drawer, rail, hub grids and search all read from `appSections` — never duplicate a tool list.
+
+---
+
+## Navigation Architecture
+
+### Adaptive Shell
+
+`AppShell` (`lib/app/navigation/app_shell.dart`) is the app root. The layout is
+chosen from the available width using the shared `AppBreakpoints`:
+
+| Width       | Layout                                        |
+| ----------- | --------------------------------------------- |
+| `< 600`     | Hamburger button + modal `AppNavigationDrawer` |
+| `600 - 840` | Persistent icon-only `AppNavigationRail`      |
+| `> 840`     | Extended `AppNavigationRail` (icon + label)    |
+
+- Sections are hosted in an **`IndexedStack`** (not `TabBarView`) so each keeps
+  its own scroll position and in-progress state. Swiping is not the interaction
+  model.
+- Each section shows a minimal `AppBar`: title = section label, actions =
+  search + `AppDropdownMenu` (Settings/About). Compact width adds a hamburger.
+- The last-selected section is persisted via `section_provider.dart`.
+
+### Tool Registry
+
+`lib/app/navigation/tool_registry.dart` holds `AppTool` and `AppSection` models
+and the `appSections` list. One section = one drawer/rail destination. A section
+with 5+ loosely related tools lists them in `AppSection.tools`; a single-screen
+section has an empty `tools` list.
+
+`AppTool.open()` is the single way to launch a tool. It seeds any required
+provider state via `onPrepare`, pushes with `FadePageRoute`, and shows a
+`showAppNotice()` "Coming Soon" notice for tools with `isAvailable: false`.
+Hub grids, the search delegate and the drawer all route through it.
+
+### Two Patterns Inside a Section
+
+Pick by tool count, not by feature:
+
+| Pattern            | When                                                          |
+| ------------------ | ------------------------------------------------------------- |
+| **Hub Grid**       | 5+ loosely related tools, or a family that keeps growing      |
+| **Segmented workspace** | 2–4 tightly coupled modes sharing one layout (same display + keypad) |
+
+- Hub Grid: `AppHubGrid` of `SharedSurface` cards → `Navigator.push` a screen
+  with its own `Scaffold` + `AppBar`. Used by Converter, Currency & Finance and
+  Symbolic Math.
+- Segmented workspace: `PillSwitcher` / `MultiPillSwitcher` swapping inline, no
+  push. Used by Calculator (Standard/Scientific ↔ Fn Evaluator).
+
+### Adding a Section or Tool
+
+1. Add an `AppSection` (or an `AppTool` in an existing section's `tools`) in
+   `tool_registry.dart`.
+2. For a hub section, set the section's `builder` to its home screen, which
+   renders `AppHubGrid` from `appHubItemsForTools(context, ref, section.tools)`.
+3. For a new screen, give it a `Scaffold` + `AppBar` whose `title` matches its
+   hub card label.
+4. Do not touch `AppShell` — the drawer, rail and search pick it up automatically.
+
+### Notes
+
+- Modular Arithmetic is reached from the **Symbolic Math** hub, not the
+  Calculator switcher. Its screen code still lives under
+  `features/calculator/` (imported, not moved) to keep the diff small; the entry
+  point is the registry. `HistoryCategory.modularArithmetic` and its deep link
+  are unchanged.
 
 ---
 
@@ -516,6 +595,10 @@ The app supports two visual systems:
 | `SharedGlassBackground` | `shared/widgets/glass_utils.dart`         | App-level glass background                                    |
 | `PillSwitcher`          | `shared/widgets/pill_switcher.dart`       | Binary toggle switcher                                        |
 | `MultiPillSwitcher`     | `shared/widgets/multi_pill_switcher.dart` | Multi-option toggle switcher                                  |
+| `AppHubGrid`            | `shared/widgets/app_hub_grid.dart`        | Hub Grid of tool cards for growing tool families (dual-theme) |
+| `AppNavigationDrawer`   | `shared/widgets/app_navigation.dart`      | Compact-width navigation drawer (dual-theme)                  |
+| `AppNavigationRail`     | `shared/widgets/app_navigation.dart`      | Medium/expanded navigation rail (dual-theme)                  |
+| `AppNotice`             | `shared/widgets/app_notice.dart`          | Transient notice banner; `showAppNotice()` toast              |
 
 **Rules:**
 

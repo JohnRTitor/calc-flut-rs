@@ -5,15 +5,17 @@ import 'package:calc_flut_rs/app/navigation/tool_registry.dart';
 import 'package:calc_flut_rs/features/settings/presentation/providers/theme_provider.dart';
 import 'package:calc_flut_rs/shared/widgets/app_hub_grid.dart';
 
-/// The entry point screen for the Unit Converter feature.
+/// The home surface of the Symbolic Math section.
 ///
-/// Displays the converter categories registered in `tool_registry.dart` as a
-/// hub grid. Tapping a card pushes that category's dedicated screen.
-class ConverterHomeScreen extends ConsumerWidget {
-  const ConverterHomeScreen({super.key});
+/// An open-ended tool family (algebra, equation solving, calculus, matrices,
+/// number theory, modular arithmetic) that is expected to keep growing, so it
+/// uses the Hub Grid pattern rather than a segmented workspace switcher. Every
+/// card is registered in `tool_registry.dart`.
+class SymbolicMathHomeScreen extends ConsumerWidget {
+  const SymbolicMathHomeScreen({super.key});
 
   /// The registry id of the section this screen renders.
-  static const String sectionId = 'converter';
+  static const String sectionId = 'symbolic_math';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -22,7 +24,6 @@ class ConverterHomeScreen extends ConsumerWidget {
 
     return AppHubGrid(
       uiStyle: uiStyle,
-      animateItems: true,
       items: appHubItemsForTools(context, ref, section.tools),
     );
   }

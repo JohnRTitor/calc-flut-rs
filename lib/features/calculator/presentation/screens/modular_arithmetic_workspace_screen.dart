@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:calc_flut_rs/features/calculator/presentation/providers/modular_arithmetic_workspace_provider.dart';
 import 'package:calc_flut_rs/features/calculator/presentation/providers/modular_arithmetic_workspace_state.dart';
+import 'package:calc_flut_rs/app/navigation/route_transitions.dart';
 import 'package:calc_flut_rs/app/theme/ui_style.dart';
+import 'package:calc_flut_rs/features/history/domain/history_category.dart';
+import 'package:calc_flut_rs/features/history/presentation/screens/history_screen.dart';
 import 'package:calc_flut_rs/features/settings/presentation/providers/theme_provider.dart';
 import 'package:calc_flut_rs/features/calculator/presentation/widgets/modular_arithmetic/structure_explorer.dart';
 import 'package:calc_flut_rs/features/calculator/presentation/widgets/modular_arithmetic/modular_onboarding_overlay.dart';
@@ -76,28 +79,48 @@ class _ModularArithmeticWorkspaceScreenState
 
     final uiStyle = ref.watch(uiStyleProvider);
 
-    return Column(
-      children: [
-        ModularArithmeticWorkspaceSwitcher(
-          uiStyle: uiStyle,
-          isEvaluatorSelected: _isEvaluatorSelected,
-          onEvaluatorSelected: (val) {
-            setState(() {
-              _isEvaluatorSelected = val;
-            });
-          },
-        ),
-        Expanded(
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            switchInCurve: Curves.easeOut,
-            switchOutCurve: Curves.easeIn,
-            child: _isEvaluatorSelected
-                ? _buildEvaluatorTab(uiStyle)
-                : const StructureExplorer(),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Modular Arithmetic'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'Modular math history',
+            onPressed: () {
+              Navigator.of(context).push(
+                FadePageRoute(
+                  page: const HistoryScreen(
+                    initialCategory: HistoryCategory.modularArithmetic,
+                  ),
+                ),
+              );
+            },
           ),
-        ),
-      ],
+        ],
+      ),
+      body: Column(
+        children: [
+          ModularArithmeticWorkspaceSwitcher(
+            uiStyle: uiStyle,
+            isEvaluatorSelected: _isEvaluatorSelected,
+            onEvaluatorSelected: (val) {
+              setState(() {
+                _isEvaluatorSelected = val;
+              });
+            },
+          ),
+          Expanded(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              child: _isEvaluatorSelected
+                  ? _buildEvaluatorTab(uiStyle)
+                  : const StructureExplorer(),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

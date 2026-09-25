@@ -11,8 +11,7 @@ import 'package:calc_flut_rs/app/navigation/route_transitions.dart';
 import 'package:calc_flut_rs/shared/widgets/glass_utils.dart';
 import 'package:calc_flut_rs/app/theme/ui_style.dart';
 import 'package:calc_flut_rs/features/settings/presentation/providers/theme_provider.dart';
-import 'package:calc_flut_rs/features/calculator/presentation/screens/modular_arithmetic_workspace_screen.dart';
-import 'package:calc_flut_rs/shared/widgets/multi_pill_switcher.dart';
+import 'package:calc_flut_rs/shared/widgets/pill_switcher.dart';
 
 /// The main screen for the calculator functionality.
 ///
@@ -65,9 +64,7 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
             duration: const Duration(milliseconds: 300),
             child: selectedTabIndex == 0
                 ? const _ScientificLayout()
-                : selectedTabIndex == 1
-                ? const FunctionEvaluatorScreen()
-                : const ModularArithmeticWorkspaceScreen(),
+                : const FunctionEvaluatorScreen(),
           ),
         ),
       ],
@@ -75,17 +72,17 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
   }
 
   Widget _buildSegmentedToggle(UiStyle uiStyle, int selectedTabIndex) {
-    return MultiPillSwitcher(
+    return PillSwitcher(
       uiStyle: uiStyle,
-      labels: const ['Calculator', 'Fn Evaluator', 'Mod'],
-      tooltips: const [
-        'Standard calculator for basic arithmetic',
-        'Function evaluator with variables',
-        'Modular arithmetic workspace'
-      ],
-      selectedIndex: selectedTabIndex,
-      onChanged: (index) {
-        ref.read(selectedTabProvider.notifier).update(index);
+      label1: 'Calculator',
+      label2: 'Fn Evaluator',
+      tooltip1: 'Standard calculator for basic arithmetic',
+      tooltip2: 'Function evaluator with variables',
+      isFirstSelected: selectedTabIndex == 0,
+      onChanged: (isCalculatorSelected) {
+        ref
+            .read(selectedTabProvider.notifier)
+            .update(isCalculatorSelected ? 0 : 1);
       },
     );
   }
@@ -106,21 +103,15 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
     void onPressed() async {
       final initialCategory = selectedTabIndex == 1
           ? HistoryCategory.functionEvaluator
-          : selectedTabIndex == 2
-              ? HistoryCategory.modularArithmetic
-              : HistoryCategory.calculator;
+          : HistoryCategory.calculator;
 
       final result = await Navigator.push<HistoryCategory>(
         context,
-        FadePageRoute(
-          page: HistoryScreen(initialCategory: initialCategory),
-        ),
+        FadePageRoute(page: HistoryScreen(initialCategory: initialCategory)),
       );
-      
+
       if (result != null) {
-        int nextIndex = 0;
-        if (result == HistoryCategory.functionEvaluator) nextIndex = 1;
-        if (result == HistoryCategory.modularArithmetic) nextIndex = 2;
+        final nextIndex = result == HistoryCategory.functionEvaluator ? 1 : 0;
         if (nextIndex != selectedTabIndex) {
           ref.read(selectedTabProvider.notifier).update(nextIndex);
         }

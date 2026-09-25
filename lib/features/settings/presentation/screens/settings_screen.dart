@@ -621,23 +621,16 @@ class _SettingsSwitchCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (uiStyle == UiStyle.liquidGlass) {
-      return SharedSurface(
-        uiStyle: uiStyle,
-        isInteractive: false,
-        glassRole: GlassSurfaceRole.card,
-        borderRadius: BorderRadius.circular(16),
-        child: _buildContent(),
-      );
-    } else {
-      return Container(
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: _buildContent(),
-      );
-    }
+    // SharedSurface renders a Material in material mode, so the ListTile inside
+    // the switch paints its selected state and ink on this surface. A raw
+    // Container with a background would sit between the two and hide them.
+    return SharedSurface(
+      uiStyle: uiStyle,
+      glassRole: GlassSurfaceRole.card,
+      borderRadius: BorderRadius.circular(16),
+      materialColor: colorScheme.surfaceContainerHigh,
+      child: _buildContent(),
+    );
   }
 
   Widget _buildContent() {

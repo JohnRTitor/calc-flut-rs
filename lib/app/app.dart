@@ -5,7 +5,7 @@ import 'package:calc_flut_rs/app/theme/app_theme.dart';
 import 'package:calc_flut_rs/app/theme/ui_style.dart';
 
 import 'package:calc_flut_rs/features/settings/presentation/providers/theme_provider.dart';
-import 'package:calc_flut_rs/app/navigation/main_navigation_bar.dart';
+import 'package:calc_flut_rs/app/navigation/app_shell.dart';
 import 'package:calc_flut_rs/shared/widgets/glass_utils.dart';
 
 import 'package:toastification/toastification.dart';
@@ -53,7 +53,7 @@ class CalculatorApp extends ConsumerWidget {
           theme: lightTheme,
           darkTheme: darkTheme,
           themeMode: flutterThemeMode,
-          home: const MainScreen(),
+          home: const AppShell(),
           builder: (context, child) {
             if (uiStyle == UiStyle.liquidGlass) {
               // Resolve active theme manually because Theme.of(context) in builder
