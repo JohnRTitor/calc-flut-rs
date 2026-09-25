@@ -14,6 +14,7 @@ import 'package:calc_flut_rs/features/currency/presentation/screens/investment_s
 import 'package:calc_flut_rs/features/currency/presentation/screens/loan_calculator_screen.dart';
 import 'package:calc_flut_rs/features/history/presentation/screens/history_screen.dart';
 import 'package:calc_flut_rs/features/settings/presentation/screens/settings_screen.dart';
+import 'package:calc_flut_rs/features/symbolic_math/presentation/screens/algebra_screen.dart';
 import 'package:calc_flut_rs/features/symbolic_math/presentation/screens/symbolic_math_home_screen.dart';
 import 'package:calc_flut_rs/shared/widgets/app_hub_grid.dart';
 import 'package:calc_flut_rs/shared/widgets/app_notice.dart';
@@ -247,8 +248,7 @@ List<AppTool> _buildSymbolicMathTools() {
       id: 'algebra',
       label: 'Algebra',
       icon: Icons.functions,
-      isAvailable: false,
-      builder: _buildEmptyToolScreen,
+      builder: _buildAlgebraScreen,
     ),
     const AppTool(
       id: 'equation_solver',
@@ -302,6 +302,8 @@ Widget _buildInvestmentScreen(BuildContext context) => const InvestmentScreen();
 
 Widget _buildModularArithmeticScreen(BuildContext context) =>
     const ModularArithmeticWorkspaceScreen();
+
+Widget _buildAlgebraScreen(BuildContext context) => const AlgebraScreen();
 
 Widget _buildEmptyToolScreen(BuildContext context) => const SizedBox.shrink();
 

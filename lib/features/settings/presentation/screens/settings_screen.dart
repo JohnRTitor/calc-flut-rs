@@ -156,7 +156,7 @@ class SettingsScreen extends ConsumerWidget {
                     _SettingsSwitchCard(
                       label: 'Educational Mode',
                       description:
-                          'Show step-by-step explanations in Modular workspace',
+                          'Show step-by-step working where a tool can provide it',
                       icon: Icons.school_outlined,
                       value: isEducationalMode,
                       uiStyle: uiStyle,

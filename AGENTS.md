@@ -132,13 +132,27 @@ Any app bar action must be reachable in **both** modes.
 ## Rust Rules
 
 **Errors** — use `Result<T, CalcError>` (calculator), `Result<T, ModError>`
-(modular), `Result<T, CommonError>` (shared), `Result<T, String>` only at the
-FRB boundary. Convert at the bridge with `.map_err(|e| e.to_string())`.
+(modular), `Result<T, SymbolicError>` (symbolic), `Result<T, CommonError>`
+(shared), `Result<T, String>` only at the FRB boundary. Convert at the bridge
+with `.map_err(|e| e.to_string())`.
 
-Three error enums, each with `From<CommonError>`: `CommonError`
+Four error enums, each with `From<CommonError>`: `CommonError`
 (`shared/error.rs`), `CalcError` (`calculator/error.rs`), `ModError`
-(`modular_arithmetic/error.rs`). Add a variant to the most specific one; if it
-is shared, add to `CommonError` and update the `From` impls.
+(`modular_arithmetic/error.rs`), `SymbolicError` (`symbolic/error.rs`). Add a
+variant to the most specific one; if it is shared, add to `CommonError` and
+update the `From` impls.
+
+**Domains are siblings, not layers.** `calculator/` is the real-number fast
+path, `modular_arithmetic/` is ring/field analysis, and `symbolic/` is
+computer algebra. They share `shared/`, nothing else. Do not fold symbolic
+concerns into `calculator/evaluator/` or widen its `Evaluator` trait — that path
+stays synchronous and keypress-latency sensitive.
+
+`symbolic/` is backed by the `symplex` crate, which keeps exact
+`Ratio<BigInt>` arithmetic end to end; never route a symbolic result through
+`f64`. Expression handles are bound to the `Context` that created them and the
+backend panics when handles from two contexts meet, so take variable *names*
+across a boundary rather than handles.
 
 **Overflow** — never wrap, saturate, or truncate. Factorial accumulates `BigInt`
 (`Expr::Factorial`). Modular exponentiation uses `mod_pow()` with
@@ -170,6 +184,21 @@ evaluator-specific architectures.
 - `#[frb(sync)]` on synchronous functions, `#[frb]` on exposed structs.
 - Prefer primitives and `String` over complex Rust types.
 - Error types must implement `std::error::Error` for `Result` returns.
+
+**Sync is the default, and the exception must be justified.** `#[frb(sync)]`
+runs the Rust work on the calling thread, which is what keeps the numeric
+calculator's live preview free of any added latency. Omit it only for work with
+no predictable upper bound — symbolic simplification, factorisation, solving —
+because a blocking FFI call freezes the UI thread and risks an Android ANR. The
+symbolic bridge (`bridge/symbolic.rs`) is the reference.
+
+**New bridge functions should return a typed error, not `Result<T, String>`.**
+A `SymbolicErrorInfo` (or a `success`/error-field envelope like
+`StructureAnalysisResponse`) crosses the boundary as a reconstructed Dart
+exception, so the UI switches on its `kind` instead of string-scrubbing wrapper
+syntax out of the message. The existing `replaceAll('AnyhowException(', '')`
+pattern in the modular and function-evaluator providers is the thing to avoid,
+not the pattern to copy.
 
 ---
 
@@ -208,6 +237,8 @@ actions · `primary` primary actions and operators · `destructive` clear/delete
 | `AppNotice`, `showAppNotice()` | `shared/widgets/app_notice.dart` |
 | `PillSwitcher` | `shared/widgets/pill_switcher.dart` |
 | `MultiPillSwitcher` | `shared/widgets/multi_pill_switcher.dart` |
+| `AppChip` | `shared/widgets/app_chip.dart` |
+| `MathExpressionText` | `shared/widgets/math_expression_text.dart` |
 | `AppBreakpoints`, `ResponsiveKeypadLayout` | `shared/layouts/breakpoints.dart` |
 
 New shared widgets go in `lib/shared/widgets/`.

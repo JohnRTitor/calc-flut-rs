@@ -8,6 +8,7 @@ import 'package:calc_flut_rs/features/calculator/presentation/providers/calculat
 import 'package:calc_flut_rs/features/calculator/presentation/providers/function_evaluator_provider.dart';
 import 'package:calc_flut_rs/features/calculator/presentation/providers/modular_arithmetic_workspace_provider.dart';
 import 'package:calc_flut_rs/features/settings/presentation/providers/theme_provider.dart';
+import 'package:calc_flut_rs/features/symbolic_math/presentation/providers/algebra_provider.dart';
 import 'package:calc_flut_rs/app/theme/ui_style.dart';
 import 'package:calc_flut_rs/shared/widgets/multi_pill_switcher.dart';
 import 'package:calc_flut_rs/shared/widgets/app_dialog.dart';
@@ -64,11 +65,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                   child: MultiPillSwitcher(
                     uiStyle: uiStyle,
                     labels: HistoryCategory.values.map((c) => c.label).toList(),
-                    tooltips: const [
-                      'Basic calculator history',
-                      'Function evaluator history',
-                      'Modular arithmetic history',
-                    ],
+                    tooltips: HistoryCategory.values
+                        .map((category) => category.tooltip)
+                        .toList(),
                     selectedIndex: HistoryCategory.values.indexOf(
                       _selectedCategory,
                     ),
@@ -313,6 +312,33 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
             textAlign: TextAlign.right,
           ),
         ];
+      case HistoryCategory.symbolic:
+        return [
+          Text(
+            previewData['operation']?.toString() ?? '',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+            ),
+            textAlign: TextAlign.right,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            previewData['expression']?.toString() ?? '',
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.right,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '= ${previewData['result']?.toString() ?? ''}',
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.right,
+          ),
+        ];
     }
   }
 
@@ -330,6 +356,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         ref
             .read(modularArithmeticWorkspaceProvider.notifier)
             .restoreSnapshot(entry.snapshot);
+        break;
+      case HistoryCategory.symbolic:
+        ref.read(algebraProvider.notifier).restoreSnapshot(entry.snapshot);
         break;
     }
     Navigator.pop(context, _selectedCategory);

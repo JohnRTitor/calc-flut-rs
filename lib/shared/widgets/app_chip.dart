@@ -39,6 +39,15 @@ class AppChip extends StatelessWidget {
   /// Optional widget shown after the label, e.g. a rotation caret.
   final Widget? trailing;
 
+  /// Optional widget drawn on top of the chip's content.
+  ///
+  /// Use this for state that must not change the chip's size — a progress
+  /// indicator that appears mid-computation, for instance. Because the content
+  /// underneath is still laid out, revealing the overlay shifts nothing, which
+  /// reserving space with a `trailing` widget would not achieve without leaving
+  /// a visible gap on every chip.
+  final Widget? overlay;
+
   /// When `false` the chip is dimmed and non-interactive.
   final bool isEnabled;
 
@@ -61,6 +70,7 @@ class AppChip extends StatelessWidget {
     this.onTap,
     this.leading,
     this.trailing,
+    this.overlay,
     this.isEnabled = true,
     this.minimumHeight,
     this.semanticLabel,
@@ -84,6 +94,42 @@ class AppChip extends StatelessWidget {
         ? backgroundColor.withValues(alpha: 0.3)
         : backgroundColor;
 
+    Widget content = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (leading != null) ...[
+              leading!,
+              const SizedBox(width: 4),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: effectiveForeground,
+              ),
+            ),
+            if (trailing != null) ...[
+              const SizedBox(width: 2),
+              trailing!,
+            ],
+          ],
+        ),
+      ),
+    );
+
+    if (overlay != null) {
+      content = Stack(
+        alignment: Alignment.center,
+        children: [content, overlay!],
+      );
+    }
+
     Widget chip = Material(
       color: fill,
       borderRadius: BorderRadius.circular(20),
@@ -91,34 +137,7 @@ class AppChip extends StatelessWidget {
       child: InkWell(
         onTap: isEnabled ? onTap : null,
         borderRadius: BorderRadius.circular(20),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (leading != null) ...[
-                  leading!,
-                  const SizedBox(width: 4),
-                ],
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: effectiveForeground,
-                  ),
-                ),
-                if (trailing != null) ...[
-                  const SizedBox(width: 2),
-                  trailing!,
-                ],
-              ],
-            ),
-          ),
-        ),
+        child: content,
       ),
     );
 
