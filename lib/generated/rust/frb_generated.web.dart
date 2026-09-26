@@ -128,9 +128,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<InversePair> dco_decode_list_inverse_pair(dynamic raw);
 
   @protected
-  List<List<String>> dco_decode_list_list_String(dynamic raw);
-
-  @protected
   List<PlotPoint> dco_decode_list_plot_point(dynamic raw);
 
   @protected
@@ -311,9 +308,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<InversePair> sse_decode_list_inverse_pair(SseDeserializer deserializer);
-
-  @protected
-  List<List<String>> sse_decode_list_list_String(SseDeserializer deserializer);
 
   @protected
   List<PlotPoint> sse_decode_list_plot_point(SseDeserializer deserializer);
@@ -531,12 +525,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_list_inverse_pair(
     List<InversePair> self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_list_list_String(
-    List<List<String>> self,
     SseSerializer serializer,
   );
 

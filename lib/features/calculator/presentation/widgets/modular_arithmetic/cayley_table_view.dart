@@ -117,8 +117,13 @@ class _CayleyTableViewState extends State<CayleyTableView> {
   }
 
   Widget _buildTableContent() {
-    final rowCount = widget.cayleyTable.rows.length + 1;
-    final colCount = widget.cayleyTable.headers.length + 1;
+    // The table arrives as a flat, row-major list of cells; the width is the
+    // number of headers. Rows and columns are both that wide, so the row count
+    // follows from the headers rather than from the cell list, which no longer
+    // carries its own length information.
+    final width = widget.cayleyTable.headers.length;
+    final rowCount = width + 1;
+    final colCount = width + 1;
     final theme = Theme.of(context);
 
     return TableView.builder(
@@ -151,7 +156,7 @@ class _CayleyTableViewState extends State<CayleyTableView> {
         } else if (isColHeader) {
           cellValue = widget.cayleyTable.headers[row - 1];
         } else if (isData) {
-          cellValue = widget.cayleyTable.rows[row - 1][col - 1];
+          cellValue = widget.cayleyTable.rows[(row - 1) * width + (col - 1)];
         }
 
         // Highlighting Logic

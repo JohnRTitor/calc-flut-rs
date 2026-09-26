@@ -72,7 +72,13 @@ pub struct ElementOrderPair {
 pub struct CayleyTable {
     pub operation: String,
     pub headers: Vec<String>,
-    pub rows: Vec<Vec<String>>,
+    /// The table's cells, row-major and flattened.
+    ///
+    /// A flat list rather than a list of rows because flutter_rust_bridge
+    /// cannot encode a nested vector, which made the whole web build fail to
+    /// compile. The row width is `headers.len()`, so no extra field is needed
+    /// to recover the shape.
+    pub rows: Vec<String>,
 }
 
 #[frb]
@@ -174,7 +180,8 @@ pub fn analyze_structure(
                     let headers = (0..modulus).map(|x| x.to_string()).collect();
                     let rows = table
                         .into_iter()
-                        .map(|row| row.into_iter().map(|num| num.to_string()).collect())
+                        .flatten()
+                        .map(|num| num.to_string())
                         .collect();
                     Some(CayleyTable {
                         operation: "+".to_string(),
@@ -248,7 +255,8 @@ pub fn analyze_structure(
                     let headers = units.iter().map(|x| x.to_string()).collect();
                     let rows = table
                         .into_iter()
-                        .map(|row| row.into_iter().map(|num| num.to_string()).collect())
+                        .flatten()
+                        .map(|num| num.to_string())
                         .collect();
                     Some(CayleyTable {
                         operation: "*".to_string(),

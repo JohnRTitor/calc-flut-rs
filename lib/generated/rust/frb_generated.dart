@@ -1311,7 +1311,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     return CayleyTable(
       operation: dco_decode_String(arr[0]),
       headers: dco_decode_list_String(arr[1]),
-      rows: dco_decode_list_list_String(arr[2]),
+      rows: dco_decode_list_String(arr[2]),
     );
   }
 
@@ -1500,12 +1500,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   List<InversePair> dco_decode_list_inverse_pair(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return (raw as List<dynamic>).map(dco_decode_inverse_pair).toList();
-  }
-
-  @protected
-  List<List<String>> dco_decode_list_list_String(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return (raw as List<dynamic>).map(dco_decode_list_String).toList();
   }
 
   @protected
@@ -1843,7 +1837,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_operation = sse_decode_String(deserializer);
     var var_headers = sse_decode_list_String(deserializer);
-    var var_rows = sse_decode_list_list_String(deserializer);
+    var var_rows = sse_decode_list_String(deserializer);
     return CayleyTable(
       operation: var_operation,
       headers: var_headers,
@@ -2082,18 +2076,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var ans_ = <InversePair>[];
     for (var idx_ = 0; idx_ < len_; ++idx_) {
       ans_.add(sse_decode_inverse_pair(deserializer));
-    }
-    return ans_;
-  }
-
-  @protected
-  List<List<String>> sse_decode_list_list_String(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-
-    var len_ = sse_decode_i_32(deserializer);
-    var ans_ = <List<String>>[];
-    for (var idx_ = 0; idx_ < len_; ++idx_) {
-      ans_.add(sse_decode_list_String(deserializer));
     }
     return ans_;
   }
@@ -2501,7 +2483,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(self.operation, serializer);
     sse_encode_list_String(self.headers, serializer);
-    sse_encode_list_list_String(self.rows, serializer);
+    sse_encode_list_String(self.rows, serializer);
   }
 
   @protected
@@ -2690,18 +2672,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_i_32(self.length, serializer);
     for (final item in self) {
       sse_encode_inverse_pair(item, serializer);
-    }
-  }
-
-  @protected
-  void sse_encode_list_list_String(
-    List<List<String>> self,
-    SseSerializer serializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_i_32(self.length, serializer);
-    for (final item in self) {
-      sse_encode_list_String(item, serializer);
     }
   }
 

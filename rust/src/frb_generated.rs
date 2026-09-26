@@ -1267,7 +1267,7 @@ impl SseDecode for crate::bridge::modular_arithmetic::CayleyTable {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_operation = <String>::sse_decode(deserializer);
         let mut var_headers = <Vec<String>>::sse_decode(deserializer);
-        let mut var_rows = <Vec<Vec<String>>>::sse_decode(deserializer);
+        let mut var_rows = <Vec<String>>::sse_decode(deserializer);
         return crate::bridge::modular_arithmetic::CayleyTable {
             operation: var_operation,
             headers: var_headers,
@@ -1522,18 +1522,6 @@ impl SseDecode for Vec<crate::bridge::modular_arithmetic::InversePair> {
         let mut ans_ = Vec::with_capacity(len_ as usize);
         for idx_ in 0..len_ {
             ans_.push(<crate::bridge::modular_arithmetic::InversePair>::sse_decode(deserializer));
-        }
-        return ans_;
-    }
-}
-
-impl SseDecode for Vec<Vec<String>> {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        let mut len_ = <i32>::sse_decode(deserializer);
-        let mut ans_ = Vec::with_capacity(len_ as usize);
-        for idx_ in 0..len_ {
-            ans_.push(<Vec<String>>::sse_decode(deserializer));
         }
         return ans_;
     }
@@ -2577,7 +2565,7 @@ impl SseEncode for crate::bridge::modular_arithmetic::CayleyTable {
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.operation, serializer);
         <Vec<String>>::sse_encode(self.headers, serializer);
-        <Vec<Vec<String>>>::sse_encode(self.rows, serializer);
+        <Vec<String>>::sse_encode(self.rows, serializer);
     }
 }
 
@@ -2755,16 +2743,6 @@ impl SseEncode for Vec<crate::bridge::modular_arithmetic::InversePair> {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
             <crate::bridge::modular_arithmetic::InversePair>::sse_encode(item, serializer);
-        }
-    }
-}
-
-impl SseEncode for Vec<Vec<String>> {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <i32>::sse_encode(self.len() as _, serializer);
-        for item in self {
-            <Vec<String>>::sse_encode(item, serializer);
         }
     }
 }

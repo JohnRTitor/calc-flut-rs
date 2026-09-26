@@ -29,7 +29,14 @@ StructureAnalysisResponse analyzeStructure({
 class CayleyTable {
   final String operation;
   final List<String> headers;
-  final List<List<String>> rows;
+
+  /// The table's cells, row-major and flattened.
+  ///
+  /// A flat list rather than a list of rows because flutter_rust_bridge
+  /// cannot encode a nested vector, which made the whole web build fail to
+  /// compile. The row width is `headers.len()`, so no extra field is needed
+  /// to recover the shape.
+  final List<String> rows;
 
   const CayleyTable({
     required this.operation,
