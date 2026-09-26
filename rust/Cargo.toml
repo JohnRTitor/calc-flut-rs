@@ -35,3 +35,9 @@ panic = "abort"
 wasm-bindgen = "0.2"
 js-sys = "0.3"
 web-sys = { version = "0.3", features = ["console", "Window"] }
+# Pulled in transitively by symplex (via astro-float -> rand). Left at its
+# default, getrandom refuses to compile for wasm because it has no way to reach
+# the host's entropy source. Naming it here with the `js` feature turns that
+# around: on the web, randomness comes from the browser instead. Cargo unifies
+# features across the graph, so this covers the transitive copies too.
+getrandom = { version = "0.2", features = ["js"] }
