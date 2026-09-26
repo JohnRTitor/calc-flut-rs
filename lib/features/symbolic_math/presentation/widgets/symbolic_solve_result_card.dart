@@ -4,10 +4,11 @@ import 'package:flutter/services.dart';
 import 'package:calc_flut_rs/app/theme/app_theme_extension.dart';
 import 'package:calc_flut_rs/app/theme/ui_style.dart';
 import 'package:calc_flut_rs/features/symbolic_math/presentation/providers/equation_solver_state.dart';
-import 'package:calc_flut_rs/generated/rust/bridge/symbolic.dart' as rust_symbolic;
+import 'package:calc_flut_rs/generated/rust/bridge/symbolic.dart'
+    as rust_symbolic;
 import 'package:calc_flut_rs/shared/widgets/app_chip.dart';
 import 'package:calc_flut_rs/shared/widgets/glass_utils.dart';
-import 'package:calc_flut_rs/shared/widgets/math_expression_text.dart';
+import 'package:calc_flut_rs/shared/widgets/scrollable_math_result.dart';
 
 /// The result surface for the Equation Solver.
 ///
@@ -24,7 +25,11 @@ class SymbolicSolveResultCard extends StatelessWidget {
   final UiStyle uiStyle;
   final EquationSolverState state;
 
-  const SymbolicSolveResultCard({super.key, required this.uiStyle, required this.state});
+  const SymbolicSolveResultCard({
+    super.key,
+    required this.uiStyle,
+    required this.state,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -45,9 +50,7 @@ class SymbolicSolveResultCard extends StatelessWidget {
           Text(
             'Result',
             style: theme.textTheme.labelMedium?.copyWith(
-              color: uiStyle == UiStyle.liquidGlass
-                  ? Colors.white70
-                  : theme.colorScheme.onSurfaceVariant,
+              color: onGlassSecondary(context, uiStyle),
             ),
           ),
           const SizedBox(height: 16),
@@ -93,15 +96,12 @@ class SymbolicSolveResultCard extends StatelessWidget {
     return [
       Opacity(
         opacity: state.isComputing ? 0.4 : 1.0,
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          reverse: true,
-          child: MathExpressionText(
-            expression: state.solutions.first,
-            style: theme.textTheme.displaySmall?.copyWith(
-              color: themeExt.resultText,
-              fontWeight: FontWeight.bold,
-            ),
+        child: ScrollableMathResult(
+          expression: state.solutions.first,
+          uiStyle: uiStyle,
+          style: theme.textTheme.displaySmall?.copyWith(
+            color: themeExt.resultText,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ),
@@ -127,15 +127,12 @@ class SymbolicSolveResultCard extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  reverse: true,
-                  child: MathExpressionText(
-                    expression: '$variable = $solution',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      color: themeExt.resultText,
-                      fontWeight: FontWeight.w600,
-                    ),
+                child: ScrollableMathResult(
+                  expression: '$variable = $solution',
+                  uiStyle: uiStyle,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    color: themeExt.resultText,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -147,8 +144,9 @@ class SymbolicSolveResultCard extends StatelessWidget {
                   icon: const Icon(Icons.copy, size: 18),
                   tooltip: 'Copy $solution',
                   color: themeExt.resultText.withValues(alpha: 0.7),
-                  onPressed: () =>
-                      Clipboard.setData(ClipboardData(text: '$variable = $solution')),
+                  onPressed: () => Clipboard.setData(
+                    ClipboardData(text: '$variable = $solution'),
+                  ),
                 ),
               ),
             ],

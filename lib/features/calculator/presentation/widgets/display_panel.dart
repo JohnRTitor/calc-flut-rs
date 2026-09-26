@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:calc_flut_rs/shared/layouts/breakpoints.dart';
 import 'package:calc_flut_rs/shared/widgets/glass_utils.dart';
+import 'package:calc_flut_rs/shared/widgets/scrollable_math_result.dart';
 import 'package:calc_flut_rs/app/theme/ui_style.dart';
 import 'package:calc_flut_rs/features/calculator/presentation/providers/calculator_provider.dart';
 import 'package:calc_flut_rs/features/calculator/presentation/widgets/token_text_field.dart';
@@ -44,17 +46,23 @@ class DisplayPanel extends ConsumerWidget {
       mainAxisAlignment: MainAxisAlignment.end,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        // Expression input
+        // Expression input.
+        //
+        // The scale pulse as the expression changes is decorative — it draws
+        // the eye to text that is already there — so under reduced motion the
+        // field renders plainly rather than pulsing on every keystroke.
         Align(
           alignment: Alignment.bottomRight,
-          child: const TokenTextField()
-              .animate(key: ValueKey(state.expression))
-              .scaleXY(
-                begin: 1.02,
-                end: 1.0,
-                duration: 150.ms,
-                curve: Curves.easeOut,
-              ),
+          child: context.prefersReducedMotion
+              ? const TokenTextField()
+              : const TokenTextField()
+                    .animate(key: ValueKey(state.expression))
+                    .scaleXY(
+                      begin: 1.02,
+                      end: 1.0,
+                      duration: 150.ms,
+                      curve: Curves.easeOut,
+                    ),
         ),
         const SizedBox(height: 8),
 
@@ -62,7 +70,7 @@ class DisplayPanel extends ConsumerWidget {
         SizedBox(
           height: 64,
           child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
+            duration: context.motion(const Duration(milliseconds: 300)),
             transitionBuilder: slideFadeTransition,
             layoutBuilder:
                 (Widget? currentChild, List<Widget> previousChildren) {
@@ -96,38 +104,59 @@ class DisplayPanel extends ConsumerWidget {
                   ),
                 );
               } else if (state.showResult) {
-                return GestureDetector(
-                  key: const ValueKey('main_result_container'),
-                  onLongPress: () {
-                    Clipboard.setData(ClipboardData(text: state.result));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text('Result copied'),
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                // The copy gesture is a real secondary action, so it is named
+                // rather than left for the user to discover by accident. The
+                // tooltip carries it on the platforms with a pointer; the
+                // long-press-to-copy convention carries it on touch, and the
+                // snackbar confirms it either way.
+                return Tooltip(
+                  message: 'Hold to copy the result',
+                  child: GestureDetector(
+                    key: const ValueKey('main_result_container'),
+                    onLongPress: () {
+                      Clipboard.setData(ClipboardData(text: state.result));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text('Result copied'),
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          duration: const Duration(milliseconds: 1500),
                         ),
-                        duration: const Duration(milliseconds: 1500),
-                      ),
-                    );
-                  },
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    reverse: true,
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 300),
-                      transitionBuilder: slideFadeTransition,
-                      child: Text(
-                        state.displayAsFraction && state.exactResult != null
-                            ? state.exactResult!
-                            : (state.result.isEmpty ? '0' : state.result),
-                        key: ValueKey(
-                          'result_${state.result}_${state.exactResult}',
+                      );
+                    },
+                    // The switcher's Stack sizes to its largest child, which for
+                    // a wide result would exceed the panel. Pin it to the row's
+                    // width so the result can measure what it has to fit into.
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: AnimatedSwitcher(
+                        duration: context.motion(
+                          const Duration(milliseconds: 300),
                         ),
-                        style: theme.textTheme.displayLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.onSurface,
-                          fontSize: 48,
+                        transitionBuilder: slideFadeTransition,
+                        child: ScrollableMathResult(
+                          key: ValueKey(
+                            'result_${state.result}_${state.exactResult}',
+                          ),
+                          uiStyle: uiStyle,
+                          expression:
+                              state.displayAsFraction &&
+                                  state.exactResult != null
+                              ? state.exactResult!
+                              : (state.result.isEmpty ? '0' : state.result),
+                          // The display panel holds a fixed-height result row, so
+                          // a second line would overflow it. Shrink, then scroll
+                          // from the start with an edge fade — never clip the head
+                          // of the answer.
+                          allowWrap: false,
+                          textAlign: TextAlign.right,
+                          style: theme.textTheme.displayLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurface,
+                            fontSize: 48,
+                          ),
                         ),
                       ),
                     ),

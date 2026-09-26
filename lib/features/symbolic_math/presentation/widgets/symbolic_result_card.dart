@@ -6,6 +6,7 @@ import 'package:calc_flut_rs/features/symbolic_math/presentation/providers/symbo
 import 'package:calc_flut_rs/shared/widgets/app_chip.dart';
 import 'package:calc_flut_rs/shared/widgets/glass_utils.dart';
 import 'package:calc_flut_rs/shared/widgets/math_expression_text.dart';
+import 'package:calc_flut_rs/shared/widgets/scrollable_math_result.dart';
 
 /// The result surface for the Algebra workspace.
 ///
@@ -87,9 +88,7 @@ class SymbolicResultCard extends StatelessWidget {
           child: Text(
             state.operation == null ? 'Result' : '${state.operation!.label} result',
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: uiStyle == UiStyle.liquidGlass
-                  ? Colors.white70
-                  : colorScheme.onSurfaceVariant,
+              color: onGlassSecondary(context, uiStyle),
             ),
           ),
         ),
@@ -131,15 +130,12 @@ class SymbolicResultCard extends StatelessWidget {
       // clearing the card: the work is still legitimately under way.
       Opacity(
         opacity: state.isComputing ? 0.4 : 1.0,
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          reverse: true,
-          child: MathExpressionText(
-            expression: state.displayValue,
-            style: Theme.of(context).textTheme.displaySmall?.copyWith(
-              color: themeExt.resultText,
-              fontWeight: FontWeight.bold,
-            ),
+        child: ScrollableMathResult(
+          expression: state.displayValue,
+          uiStyle: uiStyle,
+          style: Theme.of(context).textTheme.displaySmall?.copyWith(
+            color: themeExt.resultText,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ),
@@ -201,14 +197,21 @@ class SymbolicResultCard extends StatelessWidget {
     ColorScheme colorScheme,
     SymbolicFailure error,
   ) {
+    // A refusal is not a mistake. "Too large for this tool" and "your syntax is
+    // wrong" call for different reactions from the user, so they must not wear
+    // the same red.
+    final tone = error.isLimitation
+        ? Theme.of(context).extension<AppThemeExtension>()!.limitationText
+        : colorScheme.error;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           error.message,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: colorScheme.error,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: tone),
         ),
         if (error.suggestion != null && error.suggestion!.isNotEmpty) ...[
           const SizedBox(height: 8),
