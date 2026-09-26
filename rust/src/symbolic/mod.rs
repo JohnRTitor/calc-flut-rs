@@ -18,6 +18,7 @@ pub use error::{SymbolicError, SymbolicErrorKind};
 pub use plot::{DEFAULT_SAMPLES, PlotCurve, PlotSample, plot};
 pub use solve::{SolutionCategory, SolveOutcome, solve};
 pub use evaluator::{
-    FORM_OPERATIONS, INDEFINITE_CONSTANT, MAX_EXPRESSION_CHARS, SymbolicOperation, TransformOutcome,
+    FORM_OPERATIONS, INDEFINITE_CONSTANT, LimitRange, MAX_EXPRESSION_CHARS, SymbolicOperation,
+    TransformOutcome,
     transform,
 };

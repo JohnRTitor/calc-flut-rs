@@ -195,6 +195,16 @@ impl SymbolicOperation {
     }
 }
 
+/// Parses one limit of a range, naming which end was unusable.
+fn parse_bound(ctx: &Context, source: &str, which: &str) -> Result<Ex, SymbolicError> {
+    let trimmed = source.trim();
+    if trimmed.is_empty() {
+        return Err(SymbolicError::NoBounds);
+    }
+    ctx.parse(trimmed)
+        .map_err(|_| SymbolicError::InvalidExpression(format!("'{trimmed}' is not a usable {which}")))
+}
+
 /// One alternative representation of the same expression.
 ///
 /// Named to stay distinct from the bridge's `AlternateForm` transport type:
@@ -244,14 +254,43 @@ fn format_steps(steps: &[Step], input: &str, result: &str) -> String {
     out.trim_end().to_string()
 }
 
+/// The two ends of a definite integral.
+///
+/// A unit rather than two separate arguments, so "a lower bound but no upper
+/// one" cannot be expressed. A half-given range is not a weaker request, it is
+/// a different question, and defaulting the missing end to zero would answer it
+/// without being asked.
+///
+/// Named apart from the bridge's `Bounds` on purpose: flutter_rust_bridge keys
+/// generated objects by name, and two public types sharing one name make it pick
+/// arbitrarily between them.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LimitRange {
+    /// The lower limit, as typed.
+    pub lower: String,
+    /// The upper limit, as typed.
+    pub upper: String,
+}
+
+impl LimitRange {
+    /// Builds a pair of limits.
+    pub fn new(lower: impl Into<String>, upper: impl Into<String>) -> Self {
+        Self {
+            lower: lower.into(),
+            upper: upper.into(),
+        }
+    }
+}
+
 /// Applies `operation` to `expression`.
 ///
 /// `variable` names the variable the operation acts on when it needs one
 /// (factoring, differentiating, integrating); it is ignored by operations that do
-/// not. `lower` and `upper` are the bounds a definite integral runs between, and
-/// are ignored by every other operation.
+/// not. `bounds` is the range a definite integral runs over, and is ignored by
+/// every other operation — it is a single optional value so that half a range
+/// cannot be expressed.
 ///
-/// The variable and the bounds are taken as *names* rather than pre-built
+/// The variable and the bounds are taken as *text* rather than pre-built
 /// handles on purpose. Expression handles are bound to the [`Context`] that
 /// created them and the backend panics when handles from two contexts meet, so
 /// taking text makes it structurally impossible for a caller to hand in a
@@ -260,8 +299,7 @@ pub fn transform(
     expression: &str,
     operation: SymbolicOperation,
     variable: Option<&str>,
-    lower: Option<&str>,
-    upper: Option<&str>,
+    bounds: Option<&LimitRange>,
     show_steps: bool,
 ) -> Result<TransformOutcome, SymbolicError> {
     let trimmed = expression.trim();
@@ -292,19 +330,12 @@ pub fn transform(
     };
     let target = target.as_ref();
 
-    let bounds = match (
-        lower.map(str::trim).filter(|b| !b.is_empty()),
-        upper.map(str::trim).filter(|b| !b.is_empty()),
-    ) {
-        (Some(low), Some(high)) => {
-            let parse_bound = |src: &str, name: &str| {
-                ctx.parse(src).map_err(|_| {
-                    SymbolicError::InvalidExpression(format!("'{}' is not a usable {name}", src))
-                })
-            };
-            Some((parse_bound(low, "lower bound")?, parse_bound(high, "upper bound")?))
-        }
-        _ => None,
+    let bounds = match bounds {
+        Some(range) => Some((
+            parse_bound(&ctx, &range.lower, "lower bound")?,
+            parse_bound(&ctx, &range.upper, "upper bound")?,
+        )),
+        None => None,
     };
     let bounds = bounds.as_ref().map(|(low, high)| (low, high));
 

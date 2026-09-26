@@ -114,10 +114,16 @@ class SymbolicWorkspace extends Notifier<SymbolicWorkspaceState> {
         expression: expressionAtRequest,
         operation: operation.wireName,
         variable: operation.requiresVariable ? variableAtRequest : null,
-        // Only a definite integral reads the bounds; sending them for anything
-        // else would make a typo in an unused field look like a failure.
-        lowerBound: operation.requiresBounds ? state.lowerBound : null,
-        upperBound: operation.requiresBounds ? state.upperBound : null,
+        // Only a definite integral reads the bounds, and only once both are
+        // given. Sending a lone bound would ask a different question, and
+        // sending them for anything else would make a typo in an unused field
+        // look like a failure.
+        bounds: operation.requiresBounds && state.hasBounds
+            ? rust_symbolic.Bounds(
+                lower: state.lowerBound,
+                upper: state.upperBound,
+              )
+            : null,
         showSteps: showSteps,
       );
 

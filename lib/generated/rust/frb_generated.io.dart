@@ -40,6 +40,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool dco_decode_bool(dynamic raw);
 
   @protected
+  Bounds dco_decode_bounds(dynamic raw);
+
+  @protected
+  Bounds dco_decode_box_autoadd_bounds(dynamic raw);
+
+  @protected
   CayleyTable dco_decode_box_autoadd_cayley_table(dynamic raw);
 
   @protected
@@ -141,6 +147,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   String? dco_decode_opt_String(dynamic raw);
 
   @protected
+  Bounds? dco_decode_opt_box_autoadd_bounds(dynamic raw);
+
+  @protected
   CayleyTable? dco_decode_opt_box_autoadd_cayley_table(dynamic raw);
 
   @protected
@@ -204,6 +213,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   bool sse_decode_bool(SseDeserializer deserializer);
+
+  @protected
+  Bounds sse_decode_bounds(SseDeserializer deserializer);
+
+  @protected
+  Bounds sse_decode_box_autoadd_bounds(SseDeserializer deserializer);
 
   @protected
   CayleyTable sse_decode_box_autoadd_cayley_table(SseDeserializer deserializer);
@@ -319,6 +334,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   String? sse_decode_opt_String(SseDeserializer deserializer);
 
   @protected
+  Bounds? sse_decode_opt_box_autoadd_bounds(SseDeserializer deserializer);
+
+  @protected
   CayleyTable? sse_decode_opt_box_autoadd_cayley_table(
     SseDeserializer deserializer,
   );
@@ -393,6 +411,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_bool(bool self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_bounds(Bounds self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_box_autoadd_bounds(Bounds self, SseSerializer serializer);
 
   @protected
   void sse_encode_box_autoadd_cayley_table(
@@ -540,6 +564,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_box_autoadd_bounds(
+    Bounds? self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_opt_box_autoadd_cayley_table(

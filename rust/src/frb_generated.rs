@@ -1163,8 +1163,8 @@ fn wire__crate__bridge__symbolic__symbolic_transform_impl(
             let api_expression = <String>::sse_decode(&mut deserializer);
             let api_operation = <String>::sse_decode(&mut deserializer);
             let api_variable = <Option<String>>::sse_decode(&mut deserializer);
-            let api_lower_bound = <Option<String>>::sse_decode(&mut deserializer);
-            let api_upper_bound = <Option<String>>::sse_decode(&mut deserializer);
+            let api_bounds =
+                <Option<crate::bridge::symbolic::Bounds>>::sse_decode(&mut deserializer);
             let api_show_steps = <bool>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
@@ -1174,8 +1174,7 @@ fn wire__crate__bridge__symbolic__symbolic_transform_impl(
                             api_expression,
                             api_operation,
                             api_variable,
-                            api_lower_bound,
-                            api_upper_bound,
+                            api_bounds,
                             api_show_steps,
                         )
                         .await?;
@@ -1234,6 +1233,18 @@ impl SseDecode for bool {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         deserializer.cursor.read_u8().unwrap() != 0
+    }
+}
+
+impl SseDecode for crate::bridge::symbolic::Bounds {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_lower = <String>::sse_decode(deserializer);
+        let mut var_upper = <String>::sse_decode(deserializer);
+        return crate::bridge::symbolic::Bounds {
+            lower: var_lower,
+            upper: var_upper,
+        };
     }
 }
 
@@ -1601,6 +1612,17 @@ impl SseDecode for Option<String> {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         if (<bool>::sse_decode(deserializer)) {
             return Some(<String>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for Option<crate::bridge::symbolic::Bounds> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<crate::bridge::symbolic::Bounds>::sse_decode(deserializer));
         } else {
             return None;
         }
@@ -1978,6 +2000,27 @@ impl flutter_rust_bridge::IntoIntoDart<crate::bridge::converter::BmiResult>
     for crate::bridge::converter::BmiResult
 {
     fn into_into_dart(self) -> crate::bridge::converter::BmiResult {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::bridge::symbolic::Bounds {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.lower.into_into_dart().into_dart(),
+            self.upper.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::bridge::symbolic::Bounds
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::bridge::symbolic::Bounds>
+    for crate::bridge::symbolic::Bounds
+{
+    fn into_into_dart(self) -> crate::bridge::symbolic::Bounds {
         self
     }
 }
@@ -2512,6 +2555,14 @@ impl SseEncode for bool {
     }
 }
 
+impl SseEncode for crate::bridge::symbolic::Bounds {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.lower, serializer);
+        <String>::sse_encode(self.upper, serializer);
+    }
+}
+
 impl SseEncode for crate::bridge::calculator::CalcResult {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -2773,6 +2824,16 @@ impl SseEncode for Option<String> {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
             <String>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<crate::bridge::symbolic::Bounds> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <crate::bridge::symbolic::Bounds>::sse_encode(value, serializer);
         }
     }
 }

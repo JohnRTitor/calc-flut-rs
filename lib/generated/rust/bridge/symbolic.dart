@@ -20,24 +20,24 @@ List<String> symbolicOperations() =>
 /// `operation` is one of `simplify`, `expand`, `factor` or `differentiate`.
 /// `variable` names the variable to act on for the operations that need one;
 /// pass an empty string (or `None`) when it is not needed or not yet chosen.
-/// `lower_bound` and `upper_bound` are used by a definite integral and
-/// ignored by everything else. `show_steps` mirrors the existing
-/// `modular_evaluate` parameter and is gated by Educational Mode.
+/// `bounds` is the range a definite integral runs over, and is ignored by
+/// everything else. It is a single optional value so Dart cannot express "a
+/// lower bound but no upper one", which is not a weaker request but a different
+/// question. `show_steps` mirrors the existing `modular_evaluate` parameter and
+/// is gated by Educational Mode.
 ///
 /// Runs off the UI thread; see the module docs.
 Future<SymbolicResult> symbolicTransform({
   required String expression,
   required String operation,
   String? variable,
-  String? lowerBound,
-  String? upperBound,
+  Bounds? bounds,
   required bool showSteps,
 }) => RustLib.instance.api.crateBridgeSymbolicSymbolicTransform(
   expression: expression,
   operation: operation,
   variable: variable,
-  lowerBound: lowerBound,
-  upperBound: upperBound,
+  bounds: bounds,
   showSteps: showSteps,
 );
 
@@ -97,6 +97,31 @@ class AlternateForm {
           runtimeType == other.runtimeType &&
           label == other.label &&
           expression == other.expression;
+}
+
+/// The two ends of a definite integral.
+///
+/// One value rather than two optional strings, so half a range cannot be
+/// expressed by accident from the Dart side either.
+class Bounds {
+  /// The lower limit, as typed.
+  final String lower;
+
+  /// The upper limit, as typed.
+  final String upper;
+
+  const Bounds({required this.lower, required this.upper});
+
+  @override
+  int get hashCode => lower.hashCode ^ upper.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Bounds &&
+          runtimeType == other.runtimeType &&
+          lower == other.lower &&
+          upper == other.upper;
 }
 
 /// A sampled curve and the window it was taken over.

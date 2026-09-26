@@ -8,32 +8,18 @@
 mod tests {
     use crate::symbolic::error::{SymbolicError, SymbolicErrorKind};
     use crate::symbolic::evaluator::{
-        MAX_EXPRESSION_CHARS, SymbolicOperation, TransformOutcome, transform,
+        LimitRange, MAX_EXPRESSION_CHARS, SymbolicOperation, transform,
     };
-
-    /// Calls [`transform`](crate::symbolic::transform) for operations that take
-    /// no bounds, which is everything except a definite integral.
-    ///
-    /// The production function has six parameters because a definite integral
-    /// needs two bounds. Most tests are not about bounds, so they use this
-    /// rather than repeating `None, None` at every call site.
-    fn transform4(
-        expression: &str,
-        operation: SymbolicOperation,
-        variable: Option<&str>,
-        show_steps: bool,
-    ) -> Result<TransformOutcome, SymbolicError> {
-        transform(expression, operation, variable, None, None, show_steps)
-    }
 
     /// Runs `operation` against `expression`, supplying `x` as the acting
     /// variable so the operation is never blocked on variable discovery.
     fn run(expression: &str, operation: SymbolicOperation) -> Result<String, SymbolicError> {
         let needs_variable = operation.requires_variable();
-        transform4(
+        transform(
             expression,
             operation,
             needs_variable.then_some("x"),
+            None,
             false,
         )
         .map(|outcome| outcome.value)
@@ -41,10 +27,11 @@ mod tests {
 
     /// Differentiates `expression` with respect to `variable`.
     fn diff(expression: &str, variable: &str) -> String {
-        transform4(
+        transform(
             expression,
             SymbolicOperation::Differentiate,
             Some(variable),
+            None,
             false,
         )
         .expect("differentiation should succeed")
@@ -131,7 +118,7 @@ mod tests {
 
     #[test]
     fn test_factor_reports_nothing_to_factor() {
-        let outcome = transform4("x^2 + 1", SymbolicOperation::Factor, Some("x"), false).unwrap();
+        let outcome = transform("x^2 + 1", SymbolicOperation::Factor, Some("x"), None, false).unwrap();
         assert_eq!(
             outcome.details.as_deref(),
             Some("No further factors over the integers")
@@ -141,7 +128,7 @@ mod tests {
     #[test]
     fn test_factor_without_variable_is_refused() {
         // A constant has nothing to factor; refuse rather than invent a factor.
-        let error = transform4("6", SymbolicOperation::Factor, None, false).unwrap_err();
+        let error = transform("6", SymbolicOperation::Factor, None, None, false).unwrap_err();
         assert!(matches!(error, SymbolicError::NoVariable));
         assert_eq!(error.kind(), SymbolicErrorKind::Unsupported);
     }
@@ -150,10 +137,11 @@ mod tests {
 
     /// Integrates `expression` with respect to `variable`.
     fn integrate(expression: &str, variable: &str) -> String {
-        transform4(
+        transform(
             expression,
             SymbolicOperation::Integrate,
             Some(variable),
+            None,
             false,
         )
         .expect("integration should succeed")
@@ -261,7 +249,7 @@ mod tests {
     #[test]
     fn test_indefinite_integral_explains_the_constant() {
         let outcome =
-            transform4("x^2", SymbolicOperation::Integrate, Some("x"), false).unwrap();
+            transform("x^2", SymbolicOperation::Integrate, Some("x"), None, false).unwrap();
         let details = outcome.details.expect("the constant must be explained");
         assert!(
             details.contains('C'),
@@ -276,7 +264,7 @@ mod tests {
         // rather than the notation Integral(x!, x) reaching the UI.
         for integrand in ["x!", "x^x"] {
             let error =
-                transform4(integrand, SymbolicOperation::Integrate, Some("x"), false)
+                transform(integrand, SymbolicOperation::Integrate, Some("x"), None, false)
                     .unwrap_err();
             assert!(matches!(error, SymbolicError::NotSupported(_)), "{integrand}");
             let message = error.to_string();
@@ -289,14 +277,14 @@ mod tests {
 
     #[test]
     fn test_integrate_without_a_variable_is_refused() {
-        let error = transform4("x^2", SymbolicOperation::Integrate, None, false).unwrap_err();
+        let error = transform("x^2", SymbolicOperation::Integrate, None, None, false).unwrap_err();
         assert!(matches!(error, SymbolicError::NoVariable));
     }
 
     #[test]
     fn test_antiderivative_is_not_offered_as_an_alternate_form() {
         let outcome =
-            transform4("x^2", SymbolicOperation::Integrate, Some("x"), false).unwrap();
+            transform("x^2", SymbolicOperation::Integrate, Some("x"), None, false).unwrap();
         let labels: Vec<&str> = outcome
             .alternate_forms
             .iter()
@@ -315,20 +303,20 @@ mod tests {
         // operations fall back to the entered and resulting forms. The block must
         // never be empty just because no trace was available.
         let outcome =
-            transform4("x^2", SymbolicOperation::Integrate, Some("x"), true).unwrap();
+            transform("x^2", SymbolicOperation::Integrate, Some("x"), None, true).unwrap();
         let steps = outcome.steps.expect("steps were requested");
         assert!(steps.contains("as entered:"), "got: {steps}");
         assert!(steps.contains('x'), "should name the variable: {steps}");
 
         let diff =
-            transform4("x^2", SymbolicOperation::Differentiate, Some("x"), true).unwrap();
+            transform("x^2", SymbolicOperation::Differentiate, Some("x"), None, true).unwrap();
         assert!(diff.steps.expect("steps were requested").contains("as entered:"));
     }
 
     #[test]
     fn test_transforms_have_no_steps_unless_requested() {
         let outcome =
-            transform4("x^2", SymbolicOperation::Integrate, Some("x"), false).unwrap();
+            transform("x^2", SymbolicOperation::Integrate, Some("x"), None, false).unwrap();
         assert!(outcome.steps.is_none());
     }
 
@@ -340,8 +328,7 @@ mod tests {
             expression,
             SymbolicOperation::IntegrateDefinite,
             Some("x"),
-            Some(lower),
-            Some(upper),
+            Some(&LimitRange::new(lower, upper)),
             false,
         )
         .expect("definite integration should succeed")
@@ -395,8 +382,7 @@ mod tests {
                 integrand,
                 SymbolicOperation::IntegrateDefinite,
                 Some("x"),
-                Some(lower),
-                Some(upper),
+                Some(&LimitRange::new(lower, upper)),
                 false,
             )
             .unwrap_err();
@@ -413,8 +399,7 @@ mod tests {
             "1/x^2",
             SymbolicOperation::IntegrateDefinite,
             Some("x"),
-            Some("-1"),
-            Some("1"),
+            Some(&LimitRange::new("-1", "1")),
             false,
         )
         .unwrap_err();
@@ -432,7 +417,6 @@ mod tests {
             SymbolicOperation::IntegrateDefinite,
             Some("x"),
             None,
-            None,
             false,
         )
         .unwrap_err();
@@ -445,20 +429,24 @@ mod tests {
     }
 
     #[test]
-    fn test_a_half_given_bound_is_not_treated_as_zero() {
-        // Defaulting the missing bound to 0 would silently answer a different
-        // question, so one bound alone is not enough.
-        for (lower, upper) in [(Some("0"), None), (None, Some("1"))] {
+    fn test_a_blank_limit_is_refused_rather_than_read_as_zero() {
+        // Giving one end and leaving the other blank cannot be expressed as
+        // "half a range" — the type forces both — but a blank field can still
+        // arrive, and treating it as zero would answer a different question
+        // than the one asked.
+        for (lower, upper) in [("0", "  "), ("", "1"), ("  ", "  ")] {
             let error = transform(
                 "x^2",
                 SymbolicOperation::IntegrateDefinite,
                 Some("x"),
-                lower,
-                upper,
+                Some(&LimitRange::new(lower, upper)),
                 false,
             )
             .unwrap_err();
-            assert!(matches!(error, SymbolicError::NoBounds));
+            assert!(
+                matches!(error, SymbolicError::NoBounds),
+                "[{lower}, {upper}] should be refused, not read as zero"
+            );
         }
     }
 
@@ -468,8 +456,7 @@ mod tests {
             "x^2",
             SymbolicOperation::IntegrateDefinite,
             Some("x"),
-            Some("0"),
-            Some("1 +"),
+            Some(&LimitRange::new("0", "1 +")),
             false,
         )
         .unwrap_err();
@@ -482,8 +469,7 @@ mod tests {
             "x^2",
             SymbolicOperation::IntegrateDefinite,
             Some("x"),
-            Some("0"),
-            Some("1"),
+            Some(&LimitRange::new("0", "1")),
             false,
         )
         .unwrap();
@@ -499,10 +485,11 @@ mod tests {
 
     #[test]
     fn test_alternate_forms_exclude_the_chosen_operation() {
-        let outcome = transform4(
+        let outcome = transform(
             "(x + 1)*(x + 1)",
             SymbolicOperation::Expand,
             Some("x"),
+            None,
             false,
         )
         .unwrap();
@@ -554,7 +541,7 @@ mod tests {
 
     #[test]
     fn test_differentiate_without_a_variable_is_refused() {
-        let error = transform4("x^2", SymbolicOperation::Differentiate, None, false).unwrap_err();
+        let error = transform("x^2", SymbolicOperation::Differentiate, None, None, false).unwrap_err();
         assert!(matches!(error, SymbolicError::NoVariable));
     }
 
@@ -564,7 +551,7 @@ mod tests {
         // the request back unevaluated, which must become an explicit refusal
         // rather than the notation `Derivative(x!, x)` reaching the UI.
         let error =
-            transform4("x!", SymbolicOperation::Differentiate, Some("x"), false).unwrap_err();
+            transform("x!", SymbolicOperation::Differentiate, Some("x"), None, false).unwrap_err();
         assert!(matches!(error, SymbolicError::NotSupported(_)));
         assert_eq!(error.kind(), SymbolicErrorKind::Unsupported);
         let message = error.to_string();
@@ -578,10 +565,11 @@ mod tests {
     fn test_derivative_is_not_offered_as_an_alternate_form() {
         // The derivative is a different expression, not another way of writing
         // the input, so it must never appear among the input's forms.
-        let outcome = transform4(
+        let outcome = transform(
             "x^2 + 1",
             SymbolicOperation::Differentiate,
             Some("x"),
+            None,
             false,
         )
         .unwrap();
@@ -639,7 +627,7 @@ mod tests {
             }
             // Anything that needs a variable must say so rather than quietly
             // acting on a guess.
-            let error = transform4("1", operation, None, false).unwrap_err();
+            let error = transform("1", operation, None, None, false).unwrap_err();
             assert!(matches!(error, SymbolicError::NoVariable));
         }
     }
@@ -664,7 +652,7 @@ mod tests {
         let expected = ctx.parse("x^2 - 1").unwrap().expand();
 
         let outcome =
-            transform4("(x + 1)*(x - 1)", SymbolicOperation::Simplify, Some("x"), false).unwrap();
+            transform("(x + 1)*(x - 1)", SymbolicOperation::Simplify, Some("x"), None, false).unwrap();
 
         assert!(!outcome.alternate_forms.is_empty());
         for form in &outcome.alternate_forms {
@@ -682,7 +670,7 @@ mod tests {
     fn test_alternate_forms_omit_what_cannot_be_produced() {
         // With no variable chosen, factoring cannot run, so it must not appear
         // as a dead chip offering an answer that is not there.
-        let outcome = transform4("2x + 3x", SymbolicOperation::Simplify, None, false).unwrap();
+        let outcome = transform("2x + 3x", SymbolicOperation::Simplify, None, None, false).unwrap();
         let labels: Vec<&str> = outcome
             .alternate_forms
             .iter()
@@ -695,13 +683,13 @@ mod tests {
 
     #[test]
     fn test_steps_are_returned_only_when_requested() {
-        let quiet = transform4("2x + 3x", SymbolicOperation::Simplify, Some("x"), false).unwrap();
+        let quiet = transform("2x + 3x", SymbolicOperation::Simplify, Some("x"), None, false).unwrap();
         assert!(
             quiet.steps.is_none(),
             "steps computed even though they were not asked for"
         );
 
-        let traced = transform4("2x + 3x", SymbolicOperation::Simplify, Some("x"), true).unwrap();
+        let traced = transform("2x + 3x", SymbolicOperation::Simplify, Some("x"), None, true).unwrap();
         let steps = traced.steps.expect("steps were requested but not returned");
         assert!(!steps.trim().is_empty());
         assert_eq!(traced.value, "5*x", "tracing changed the result");
@@ -713,7 +701,7 @@ mod tests {
         // rewrite rules and hence an empty trace. The steps block must still
         // say something true rather than render an empty box.
         for input in ["2x + 3x", "sin(x)^2 + cos(x)^2", "x/x", "sqrt(8)"] {
-            let outcome = transform4(input, SymbolicOperation::Simplify, Some("x"), true).unwrap();
+            let outcome = transform(input, SymbolicOperation::Simplify, Some("x"), None, true).unwrap();
             let steps = outcome
                 .steps
                 .unwrap_or_else(|| panic!("no steps produced for {input}"));
@@ -729,7 +717,7 @@ mod tests {
     fn test_steps_show_real_rules_when_they_fire() {
         // sin^2 + cos^2 -> 1 is a genuine rewrite, so the rule must be named.
         let outcome =
-            transform4("sin(x)^2 + cos(x)^2", SymbolicOperation::Simplify, Some("x"), true).unwrap();
+            transform("sin(x)^2 + cos(x)^2", SymbolicOperation::Simplify, Some("x"), None, true).unwrap();
         assert_eq!(outcome.value, "1");
         let steps = outcome.steps.unwrap();
         assert!(
@@ -742,14 +730,14 @@ mod tests {
 
     #[test]
     fn test_empty_expression_is_rejected() {
-        let error = transform4("   ", SymbolicOperation::Simplify, None, false).unwrap_err();
+        let error = transform("   ", SymbolicOperation::Simplify, None, None, false).unwrap_err();
         assert!(matches!(error, SymbolicError::EmptyExpression));
         assert_eq!(error.kind(), SymbolicErrorKind::Input);
     }
 
     #[test]
     fn test_invalid_syntax_is_an_input_error() {
-        let error = transform4("x^^2 +", SymbolicOperation::Simplify, None, false).unwrap_err();
+        let error = transform("x^^2 +", SymbolicOperation::Simplify, None, None, false).unwrap_err();
         assert_eq!(error.kind(), SymbolicErrorKind::Input);
         assert!(
             error.suggestion().is_some(),
@@ -760,7 +748,7 @@ mod tests {
     #[test]
     fn test_oversized_expression_hits_the_documented_cap() {
         let huge = "x".repeat(MAX_EXPRESSION_CHARS + 1);
-        let error = transform4(&huge, SymbolicOperation::Simplify, None, false).unwrap_err();
+        let error = transform(&huge, SymbolicOperation::Simplify, None, None, false).unwrap_err();
         assert!(matches!(error, SymbolicError::TooLarge(_)));
         assert_eq!(error.kind(), SymbolicErrorKind::TooLarge);
     }
@@ -793,11 +781,11 @@ mod tests {
         // Errors cross the FFI boundary as plain strings. Guard the contract
         // that no backend crate or Rust type name reaches the UI.
         let cases = [
-            transform4("", SymbolicOperation::Simplify, None, false)
+            transform("", SymbolicOperation::Simplify, None, None, false)
                 .map(|_| ()),
-            transform4("x^^", SymbolicOperation::Simplify, None, false).map(|_| ()),
+            transform("x^^", SymbolicOperation::Simplify, None, None, false).map(|_| ()),
             SymbolicOperation::from_name("nope").map(|_| ()),
-            transform4("6", SymbolicOperation::Factor, None, false).map(|_| ()),
+            transform("6", SymbolicOperation::Factor, None, None, false).map(|_| ()),
         ];
         for case in cases {
             let error = case.unwrap_err().to_string();

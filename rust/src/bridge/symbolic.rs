@@ -14,8 +14,8 @@
 use flutter_rust_bridge::frb;
 
 use crate::symbolic::error::{SymbolicError, SymbolicErrorKind};
-use crate::symbolic::evaluator::{self, SymbolicOperation};
-use crate::symbolic::solve::{self, SolutionCategory as CoreSolutionCategory};
+use crate::symbolic::evaluator::{self, LimitRange, SymbolicOperation};
+use crate::symbolic::solve::{self, SolutionCategory};
 
 /// A structured error, safe to display verbatim.
 ///
@@ -48,6 +48,18 @@ impl From<&SymbolicError> for SymbolicErrorInfo {
             suggestion: error.suggestion(),
         }
     }
+}
+
+/// The two ends of a definite integral.
+///
+/// One value rather than two optional strings, so half a range cannot be
+/// expressed by accident from the Dart side either.
+#[frb]
+pub struct Bounds {
+    /// The lower limit, as typed.
+    pub lower: String,
+    /// The upper limit, as typed.
+    pub upper: String,
 }
 
 /// One alternative representation of the same expression, offered as a
@@ -91,9 +103,11 @@ pub fn symbolic_operations() -> Vec<String> {
 /// `operation` is one of `simplify`, `expand`, `factor` or `differentiate`.
 /// `variable` names the variable to act on for the operations that need one;
 /// pass an empty string (or `None`) when it is not needed or not yet chosen.
-/// `lower_bound` and `upper_bound` are used by a definite integral and
-/// ignored by everything else. `show_steps` mirrors the existing
-/// `modular_evaluate` parameter and is gated by Educational Mode.
+/// `bounds` is the range a definite integral runs over, and is ignored by
+/// everything else. It is a single optional value so Dart cannot express "a
+/// lower bound but no upper one", which is not a weaker request but a different
+/// question. `show_steps` mirrors the existing `modular_evaluate` parameter and
+/// is gated by Educational Mode.
 ///
 /// Runs off the UI thread; see the module docs.
 #[frb]
@@ -101,8 +115,7 @@ pub async fn symbolic_transform(
     expression: String,
     operation: String,
     variable: Option<String>,
-    lower_bound: Option<String>,
-    upper_bound: Option<String>,
+    bounds: Option<Bounds>,
     show_steps: bool,
 ) -> Result<SymbolicResult, SymbolicErrorInfo> {
     let operation = SymbolicOperation::from_name(&operation)
@@ -112,8 +125,7 @@ pub async fn symbolic_transform(
         &expression,
         operation,
         variable.as_deref(),
-        lower_bound.as_deref(),
-        upper_bound.as_deref(),
+        bounds.as_ref().map(|b| LimitRange::new(b.lower.clone(), b.upper.clone())).as_ref(),
         show_steps,
     )
         .map(|outcome| SymbolicResult {
@@ -149,13 +161,13 @@ pub enum SolutionKind {
     None,
 }
 
-impl From<CoreSolutionCategory> for SolutionKind {
-    fn from(kind: CoreSolutionCategory) -> Self {
+impl From<SolutionCategory> for SolutionKind {
+    fn from(kind: SolutionCategory) -> Self {
         match kind {
-            CoreSolutionCategory::Unique => SolutionKind::Unique,
-            CoreSolutionCategory::Multiple => SolutionKind::Multiple,
-            CoreSolutionCategory::Infinite => SolutionKind::Infinite,
-            CoreSolutionCategory::None => SolutionKind::None,
+            SolutionCategory::Unique => SolutionKind::Unique,
+            SolutionCategory::Multiple => SolutionKind::Multiple,
+            SolutionCategory::Infinite => SolutionKind::Infinite,
+            SolutionCategory::None => SolutionKind::None,
         }
     }
 }
