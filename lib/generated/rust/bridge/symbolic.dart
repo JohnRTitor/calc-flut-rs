@@ -59,6 +59,23 @@ Future<SymbolicSolveResult> symbolicSolve({
   showSteps: showSteps,
 );
 
+/// Samples `expression` numerically for plotting.
+///
+/// `variable` is the symbol the curve is a function of. Values the function
+/// cannot produce become gaps, and a jump across a pole opens one, so an
+/// asymptote is drawn as two branches rather than a line through it.
+///
+/// Runs off the UI thread; see the module docs.
+Future<PlotData> symbolicPlot({
+  required String expression,
+  String? variable,
+  int? samples,
+}) => RustLib.instance.api.crateBridgeSymbolicSymbolicPlot(
+  expression: expression,
+  variable: variable,
+  samples: samples,
+);
+
 /// One alternative representation of the same expression, offered as a
 /// tappable chip under the primary result.
 class AlternateForm {
@@ -80,6 +97,77 @@ class AlternateForm {
           runtimeType == other.runtimeType &&
           label == other.label &&
           expression == other.expression;
+}
+
+/// A sampled curve and the window it was taken over.
+class PlotData {
+  /// The samples, in increasing `x`.
+  final List<PlotPoint> points;
+
+  /// Lower bound of the sampled window.
+  final double xMin;
+
+  /// Upper bound of the sampled window.
+  final double xMax;
+
+  /// Smallest plotted ordinate, for setting the vertical axis.
+  final double yMin;
+
+  /// Largest plotted ordinate, for setting the vertical axis.
+  final double yMax;
+
+  const PlotData({
+    required this.points,
+    required this.xMin,
+    required this.xMax,
+    required this.yMin,
+    required this.yMax,
+  });
+
+  @override
+  int get hashCode =>
+      points.hashCode ^
+      xMin.hashCode ^
+      xMax.hashCode ^
+      yMin.hashCode ^
+      yMax.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PlotData &&
+          runtimeType == other.runtimeType &&
+          points == other.points &&
+          xMin == other.xMin &&
+          xMax == other.xMax &&
+          yMin == other.yMin &&
+          yMax == other.yMax;
+}
+
+/// One sampled point on a plotted curve.
+///
+/// `y` is `None` where the function is undefined. That is a hole in the curve,
+/// not a value of zero, and the UI must break the line rather than join across
+/// it.
+class PlotPoint {
+  /// The abscissa.
+  final double x;
+
+  /// The ordinate, or `None` at a gap in the curve.
+  final double? y;
+
+  const PlotPoint({required this.x, this.y});
+
+  @override
+  int get hashCode => x.hashCode ^ y.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PlotPoint &&
+          runtimeType == other.runtimeType &&
+          x == other.x &&
+          y == other.y;
 }
 
 /// How many solutions an equation has.

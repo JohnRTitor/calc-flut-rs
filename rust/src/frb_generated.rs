@@ -39,7 +39,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.13.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1516160230;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1833968171;
 
 // Section: executor
 
@@ -1052,6 +1052,49 @@ fn wire__crate__bridge__symbolic__symbolic_operations_impl(
         },
     )
 }
+fn wire__crate__bridge__symbolic__symbolic_plot_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "symbolic_plot",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_expression = <String>::sse_decode(&mut deserializer);
+            let api_variable = <Option<String>>::sse_decode(&mut deserializer);
+            let api_samples = <Option<u32>>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::bridge::symbolic::SymbolicErrorInfo>(
+                    (move || async move {
+                        let output_ok = crate::bridge::symbolic::symbolic_plot(
+                            api_expression,
+                            api_variable,
+                            api_samples,
+                        )
+                        .await?;
+                        std::result::Result::Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__bridge__symbolic__symbolic_solve_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -1485,6 +1528,20 @@ impl SseDecode for Vec<Vec<String>> {
     }
 }
 
+impl SseDecode for Vec<crate::bridge::symbolic::PlotPoint> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<crate::bridge::symbolic::PlotPoint>::sse_decode(
+                deserializer,
+            ));
+        }
+        return ans_;
+    }
+}
+
 impl SseDecode for Vec<u8> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1584,6 +1641,44 @@ impl SseDecode for Option<crate::bridge::modular_arithmetic::StructureAnalysis> 
         } else {
             return None;
         }
+    }
+}
+
+impl SseDecode for Option<u32> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<u32>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for crate::bridge::symbolic::PlotData {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_points = <Vec<crate::bridge::symbolic::PlotPoint>>::sse_decode(deserializer);
+        let mut var_xMin = <f64>::sse_decode(deserializer);
+        let mut var_xMax = <f64>::sse_decode(deserializer);
+        let mut var_yMin = <f64>::sse_decode(deserializer);
+        let mut var_yMax = <f64>::sse_decode(deserializer);
+        return crate::bridge::symbolic::PlotData {
+            points: var_points,
+            x_min: var_xMin,
+            x_max: var_xMax,
+            y_min: var_yMin,
+            y_max: var_yMax,
+        };
+    }
+}
+
+impl SseDecode for crate::bridge::symbolic::PlotPoint {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_x = <f64>::sse_decode(deserializer);
+        let mut var_y = <Option<f64>>::sse_decode(deserializer);
+        return crate::bridge::symbolic::PlotPoint { x: var_x, y: var_y };
     }
 }
 
@@ -1758,8 +1853,9 @@ fn pde_ffi_dispatcher_primary_impl(
     match func_id {
         8 => wire__crate__bridge__history__app_history_load_impl(port, ptr, rust_vec_len, data_len),
         9 => wire__crate__bridge__history__app_history_save_impl(port, ptr, rust_vec_len, data_len),
-        31 => wire__crate__bridge__symbolic__symbolic_solve_impl(port, ptr, rust_vec_len, data_len),
-        32 => wire__crate__bridge__symbolic__symbolic_transform_impl(
+        31 => wire__crate__bridge__symbolic__symbolic_plot_impl(port, ptr, rust_vec_len, data_len),
+        32 => wire__crate__bridge__symbolic__symbolic_solve_impl(port, ptr, rust_vec_len, data_len),
+        33 => wire__crate__bridge__symbolic__symbolic_transform_impl(
             port,
             ptr,
             rust_vec_len,
@@ -2179,6 +2275,51 @@ impl flutter_rust_bridge::IntoIntoDart<crate::bridge::modular_arithmetic::Modula
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::bridge::symbolic::PlotData {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.points.into_into_dart().into_dart(),
+            self.x_min.into_into_dart().into_dart(),
+            self.x_max.into_into_dart().into_dart(),
+            self.y_min.into_into_dart().into_dart(),
+            self.y_max.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::bridge::symbolic::PlotData
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::bridge::symbolic::PlotData>
+    for crate::bridge::symbolic::PlotData
+{
+    fn into_into_dart(self) -> crate::bridge::symbolic::PlotData {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::bridge::symbolic::PlotPoint {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.x.into_into_dart().into_dart(),
+            self.y.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::bridge::symbolic::PlotPoint
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::bridge::symbolic::PlotPoint>
+    for crate::bridge::symbolic::PlotPoint
+{
+    fn into_into_dart(self) -> crate::bridge::symbolic::PlotPoint {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::bridge::symbolic::SolutionKind {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         match self {
@@ -2577,6 +2718,16 @@ impl SseEncode for Vec<Vec<String>> {
     }
 }
 
+impl SseEncode for Vec<crate::bridge::symbolic::PlotPoint> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::bridge::symbolic::PlotPoint>::sse_encode(item, serializer);
+        }
+    }
+}
+
 impl SseEncode for Vec<u8> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -2653,6 +2804,35 @@ impl SseEncode for Option<crate::bridge::modular_arithmetic::StructureAnalysis> 
         if let Some(value) = self {
             <crate::bridge::modular_arithmetic::StructureAnalysis>::sse_encode(value, serializer);
         }
+    }
+}
+
+impl SseEncode for Option<u32> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <u32>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for crate::bridge::symbolic::PlotData {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Vec<crate::bridge::symbolic::PlotPoint>>::sse_encode(self.points, serializer);
+        <f64>::sse_encode(self.x_min, serializer);
+        <f64>::sse_encode(self.x_max, serializer);
+        <f64>::sse_encode(self.y_min, serializer);
+        <f64>::sse_encode(self.y_max, serializer);
+    }
+}
+
+impl SseEncode for crate::bridge::symbolic::PlotPoint {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <f64>::sse_encode(self.x, serializer);
+        <Option<f64>>::sse_encode(self.y, serializer);
     }
 }
 

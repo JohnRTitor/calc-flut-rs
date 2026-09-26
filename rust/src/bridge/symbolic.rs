@@ -201,3 +201,63 @@ pub async fn symbolic_solve(
         })
         .map_err(|e| SymbolicErrorInfo::from(&e))
 }
+
+/// One sampled point on a plotted curve.
+///
+/// `y` is `None` where the function is undefined. That is a hole in the curve,
+/// not a value of zero, and the UI must break the line rather than join across
+/// it.
+#[frb]
+pub struct PlotPoint {
+    /// The abscissa.
+    pub x: f64,
+    /// The ordinate, or `None` at a gap in the curve.
+    pub y: Option<f64>,
+}
+
+/// A sampled curve and the window it was taken over.
+#[frb]
+pub struct PlotData {
+    /// The samples, in increasing `x`.
+    pub points: Vec<PlotPoint>,
+    /// Lower bound of the sampled window.
+    pub x_min: f64,
+    /// Upper bound of the sampled window.
+    pub x_max: f64,
+    /// Smallest plotted ordinate, for setting the vertical axis.
+    pub y_min: f64,
+    /// Largest plotted ordinate, for setting the vertical axis.
+    pub y_max: f64,
+}
+
+/// Samples `expression` numerically for plotting.
+///
+/// `variable` is the symbol the curve is a function of. Values the function
+/// cannot produce become gaps, and a jump across a pole opens one, so an
+/// asymptote is drawn as two branches rather than a line through it.
+///
+/// Runs off the UI thread; see the module docs.
+#[frb]
+pub async fn symbolic_plot(
+    expression: String,
+    variable: Option<String>,
+    samples: Option<u32>,
+) -> Result<PlotData, SymbolicErrorInfo> {
+    let count = samples
+        .filter(|count| *count >= 2)
+        .unwrap_or(crate::symbolic::plot::DEFAULT_SAMPLES);
+
+    crate::symbolic::plot::plot(&expression, variable.as_deref(), count)
+        .map(|data| PlotData {
+            points: data
+                .points
+                .into_iter()
+                .map(|point| PlotPoint { x: point.x, y: point.y })
+                .collect(),
+            x_min: data.x_min,
+            x_max: data.x_max,
+            y_min: data.y_min,
+            y_max: data.y_max,
+        })
+        .map_err(|e| SymbolicErrorInfo::from(&e))
+}

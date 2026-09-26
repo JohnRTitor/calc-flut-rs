@@ -32,6 +32,9 @@ class SymbolicResultCard extends StatelessWidget {
   /// Explains a practical limit, shown beside a `too_large` failure.
   final VoidCallback? onExplainLimit;
 
+  /// Draws the current expression, for expressions of one variable.
+  final VoidCallback? onPlot;
+
   const SymbolicResultCard({
     super.key,
     required this.uiStyle,
@@ -39,6 +42,7 @@ class SymbolicResultCard extends StatelessWidget {
     this.onCopy,
     this.onShowForm,
     this.onExplainLimit,
+    this.onPlot,
   });
 
   @override
@@ -89,6 +93,18 @@ class SymbolicResultCard extends StatelessWidget {
             ),
           ),
         ),
+        if (onPlot != null && state.canPlot)
+          SizedBox(
+            width: AppChip.minimumTouchTarget,
+            height: AppChip.minimumTouchTarget,
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              icon: const Icon(Icons.show_chart, size: 20),
+              tooltip: 'Plot the curve',
+              onPressed: onPlot,
+              color: themeExt.resultText.withValues(alpha: 0.8),
+            ),
+          ),
         if (state.hasResult && onCopy != null)
           SizedBox(
             width: AppChip.minimumTouchTarget,

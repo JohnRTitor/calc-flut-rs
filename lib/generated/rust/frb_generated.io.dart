@@ -52,6 +52,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   StructureAnalysis dco_decode_box_autoadd_structure_analysis(dynamic raw);
 
   @protected
+  int dco_decode_box_autoadd_u_32(dynamic raw);
+
+  @protected
   CalcResult dco_decode_calc_result(dynamic raw);
 
   @protected
@@ -120,6 +123,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<List<String>> dco_decode_list_list_String(dynamic raw);
 
   @protected
+  List<PlotPoint> dco_decode_list_plot_point(dynamic raw);
+
+  @protected
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
   @protected
@@ -142,6 +148,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   StructureAnalysis? dco_decode_opt_box_autoadd_structure_analysis(dynamic raw);
+
+  @protected
+  int? dco_decode_opt_box_autoadd_u_32(dynamic raw);
+
+  @protected
+  PlotData dco_decode_plot_data(dynamic raw);
+
+  @protected
+  PlotPoint dco_decode_plot_point(dynamic raw);
 
   @protected
   (String, double) dco_decode_record_string_f_64(dynamic raw);
@@ -203,6 +218,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   StructureAnalysis sse_decode_box_autoadd_structure_analysis(
     SseDeserializer deserializer,
   );
+
+  @protected
+  int sse_decode_box_autoadd_u_32(SseDeserializer deserializer);
 
   @protected
   CalcResult sse_decode_calc_result(SseDeserializer deserializer);
@@ -281,6 +299,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<List<String>> sse_decode_list_list_String(SseDeserializer deserializer);
 
   @protected
+  List<PlotPoint> sse_decode_list_plot_point(SseDeserializer deserializer);
+
+  @protected
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
 
   @protected
@@ -309,6 +330,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   StructureAnalysis? sse_decode_opt_box_autoadd_structure_analysis(
     SseDeserializer deserializer,
   );
+
+  @protected
+  int? sse_decode_opt_box_autoadd_u_32(SseDeserializer deserializer);
+
+  @protected
+  PlotData sse_decode_plot_data(SseDeserializer deserializer);
+
+  @protected
+  PlotPoint sse_decode_plot_point(SseDeserializer deserializer);
 
   @protected
   (String, double) sse_decode_record_string_f_64(SseDeserializer deserializer);
@@ -381,6 +411,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     StructureAnalysis self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_box_autoadd_u_32(int self, SseSerializer serializer);
 
   @protected
   void sse_encode_calc_result(CalcResult self, SseSerializer serializer);
@@ -482,6 +515,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_list_plot_point(
+    List<PlotPoint> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_prim_u_8_strict(
     Uint8List self,
     SseSerializer serializer,
@@ -516,6 +555,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     StructureAnalysis? self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_opt_box_autoadd_u_32(int? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_plot_data(PlotData self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_plot_point(PlotPoint self, SseSerializer serializer);
 
   @protected
   void sse_encode_record_string_f_64(

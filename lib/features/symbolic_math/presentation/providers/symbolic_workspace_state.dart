@@ -123,6 +123,17 @@ class SymbolicWorkspaceState {
   /// hidden until the backend reports at least two.
   bool get hasMultipleForms => forms.length > 1;
 
+  /// Whether the current expression can be drawn as a curve.
+  ///
+  /// A curve needs exactly one variable and nothing left free, so a plot of
+  /// something else would be showing a function the user did not ask for. The
+  /// plot action stays absent rather than failing when opened.
+  bool get canPlot {
+    if (expression.trim().isEmpty || isComputing) return false;
+    if (variables.length != 1) return false;
+    return selectedVariable == variables.first;
+  }
+
   /// Whether [candidate] can run against the current expression.
   ///
   /// An operation that is contextually inapplicable is reported as disabled

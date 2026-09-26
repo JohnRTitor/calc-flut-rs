@@ -70,7 +70,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.13.0';
 
   @override
-  int get rustContentHash => 1516160230;
+  int get rustContentHash => 1833968171;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -203,6 +203,12 @@ abstract class RustLibApi extends BaseApi {
   });
 
   List<String> crateBridgeSymbolicSymbolicOperations();
+
+  Future<PlotData> crateBridgeSymbolicSymbolicPlot({
+    required String expression,
+    String? variable,
+    int? samples,
+  });
 
   Future<SymbolicSolveResult> crateBridgeSymbolicSymbolicSolve({
     required String equation,
@@ -1072,6 +1078,43 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "symbolic_operations", argNames: []);
 
   @override
+  Future<PlotData> crateBridgeSymbolicSymbolicPlot({
+    required String expression,
+    String? variable,
+    int? samples,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(expression, serializer);
+          sse_encode_opt_String(variable, serializer);
+          sse_encode_opt_box_autoadd_u_32(samples, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 31,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_plot_data,
+          decodeErrorData: sse_decode_symbolic_error_info,
+        ),
+        constMeta: kCrateBridgeSymbolicSymbolicPlotConstMeta,
+        argValues: [expression, variable, samples],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateBridgeSymbolicSymbolicPlotConstMeta =>
+      const TaskConstMeta(
+        debugName: "symbolic_plot",
+        argNames: ["expression", "variable", "samples"],
+      );
+
+  @override
   Future<SymbolicSolveResult> crateBridgeSymbolicSymbolicSolve({
     required String equation,
     String? variable,
@@ -1087,7 +1130,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 31,
+            funcId: 32,
             port: port_,
           );
         },
@@ -1130,7 +1173,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 32,
+            funcId: 33,
             port: port_,
           );
         },
@@ -1231,6 +1274,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   StructureAnalysis dco_decode_box_autoadd_structure_analysis(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_structure_analysis(raw);
+  }
+
+  @protected
+  int dco_decode_box_autoadd_u_32(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as int;
   }
 
   @protected
@@ -1453,6 +1502,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<PlotPoint> dco_decode_list_plot_point(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_plot_point).toList();
+  }
+
+  @protected
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as Uint8List;
@@ -1515,6 +1570,39 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw == null ? null : dco_decode_box_autoadd_structure_analysis(raw);
+  }
+
+  @protected
+  int? dco_decode_opt_box_autoadd_u_32(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_u_32(raw);
+  }
+
+  @protected
+  PlotData dco_decode_plot_data(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
+    return PlotData(
+      points: dco_decode_list_plot_point(arr[0]),
+      xMin: dco_decode_f_64(arr[1]),
+      xMax: dco_decode_f_64(arr[2]),
+      yMin: dco_decode_f_64(arr[3]),
+      yMax: dco_decode_f_64(arr[4]),
+    );
+  }
+
+  @protected
+  PlotPoint dco_decode_plot_point(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return PlotPoint(
+      x: dco_decode_f_64(arr[0]),
+      y: dco_decode_opt_box_autoadd_f_64(arr[1]),
+    );
   }
 
   @protected
@@ -1702,6 +1790,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_structure_analysis(deserializer));
+  }
+
+  @protected
+  int sse_decode_box_autoadd_u_32(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_u_32(deserializer));
   }
 
   @protected
@@ -1978,6 +2072,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<PlotPoint> sse_decode_list_plot_point(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <PlotPoint>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_plot_point(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var len_ = sse_decode_i_32(deserializer);
@@ -2072,6 +2178,42 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     } else {
       return null;
     }
+  }
+
+  @protected
+  int? sse_decode_opt_box_autoadd_u_32(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_u_32(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  PlotData sse_decode_plot_data(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_points = sse_decode_list_plot_point(deserializer);
+    var var_xMin = sse_decode_f_64(deserializer);
+    var var_xMax = sse_decode_f_64(deserializer);
+    var var_yMin = sse_decode_f_64(deserializer);
+    var var_yMax = sse_decode_f_64(deserializer);
+    return PlotData(
+      points: var_points,
+      xMin: var_xMin,
+      xMax: var_xMax,
+      yMin: var_yMin,
+      yMax: var_yMax,
+    );
+  }
+
+  @protected
+  PlotPoint sse_decode_plot_point(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_x = sse_decode_f_64(deserializer);
+    var var_y = sse_decode_opt_box_autoadd_f_64(deserializer);
+    return PlotPoint(x: var_x, y: var_y);
   }
 
   @protected
@@ -2287,6 +2429,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_structure_analysis(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_u_32(int self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_u_32(self, serializer);
   }
 
   @protected
@@ -2507,6 +2655,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_list_plot_point(
+    List<PlotPoint> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_plot_point(item, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_list_prim_u_8_strict(
     Uint8List self,
     SseSerializer serializer,
@@ -2589,6 +2749,33 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     if (self != null) {
       sse_encode_box_autoadd_structure_analysis(self, serializer);
     }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_u_32(int? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_u_32(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_plot_data(PlotData self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_list_plot_point(self.points, serializer);
+    sse_encode_f_64(self.xMin, serializer);
+    sse_encode_f_64(self.xMax, serializer);
+    sse_encode_f_64(self.yMin, serializer);
+    sse_encode_f_64(self.yMax, serializer);
+  }
+
+  @protected
+  void sse_encode_plot_point(PlotPoint self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_f_64(self.x, serializer);
+    sse_encode_opt_box_autoadd_f_64(self.y, serializer);
   }
 
   @protected

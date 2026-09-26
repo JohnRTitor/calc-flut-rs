@@ -11,6 +11,7 @@ import 'package:calc_flut_rs/features/symbolic_math/presentation/providers/symbo
 import 'symbolic_action_row.dart';
 import 'symbolic_expression_editor.dart';
 import 'symbolic_help_dialog.dart';
+import 'symbolic_plot_sheet.dart';
 import 'symbolic_result_card.dart';
 import 'package:calc_flut_rs/generated/rust/bridge/symbolic.dart' as rust_symbolic;
 import 'package:calc_flut_rs/shared/widgets/app_notice.dart';
@@ -146,6 +147,19 @@ class _SymbolicWorkspaceScaffoldState
     showAppNotice(context, 'Result copied', icon: Icons.check);
   }
 
+  /// Draws the current expression, for a function of one variable.
+  void _plot() {
+    final state = ref.read(widget.provider);
+    final variable = state.selectedVariable;
+    if (variable == null) return;
+    showSymbolicPlotSheet(
+      context: context,
+      uiStyle: ref.read(uiStyleProvider),
+      expression: state.expression,
+      variable: variable,
+    );
+  }
+
   /// Explains what this tool offers and how much its answers can be trusted.
   ///
   /// The chip labels come from the same enum that drives the action row, and the
@@ -271,6 +285,7 @@ class _SymbolicWorkspaceScaffoldState
                   onShowForm: (index) =>
                       ref.read(widget.provider.notifier).showForm(index),
                   onExplainLimit: _explainLimit,
+                  onPlot: _plot,
                 ),
               ],
             ),
