@@ -14,6 +14,13 @@ use crate::symbolic::error::SymbolicError;
 /// anything hand-typed on a phone keypad.
 pub const MAX_EXPRESSION_CHARS: usize = 1000;
 
+/// The arbitrary constant in an indefinite integral's answer.
+///
+/// An antiderivative is only ever determined up to an additive constant, so the
+/// answer is incomplete without it. It is spelled `C` rather than `c` to keep
+/// clear of a variable the user might have typed.
+pub const INDEFINITE_CONSTANT: &str = "C";
+
 /// The symbolic transformations this build supports.
 ///
 /// Modelled as an enum so the FFI boundary can stay a plain `String` (matching
@@ -37,6 +44,8 @@ pub enum SymbolicOperation {
     Factor,
     /// Differentiate with respect to a variable.
     Differentiate,
+    /// Find an antiderivative with respect to a variable.
+    Integrate,
 }
 
 /// Operations that rewrite an expression into an equivalent one.
@@ -60,6 +69,7 @@ impl SymbolicOperation {
             SymbolicOperation::Expand => "Expanded",
             SymbolicOperation::Factor => "Factored",
             SymbolicOperation::Differentiate => "Derivative",
+            SymbolicOperation::Integrate => "Antiderivative",
         }
     }
 
@@ -70,15 +80,17 @@ impl SymbolicOperation {
             SymbolicOperation::Expand => "Expand",
             SymbolicOperation::Factor => "Factor",
             SymbolicOperation::Differentiate => "Differentiate",
+            SymbolicOperation::Integrate => "Integrate",
         }
     }
 
     /// Every supported operation, in presentation order.
-    pub const ALL: [SymbolicOperation; 4] = [
+    pub const ALL: [SymbolicOperation; 5] = [
         SymbolicOperation::Simplify,
         SymbolicOperation::Expand,
         SymbolicOperation::Factor,
         SymbolicOperation::Differentiate,
+        SymbolicOperation::Integrate,
     ];
 
     /// Whether this operation rewrites an expression into an equivalent one.
@@ -95,7 +107,9 @@ impl SymbolicOperation {
     pub const fn requires_variable(self) -> bool {
         matches!(
             self,
-            SymbolicOperation::Factor | SymbolicOperation::Differentiate
+            SymbolicOperation::Factor
+                | SymbolicOperation::Differentiate
+                | SymbolicOperation::Integrate
         )
     }
 
@@ -106,6 +120,7 @@ impl SymbolicOperation {
             "expand" => Ok(SymbolicOperation::Expand),
             "factor" | "factorise" | "factorize" => Ok(SymbolicOperation::Factor),
             "differentiate" | "diff" | "derivative" => Ok(SymbolicOperation::Differentiate),
+            "integrate" | "int" | "antiderivative" => Ok(SymbolicOperation::Integrate),
             _ => Err(SymbolicError::UnknownOperation(name.trim().to_string())),
         }
     }
@@ -146,6 +161,10 @@ impl SymbolicOperation {
                 // not contain is not an error: the derivative is genuinely 0.
                 let target = target.ok_or(SymbolicError::NoVariable)?;
                 Ok((expr.diff(target), None))
+            }
+            SymbolicOperation::Integrate => {
+                let target = target.ok_or(SymbolicError::NoVariable)?;
+                Ok((expr.integrate(target), None))
             }        }
     }
 }
@@ -246,9 +265,12 @@ pub fn transform(
     let (value, steps) = operation.apply(&parsed, target, trimmed, show_steps)?;
 
     // The backend signals "I could not actually do this" by returning the
-    // request back unevaluated, e.g. `Derivative(x!, x)` for the derivative of
+    // request back unevaluated, e.g. `Integral(x!, x)` for the antiderivative of
     // a factorial. Surfacing that verbatim would put backend notation in front
     // of the user and read as an answer, so it becomes an explicit refusal.
+    //
+    // Checked on the expression itself, before any presentation formatting, so
+    // the test is about the mathematics and not about the rendered text.
     if value.has_unevaluated() {
         return Err(SymbolicError::NotSupported(format!(
             "{} has no symbolic form here",
@@ -256,8 +278,31 @@ pub fn transform(
         )));
     }
 
+    // An indefinite integral is a family of functions differing by a constant.
+    // The constant is added to the value rather than only mentioned in a
+    // qualifier, so the answer cannot be read past or copied away.
+    let rendered = if operation == SymbolicOperation::Integrate {
+        format!("{} + {}", value, INDEFINITE_CONSTANT)
+    } else {
+        value.to_string()
+    };
+
+    // Simplification can report which rules fired. Nothing else can, so any
+    // other operation falls back to the entered and resulting forms, which is
+    // the honest record of what happened.
+    let steps = match (show_steps, steps) {
+        (true, Some(traced)) => Some(traced),
+        (true, None) => Some(format!(
+            "as entered:  {}\n{}:     {}\nresult:      {rendered}",
+            trimmed,
+            operation.verb().to_lowercase(),
+            target.map_or_else(|| String::new(), |var| format!("with respect to {var}"))
+        )),
+        (false, _) => None,
+    };
+
     Ok(TransformOutcome {
-        value: value.to_string(),
+        value: rendered,
         // A transform produces a different expression, so its "other forms" are
         // the forms of the original input, not of the transform's result.
         alternate_forms: alternate_forms(&parsed, operation, target),
@@ -322,6 +367,10 @@ fn details_for(
                 None
             }
         }
+        SymbolicOperation::Integrate => Some(format!(
+            "Any constant added is also an answer, written + {} here",
+            INDEFINITE_CONSTANT
+        )),
         SymbolicOperation::Simplify
         | SymbolicOperation::Expand
         | SymbolicOperation::Differentiate => None,

@@ -154,14 +154,23 @@ stays synchronous and keypress-latency sensitive.
 backend panics when handles from two contexts meet, so take variable *names*
 across a boundary rather than handles.
 
-**Verify the backend's answers, do not relay them.** `symplex` reports "I
-cannot do this" by returning the request unevaluated, and its solver reaches
-answers by rearranging the equation — which admits roots that satisfy the
-rearranged form but not the original (`sqrt(x) = -1` yields `x = 1`). Both cases
-are handled in `symbolic/`: `has_unevaluated()` turns the first into an explicit
-refusal, and every solved candidate is substituted back and kept only if its
-residual simplifies to exactly zero. Never surface a result you have not
-checked.
+**Verify the backend's answers, do not relay them — but only where the check
+is sound.** `symplex` reports "I cannot do this" by returning the request
+unevaluated, and its solver reaches answers by rearranging the equation — which
+admits roots that satisfy the rearranged form but not the original
+(`sqrt(x) = -1` yields `x = 1`). Both are handled in `symbolic/`:
+`has_unevaluated()` turns the first into an explicit refusal, and every solved
+candidate is substituted back and kept only if its residual simplifies to
+exactly zero. Never surface a result you have not checked.
+
+The same residual gate must **not** be applied to indefinite integrals. Their
+answers are frequently correct while `simplify` cannot prove it: differentiating
+`ln(abs(x))` or `-ln(abs(cos(x)))` introduces `sign`/`abs` pairs that do not
+reduce, so the check reports false negatives and would reject correct
+mathematics. Integration is gated on `has_unevaluated()` alone. If simplification
+ever closes that loop, a test asserting the current false negative
+(`test_simplification_cannot_always_verify_a_good_answer`) will fail and prompt
+the question again.
 
 **Overflow** — never wrap, saturate, or truncate. Factorial accumulates `BigInt`
 (`Expr::Factorial`). Modular exponentiation uses `mod_pow()` with

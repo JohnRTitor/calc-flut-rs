@@ -36,6 +36,18 @@ enum SymbolicOperation {
     label: 'Differentiate',
     formLabel: 'Derivative',
     description: 'Differentiate with respect to one variable',
+  ),
+
+  /// Finds an antiderivative with respect to one variable.
+  ///
+  /// The answer carries `+ C`, because an indefinite integral is only ever
+  /// determined up to an additive constant and dropping it would present an
+  /// incomplete answer as a complete one.
+  integrate(
+    wireName: 'integrate',
+    label: 'Integrate',
+    formLabel: 'Antiderivative',
+    description: 'Find an antiderivative, up to an arbitrary constant',
   );
 
   /// The name accepted by the Rust bridge.
@@ -63,14 +75,24 @@ enum SymbolicOperation {
   /// A transform's output is a *different expression* — the derivative of
   /// `x^2` is not another form of `x^2` — so it must never be listed among the
   /// forms of the expression the user typed.
-  bool get isForm => this != SymbolicOperation.differentiate;
+  bool get isForm =>
+      this != SymbolicOperation.differentiate &&
+      this != SymbolicOperation.integrate;
 
   /// Whether this operation needs to be told which variable to act on.
   ///
-  /// Both factoring and differentiating are defined relative to a variable,
-  /// and a constant has neither.
+  /// Factoring, differentiating and integrating are all defined relative to a
+  /// variable, and a constant has none of them.
   bool get requiresVariable =>
-      this == SymbolicOperation.factor || this == SymbolicOperation.differentiate;
+      this == SymbolicOperation.factor ||
+      this == SymbolicOperation.differentiate ||
+      this == SymbolicOperation.integrate;
+
+  /// Whether the answer is only determined up to an arbitrary constant.
+  ///
+  /// The UI says so explicitly, and the backend's value already carries the
+  /// constant, so it cannot be missed.
+  bool get isUpToAConstant => this == SymbolicOperation.integrate;
 
   /// The operations offered by the Algebra workspace, in presentation order.
   static const List<SymbolicOperation> algebraOperations = [
@@ -81,9 +103,10 @@ enum SymbolicOperation {
 
   /// The operations offered by the Calculus workspace, in presentation order.
   ///
-  /// Differentiation needs a variable and a single expression, so unlike
-  /// Algebra this list starts at exactly one.
+  /// Differentiation and integration need a variable, so unlike Algebra this
+  /// list starts at operations that take one.
   static const List<SymbolicOperation> calculusOperations = [
     SymbolicOperation.differentiate,
+    SymbolicOperation.integrate,
   ];
 }

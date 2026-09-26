@@ -187,7 +187,7 @@ void main() {
         expect(find.text('Differentiate'), findsNothing);
       });
 
-      testWidgets('a single-operation tool shows only that one ($uiStyle)', (
+      testWidgets('shows only what its tool lists, never the whole enum ($uiStyle)', (
         tester,
       ) async {
         await tester.pumpWidget(
@@ -203,9 +203,13 @@ void main() {
           ),
         );
 
-        expect(find.text('Differentiate'), findsOneWidget);
-        expect(find.text('Simplify'), findsNothing);
-        expect(find.text('Factor'), findsNothing);
+        for (final operation in SymbolicOperation.calculusOperations) {
+          expect(find.text(operation.label), findsOneWidget);
+        }
+        // The algebra operations belong to another tool entirely.
+        for (final label in ['Simplify', 'Expand', 'Factor']) {
+          expect(find.text(label), findsNothing);
+        }
       });
 
       testWidgets('runs the tapped operation ($uiStyle)', (tester) async {
@@ -504,6 +508,33 @@ void main() {
         expect(find.textContaining('as entered:'), findsOneWidget);
       });
 
+      testWidgets('shows an indefinite integral with its arbitrary constant ($uiStyle)',
+          (tester) async {
+        // The backend's value already carries "+ C", so the constant cannot be
+        // missed by reading the result or by copying it away.
+        await tester.pumpWidget(
+          _host(
+            uiStyle,
+            SymbolicResultCard(
+              uiStyle: uiStyle,
+              state: _stateWith(
+                forms: const [
+                  SymbolicForm(
+                    label: 'Antiderivative',
+                    expression: '1/2*x^2 + C',
+                  ),
+                ],
+                details: 'Any constant added is also an answer, written + C here',
+                operation: SymbolicOperation.integrate,
+              ),
+            ),
+          ),
+        );
+
+        expect(find.text('1/2*x² + C'), findsOneWidget);
+        expect(find.textContaining('Any constant added'), findsOneWidget);
+      });
+
       testWidgets('omits the steps block when there is none ($uiStyle)',
           (tester) async {
         await tester.pumpWidget(
@@ -564,9 +595,10 @@ void main() {
 
   group('SymbolicOperation', () {
     test('a transform is not a form of the input', () {
-      // The derivative of x^2 is not another way of writing x^2, so it must
-      // never be offered among the input's alternate forms.
+      // The derivative of x^2 is not another way of writing x^2, and neither is
+      // its antiderivative, so neither may be offered among the input's forms.
       expect(SymbolicOperation.differentiate.isForm, isFalse);
+      expect(SymbolicOperation.integrate.isForm, isFalse);
       expect(SymbolicOperation.simplify.isForm, isTrue);
       expect(SymbolicOperation.expand.isForm, isTrue);
       expect(SymbolicOperation.factor.isForm, isTrue);
@@ -576,7 +608,9 @@ void main() {
       // Guards the split itself: anything added later must be deliberately
       // classified, rather than defaulting into the wrong bucket.
       for (final operation in SymbolicOperation.values) {
-        final isTransform = operation == SymbolicOperation.differentiate;
+        final isTransform =
+            operation == SymbolicOperation.differentiate ||
+            operation == SymbolicOperation.integrate;
         expect(
           operation.isForm,
           !isTransform,
@@ -588,8 +622,21 @@ void main() {
     test('the variable-taking operations are declared consistently', () {
       expect(SymbolicOperation.factor.requiresVariable, isTrue);
       expect(SymbolicOperation.differentiate.requiresVariable, isTrue);
+      expect(SymbolicOperation.integrate.requiresVariable, isTrue);
       expect(SymbolicOperation.simplify.requiresVariable, isFalse);
       expect(SymbolicOperation.expand.requiresVariable, isFalse);
+    });
+
+    test('only integration is determined up to a constant', () {
+      expect(SymbolicOperation.integrate.isUpToAConstant, isTrue);
+      for (final operation in SymbolicOperation.values) {
+        if (operation == SymbolicOperation.integrate) continue;
+        expect(
+          operation.isUpToAConstant,
+          isFalse,
+          reason: '$operation is fully determined',
+        );
+      }
     });
 
     test('each tool offers its own operations', () {
@@ -600,6 +647,7 @@ void main() {
       ]);
       expect(SymbolicOperation.calculusOperations, [
         SymbolicOperation.differentiate,
+        SymbolicOperation.integrate,
       ]);
     });
 

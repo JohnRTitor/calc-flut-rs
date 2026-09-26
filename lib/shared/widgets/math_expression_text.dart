@@ -118,6 +118,11 @@ String _superscriptPowers(String input) {
 /// `2*x + 1` becomes `2x + 1` and `2*(x + 1)` becomes `2(x + 1)`. A `*` between
 /// two symbols (`x*y`) is kept: rendering it as `xy` would read as a single
 /// variable named `xy`, which is a different expression.
+///
+/// A digit that follows a `/` is left alone too. There the digit closes a
+/// fraction rather than being a coefficient, and `1/3*x^3` must not collapse to
+/// `1/3x^3`, which reads as a mangled fraction. Unambiguous and plain beats
+/// shorter and confusing.
 String _dropImplicitMultiplication(String input) {
   final buffer = StringBuffer();
   for (var i = 0; i < input.length; i++) {
@@ -126,6 +131,9 @@ String _dropImplicitMultiplication(String input) {
         i > 0 &&
         i + 1 < input.length &&
         _isDigit(input[i - 1]) &&
+        // The digit must not be closing a fraction: in `1/3*x` it is preceded
+        // by `/`, and there it is a denominator rather than a coefficient.
+        !(i >= 2 && input[i - 2] == '/') &&
         (_isLetter(input[i + 1]) || input[i + 1] == '(')) {
       continue;
     }

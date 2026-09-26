@@ -72,12 +72,13 @@ void main() {
         expect(tester.takeException(), isNull);
       });
 
-      testWidgets('offers differentiation and nothing else ($uiStyle)', (
+      testWidgets('offers both calculus operations and no algebra ones ($uiStyle)', (
         tester,
       ) async {
         await _pump(tester, uiStyle, const CalculusScreen());
 
         expect(find.text('Differentiate'), findsOneWidget);
+        expect(find.text('Integrate'), findsOneWidget);
         for (final label in ['Simplify', 'Expand', 'Factor']) {
           expect(find.text(label), findsNothing);
         }

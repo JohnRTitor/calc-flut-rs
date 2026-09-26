@@ -16,5 +16,6 @@ pub mod solve;
 pub use error::{SymbolicError, SymbolicErrorKind};
 pub use solve::{SolutionCategory, SolveOutcome, solve};
 pub use evaluator::{
-    FORM_OPERATIONS, MAX_EXPRESSION_CHARS, SymbolicOperation, TransformOutcome, transform,
+    FORM_OPERATIONS, INDEFINITE_CONSTANT, MAX_EXPRESSION_CHARS, SymbolicOperation, TransformOutcome,
+    transform,
 };

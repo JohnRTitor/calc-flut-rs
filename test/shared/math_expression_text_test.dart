@@ -56,6 +56,13 @@ void main() {
       expect(formatMathForDisplay('x^(2/3)'), 'x^(2/3)');
     });
 
+    test('keeps the * after a fraction, which is not a coefficient', () {
+      // Antiderivatives are full of rational coefficients. Here the digit
+      // closes a fraction, so collapsing would read as a mangled fraction.
+      expect(formatMathForDisplay('1/3*x^3'), '1/3*x³');
+      expect(formatMathForDisplay('1/2*x^2 + C'), '1/2*x² + C');
+    });
+
     test('collapses whitespace runs', () {
       expect(formatMathForDisplay('  x^2   +   1  '), 'x² + 1');
     });
@@ -77,6 +84,9 @@ void main() {
       expect(formatMathForDisplay('(x - 2)*(x + 2)'), '(x - 2)*(x + 2)');
       expect(formatMathForDisplay('5*x'), '5x');
       expect(formatMathForDisplay('-x^(-2)'), '-x⁻²');
+      // Indefinite integrals, constant included.
+      expect(formatMathForDisplay('1/3*x^3 + C'), '1/3*x³ + C');
+      expect(formatMathForDisplay('-cos(x) + C'), '-cos(x) + C');
     });
 
     test('lower-cases the imaginary unit', () {

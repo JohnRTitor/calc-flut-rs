@@ -131,6 +131,192 @@ mod tests {
         assert_eq!(error.kind(), SymbolicErrorKind::Unsupported);
     }
 
+    // ---------- integrate ----------
+
+    /// Integrates `expression` with respect to `variable`.
+    fn integrate(expression: &str, variable: &str) -> String {
+        transform(
+            expression,
+            SymbolicOperation::Integrate,
+            Some(variable),
+            false,
+        )
+        .expect("integration should succeed")
+        .value
+    }
+
+    /// Whether differentiating the antiderivative returns the integrand.
+    ///
+    /// Only usable when simplification can close the loop, so it is applied to
+    /// the tractable cases in the tests below and deliberately not used as a
+    /// runtime gate — see `test_simplification_cannot_always_verify_a_good_answer`.
+    fn is_antiderivative_of(integrand: &str, antiderivative: &str) -> bool {
+        let ctx = symplex::prelude::Context::new();
+        let x = ctx.symbol("x");
+        let f = ctx.parse(integrand).unwrap();
+        let a = ctx.parse(antiderivative).unwrap();
+        a.diff(&x).simplify() == f.simplify()
+    }
+
+    /// Integrands whose antiderivatives involve `ln(abs(..))`.
+    ///
+    /// Differentiating an absolute value introduces `sign`/`abs` pairs that
+    /// simplification will not reduce, so these cannot be checked by
+    /// differentiating back even though the answers are right.
+    const UNVERIFIABLE: [&str; 3] = ["1/x", "tan(x)", "1/(x^2 - 1)"];
+
+    #[test]
+    fn test_integrate_power_rule() {
+        assert_eq!(integrate("x^2", "x"), "1/3*x^3 + C");
+        assert_eq!(integrate("x^3+x", "x"), "1/4*x^4 + 1/2*x^2 + C");
+    }
+
+    #[test]
+    fn test_integrate_keeps_exact_fractions() {
+        // Must not decay to a decimal.
+        assert_eq!(integrate("1/3", "x"), "1/3*x + C");
+        assert!(integrate("x", "x").contains("1/2"));
+    }
+
+    #[test]
+    fn test_integrate_trigonometric_and_exponential() {
+        assert!(is_antiderivative_of("sin(x)", &integrate("sin(x)", "x")));
+        assert!(is_antiderivative_of("cos(x)", &integrate("cos(x)", "x")));
+        assert!(is_antiderivative_of("exp(x)", &integrate("exp(x)", "x")));
+        assert!(is_antiderivative_of(
+            "exp(-x^2)",
+            &integrate("exp(-x^2)", "x")
+        ));
+    }
+
+    #[test]
+    fn test_integrate_special_functions() {
+        // The ones a textbook student actually meets, checked by differentiating
+        // back: sqrt, 1/(1+x^2), 1/x^2, and a product needing by parts.
+        for integrand in ["sqrt(x)", "1/(1 + x^2)", "1/x^2", "x*exp(x)", "ln(x)"] {
+            let antiderivative = integrate(integrand, "x");
+            assert!(
+                is_antiderivative_of(integrand, &antiderivative),
+                "d/dx of {antiderivative} did not give {integrand}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_every_checkable_antiderivative_differentiates_back() {
+        for integrand in [
+            "x^2", "x^3+x", "sin(x)", "cos(x)", "exp(x)", "sqrt(x)",
+            "1/(1 + x^2)", "1/x^2", "x*exp(x)", "ln(x)", "sec(x)^2", "2^x",
+        ] {
+            let antiderivative = integrate(integrand, "x");
+            assert!(
+                is_antiderivative_of(integrand, &antiderivative),
+                "{integrand}: d/dx of {antiderivative} is not {integrand}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_simplification_cannot_always_verify_a_good_answer() {
+        // Why the runtime path has no residual check, unlike solving. The
+        // antiderivatives of these are correct, but differentiating them
+        // introduces sign/abs terms that simplify will not reduce, so a residual
+        // gate would reject correct mathematics.
+        for integrand in UNVERIFIABLE {
+            let antiderivative = integrate(integrand, "x");
+            assert!(
+                !is_antiderivative_of(integrand, &antiderivative),
+                "{integrand} unexpectedly verified; if simplify has improved, the \
+                 runtime residual check can be reconsidered"
+            );
+        }
+    }
+
+    #[test]
+    fn test_indefinite_integral_states_the_arbitrary_constant() {
+        // Reporting one member of the family and stopping would present an
+        // incomplete answer as a complete one.
+        let value = integrate("x^2", "x");
+        assert!(
+            value.ends_with("+ C"),
+            "the constant must be part of the value, not just mentioned: {value}"
+        );
+    }
+
+    #[test]
+    fn test_indefinite_integral_explains_the_constant() {
+        let outcome =
+            transform("x^2", SymbolicOperation::Integrate, Some("x"), false).unwrap();
+        let details = outcome.details.expect("the constant must be explained");
+        assert!(
+            details.contains('C'),
+            "expected the qualifier to name the constant, got: {details}"
+        );
+    }
+
+    #[test]
+    fn test_integrate_refuses_what_it_cannot_do() {
+        // Neither a factorial nor x^x has an elementary antiderivative. The
+        // backend hands both back unevaluated, which must become a refusal
+        // rather than the notation Integral(x!, x) reaching the UI.
+        for integrand in ["x!", "x^x"] {
+            let error =
+                transform(integrand, SymbolicOperation::Integrate, Some("x"), false)
+                    .unwrap_err();
+            assert!(matches!(error, SymbolicError::NotSupported(_)), "{integrand}");
+            let message = error.to_string();
+            assert!(
+                !message.contains("Integral("),
+                "unevaluated backend notation leaked: {message}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_integrate_without_a_variable_is_refused() {
+        let error = transform("x^2", SymbolicOperation::Integrate, None, false).unwrap_err();
+        assert!(matches!(error, SymbolicError::NoVariable));
+    }
+
+    #[test]
+    fn test_antiderivative_is_not_offered_as_an_alternate_form() {
+        let outcome =
+            transform("x^2", SymbolicOperation::Integrate, Some("x"), false).unwrap();
+        let labels: Vec<&str> = outcome
+            .alternate_forms
+            .iter()
+            .map(|f| f.label.as_str())
+            .collect();
+        assert!(!labels.contains(&"Antiderivative"));
+        // What it does offer are forms of the original input.
+        for form in &outcome.alternate_forms {
+            assert_ne!(form.expression, outcome.value);
+        }
+    }
+
+    #[test]
+    fn test_transforms_have_steps_even_without_a_rule_trace() {
+        // Nothing but simplification can name the rules it fired, so the other
+        // operations fall back to the entered and resulting forms. The block must
+        // never be empty just because no trace was available.
+        let outcome =
+            transform("x^2", SymbolicOperation::Integrate, Some("x"), true).unwrap();
+        let steps = outcome.steps.expect("steps were requested");
+        assert!(steps.contains("as entered:"), "got: {steps}");
+        assert!(steps.contains('x'), "should name the variable: {steps}");
+
+        let diff =
+            transform("x^2", SymbolicOperation::Differentiate, Some("x"), true).unwrap();
+        assert!(diff.steps.expect("steps were requested").contains("as entered:"));
+    }
+
+    #[test]
+    fn test_transforms_have_no_steps_unless_requested() {
+        let outcome =
+            transform("x^2", SymbolicOperation::Integrate, Some("x"), false).unwrap();
+        assert!(outcome.steps.is_none());
+    }
+
     // ---------- alternate forms ----------
 
     #[test]
@@ -246,9 +432,13 @@ mod tests {
             .collect();
         assert_eq!(forms, vec!["Simplified", "Expanded", "Factored"]);
         for operation in SymbolicOperation::ALL {
+            let is_transform = matches!(
+                operation,
+                SymbolicOperation::Differentiate | SymbolicOperation::Integrate
+            );
             assert_eq!(
                 operation.is_form(),
-                !matches!(operation, SymbolicOperation::Differentiate),
+                !is_transform,
                 "{operation:?} was not classified"
             );
         }
@@ -257,15 +447,24 @@ mod tests {
     #[test]
     fn test_operations_needing_a_variable_are_declared_consistently() {
         for operation in SymbolicOperation::ALL {
-            let needs_variable = matches!(
-                operation,
-                SymbolicOperation::Factor | SymbolicOperation::Differentiate
-            );
+            let needs_variable = operation.requires_variable();
             assert_eq!(
                 operation.requires_variable(),
-                needs_variable,
+                matches!(
+                    operation,
+                    SymbolicOperation::Factor
+                        | SymbolicOperation::Differentiate
+                        | SymbolicOperation::Integrate
+                ),
                 "{operation:?} disagreed about needing a variable"
             );
+            if !needs_variable {
+                continue;
+            }
+            // Anything that needs a variable must say so rather than quietly
+            // acting on a guess.
+            let error = transform("1", operation, None, false).unwrap_err();
+            assert!(matches!(error, SymbolicError::NoVariable));
         }
     }
 
