@@ -149,6 +149,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   (String, double) dco_decode_record_string_f_64(dynamic raw);
 
   @protected
+  SolutionKind dco_decode_solution_kind(dynamic raw);
+
+  @protected
   StructureAnalysis dco_decode_structure_analysis(dynamic raw);
 
   @protected
@@ -159,6 +162,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   SymbolicResult dco_decode_symbolic_result(dynamic raw);
+
+  @protected
+  SymbolicSolveResult dco_decode_symbolic_solve_result(dynamic raw);
 
   @protected
   int dco_decode_u_32(dynamic raw);
@@ -310,6 +316,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   (String, double) sse_decode_record_string_f_64(SseDeserializer deserializer);
 
   @protected
+  SolutionKind sse_decode_solution_kind(SseDeserializer deserializer);
+
+  @protected
   StructureAnalysis sse_decode_structure_analysis(SseDeserializer deserializer);
 
   @protected
@@ -324,6 +333,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   SymbolicResult sse_decode_symbolic_result(SseDeserializer deserializer);
+
+  @protected
+  SymbolicSolveResult sse_decode_symbolic_solve_result(
+    SseDeserializer deserializer,
+  );
 
   @protected
   int sse_decode_u_32(SseDeserializer deserializer);
@@ -512,6 +526,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_solution_kind(SolutionKind self, SseSerializer serializer);
+
+  @protected
   void sse_encode_structure_analysis(
     StructureAnalysis self,
     SseSerializer serializer,
@@ -532,6 +549,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_symbolic_result(
     SymbolicResult self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_symbolic_solve_result(
+    SymbolicSolveResult self,
     SseSerializer serializer,
   );
 

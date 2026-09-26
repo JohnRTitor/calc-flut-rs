@@ -18,6 +18,8 @@ pub enum SymbolicError {
     UnknownOperation(String),
     /// The operation needs a free variable to act on, but there was none.
     NoVariable,
+    /// The input was an expression where an equation was required.
+    NotEquation,
     /// The requested operation is valid but cannot be carried out as asked.
     NotSupported(String),
     /// A symbolic operation ran but could not produce an answer.
@@ -40,6 +42,10 @@ impl fmt::Display for SymbolicError {
                 write!(f, "Unsupported operation: {}", op)
             }
             SymbolicError::NoVariable => write!(f, "This expression has no variable to work with"),
+            SymbolicError::NotEquation => write!(
+                f,
+                "That is an expression, not an equation — put an '=' between two sides"
+            ),
             SymbolicError::NotSupported(msg) => write!(f, "Cannot do that: {}", msg),
             SymbolicError::ComputationFailed(msg) => write!(f, "Could not simplify: {}", msg),
             SymbolicError::TooLarge(msg) => write!(f, "Expression is too large: {}", msg),
@@ -139,6 +145,7 @@ impl SymbolicError {
             }
             SymbolicError::UnknownOperation(_)
             | SymbolicError::NoVariable
+            | SymbolicError::NotEquation
             | SymbolicError::NotSupported(_) => SymbolicErrorKind::Unsupported,
             SymbolicError::ComputationFailed(_) => SymbolicErrorKind::Computation,
             SymbolicError::TooLarge(_) => SymbolicErrorKind::TooLarge,
@@ -159,6 +166,7 @@ impl SymbolicError {
             SymbolicError::NoVariable => {
                 Some("Include a letter, for example x^2 + 3*x".into())
             }
+            SymbolicError::NotEquation => Some("Try something like x^2 - 4 = 0".into()),
             SymbolicError::NotSupported(_) => None,
             SymbolicError::ComputationFailed(_) => {
                 Some("Try a smaller expression, or a different form of it".into())

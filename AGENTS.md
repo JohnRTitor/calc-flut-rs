@@ -154,6 +154,15 @@ stays synchronous and keypress-latency sensitive.
 backend panics when handles from two contexts meet, so take variable *names*
 across a boundary rather than handles.
 
+**Verify the backend's answers, do not relay them.** `symplex` reports "I
+cannot do this" by returning the request unevaluated, and its solver reaches
+answers by rearranging the equation — which admits roots that satisfy the
+rearranged form but not the original (`sqrt(x) = -1` yields `x = 1`). Both cases
+are handled in `symbolic/`: `has_unevaluated()` turns the first into an explicit
+refusal, and every solved candidate is substituted back and kept only if its
+residual simplifies to exactly zero. Never surface a result you have not
+checked.
+
 **Overflow** — never wrap, saturate, or truncate. Factorial accumulates `BigInt`
 (`Expr::Factorial`). Modular exponentiation uses `mod_pow()` with
 square-and-multiply. If a value cannot be computed, return a descriptive error.

@@ -31,6 +31,24 @@ bool _isLetter(String c) =>
     (c.compareTo('a') >= 0 && c.compareTo('z') <= 0) ||
     (c.compareTo('A') >= 0 && c.compareTo('Z') <= 0);
 
+bool _isDigit(String c) => c.compareTo('0') >= 0 && c.compareTo('9') <= 0;
+
+/// Rewrites the imaginary unit to the conventional `i`.
+///
+/// The symbolic engine writes the imaginary unit as a capital `I`, which reads
+/// like a variable named "I" and collides with the app's own integral notation
+/// to anyone expecting it. Lower-casing it is the standard way solutions are
+/// written.
+///
+/// Only a standalone `I` is rewritten: an `I` inside a longer name is a
+/// variable the user chose, and must be left alone.
+String _normaliseImaginaryUnit(String input) {
+  return input.replaceAll(
+    RegExp(r'(?<![A-Za-z0-9_])I(?![A-Za-z0-9_])'),
+    'i',
+  );
+}
+
 /// Converts one exponent body to superscript, or returns `null` if any part of
 /// it has no superscript form.
 String? _toSuperscript(String body) {
@@ -94,8 +112,6 @@ String _superscriptPowers(String input) {
   return buffer.toString();
 }
 
-bool _isDigit(String c) => c.compareTo('0') >= 0 && c.compareTo('9') <= 0;
-
 /// Drops an explicit `*` where the product is already unambiguous.
 ///
 /// Only removes the sign between a digit and a following letter or bracket, so
@@ -128,14 +144,21 @@ String _dropImplicitMultiplication(String input) {
 /// Applies, in order:
 /// 1. whitespace runs collapsed to single spaces;
 /// 2. `^n` exponents mapped to Unicode superscripts where a full mapping exists;
-/// 3. `*` dropped where the product is already unambiguous (`3*x` becomes `3x`).
+/// 3. a standalone imaginary unit lower-cased to `i`;
+/// 4. `*` dropped where the product is already unambiguous (`3*x` becomes `3x`).
+///
+/// The order matters: the imaginary unit is recognised before the `*` is
+/// dropped, so `2*I` is read as a coefficient times a unit (`2i`) rather than as
+/// a coefficient times a variable named `I`.
 ///
 /// Deliberately does *not* build stacked fractions, radical vincula or nested
 /// layout. Exact fractions keep the app's existing flat `a/b` convention.
 String formatMathForDisplay(String expression) {
   final collapsed = expression.replaceAll(RegExp(r'\s+'), ' ').trim();
   if (collapsed.isEmpty) return collapsed;
-  return _dropImplicitMultiplication(_superscriptPowers(collapsed));
+  return _dropImplicitMultiplication(
+    _normaliseImaginaryUnit(_superscriptPowers(collapsed)),
+  );
 }
 
 /// Renders a mathematical expression string using the app's flat, single-line

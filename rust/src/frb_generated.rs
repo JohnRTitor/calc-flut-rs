@@ -39,7 +39,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.13.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 574047861;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1516160230;
 
 // Section: executor
 
@@ -1052,6 +1052,49 @@ fn wire__crate__bridge__symbolic__symbolic_operations_impl(
         },
     )
 }
+fn wire__crate__bridge__symbolic__symbolic_solve_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "symbolic_solve",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_equation = <String>::sse_decode(&mut deserializer);
+            let api_variable = <Option<String>>::sse_decode(&mut deserializer);
+            let api_show_steps = <bool>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::bridge::symbolic::SymbolicErrorInfo>(
+                    (move || async move {
+                        let output_ok = crate::bridge::symbolic::symbolic_solve(
+                            api_equation,
+                            api_variable,
+                            api_show_steps,
+                        )
+                        .await?;
+                        std::result::Result::Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__bridge__symbolic__symbolic_transform_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -1549,6 +1592,20 @@ impl SseDecode for (String, f64) {
     }
 }
 
+impl SseDecode for crate::bridge::symbolic::SolutionKind {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <i32>::sse_decode(deserializer);
+        return match inner {
+            0 => crate::bridge::symbolic::SolutionKind::Unique,
+            1 => crate::bridge::symbolic::SolutionKind::Multiple,
+            2 => crate::bridge::symbolic::SolutionKind::Infinite,
+            3 => crate::bridge::symbolic::SolutionKind::None,
+            _ => unreachable!("Invalid variant for SolutionKind: {}", inner),
+        };
+    }
+}
+
 impl SseDecode for crate::bridge::modular_arithmetic::StructureAnalysis {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1650,6 +1707,23 @@ impl SseDecode for crate::bridge::symbolic::SymbolicResult {
     }
 }
 
+impl SseDecode for crate::bridge::symbolic::SymbolicSolveResult {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_solutions = <Vec<String>>::sse_decode(deserializer);
+        let mut var_solutionKind =
+            <crate::bridge::symbolic::SolutionKind>::sse_decode(deserializer);
+        let mut var_details = <Option<String>>::sse_decode(deserializer);
+        let mut var_steps = <Option<String>>::sse_decode(deserializer);
+        return crate::bridge::symbolic::SymbolicSolveResult {
+            solutions: var_solutions,
+            solution_kind: var_solutionKind,
+            details: var_details,
+            steps: var_steps,
+        };
+    }
+}
+
 impl SseDecode for u32 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1680,7 +1754,8 @@ fn pde_ffi_dispatcher_primary_impl(
     match func_id {
         8 => wire__crate__bridge__history__app_history_load_impl(port, ptr, rust_vec_len, data_len),
         9 => wire__crate__bridge__history__app_history_save_impl(port, ptr, rust_vec_len, data_len),
-        31 => wire__crate__bridge__symbolic__symbolic_transform_impl(
+        31 => wire__crate__bridge__symbolic__symbolic_solve_impl(port, ptr, rust_vec_len, data_len),
+        32 => wire__crate__bridge__symbolic__symbolic_transform_impl(
             port,
             ptr,
             rust_vec_len,
@@ -2100,6 +2175,29 @@ impl flutter_rust_bridge::IntoIntoDart<crate::bridge::modular_arithmetic::Modula
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::bridge::symbolic::SolutionKind {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            Self::Unique => 0.into_dart(),
+            Self::Multiple => 1.into_dart(),
+            Self::Infinite => 2.into_dart(),
+            Self::None => 3.into_dart(),
+            _ => unreachable!(),
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::bridge::symbolic::SolutionKind
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::bridge::symbolic::SolutionKind>
+    for crate::bridge::symbolic::SolutionKind
+{
+    fn into_into_dart(self) -> crate::bridge::symbolic::SolutionKind {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::bridge::modular_arithmetic::StructureAnalysis {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -2205,6 +2303,29 @@ impl flutter_rust_bridge::IntoIntoDart<crate::bridge::symbolic::SymbolicResult>
     for crate::bridge::symbolic::SymbolicResult
 {
     fn into_into_dart(self) -> crate::bridge::symbolic::SymbolicResult {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::bridge::symbolic::SymbolicSolveResult {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.solutions.into_into_dart().into_dart(),
+            self.solution_kind.into_into_dart().into_dart(),
+            self.details.into_into_dart().into_dart(),
+            self.steps.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::bridge::symbolic::SymbolicSolveResult
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::bridge::symbolic::SymbolicSolveResult>
+    for crate::bridge::symbolic::SymbolicSolveResult
+{
+    fn into_into_dart(self) -> crate::bridge::symbolic::SymbolicSolveResult {
         self
     }
 }
@@ -2539,6 +2660,24 @@ impl SseEncode for (String, f64) {
     }
 }
 
+impl SseEncode for crate::bridge::symbolic::SolutionKind {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(
+            match self {
+                crate::bridge::symbolic::SolutionKind::Unique => 0,
+                crate::bridge::symbolic::SolutionKind::Multiple => 1,
+                crate::bridge::symbolic::SolutionKind::Infinite => 2,
+                crate::bridge::symbolic::SolutionKind::None => 3,
+                _ => {
+                    unimplemented!("");
+                }
+            },
+            serializer,
+        );
+    }
+}
+
 impl SseEncode for crate::bridge::modular_arithmetic::StructureAnalysis {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -2601,6 +2740,16 @@ impl SseEncode for crate::bridge::symbolic::SymbolicResult {
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.value, serializer);
         <Vec<crate::bridge::symbolic::AlternateForm>>::sse_encode(self.alternate_forms, serializer);
+        <Option<String>>::sse_encode(self.details, serializer);
+        <Option<String>>::sse_encode(self.steps, serializer);
+    }
+}
+
+impl SseEncode for crate::bridge::symbolic::SymbolicSolveResult {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Vec<String>>::sse_encode(self.solutions, serializer);
+        <crate::bridge::symbolic::SolutionKind>::sse_encode(self.solution_kind, serializer);
         <Option<String>>::sse_encode(self.details, serializer);
         <Option<String>>::sse_encode(self.steps, serializer);
     }

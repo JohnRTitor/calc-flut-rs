@@ -78,6 +78,22 @@ void main() {
       expect(formatMathForDisplay('5*x'), '5x');
       expect(formatMathForDisplay('-x^(-2)'), '-x⁻²');
     });
+
+    test('lower-cases the imaginary unit', () {
+      // The engine writes it as a capital I, which reads like a variable name.
+      expect(formatMathForDisplay('I'), 'i');
+      expect(formatMathForDisplay('-I'), '-i');
+      expect(formatMathForDisplay('2*I'), '2i');
+      expect(formatMathForDisplay('I, -I'), 'i, -i');
+    });
+
+    test('leaves an I that is part of a name alone', () {
+      // That is a variable the user chose, not the imaginary unit.
+      expect(formatMathForDisplay('Ix'), 'Ix');
+      expect(formatMathForDisplay('Ix + 1'), 'Ix + 1');
+      expect(formatMathForDisplay('xI'), 'xI');
+      expect(formatMathForDisplay('I_1'), 'I_1');
+    });
   });
 
   group('MathExpressionText', () {

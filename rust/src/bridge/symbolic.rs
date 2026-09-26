@@ -15,6 +15,7 @@ use flutter_rust_bridge::frb;
 
 use crate::symbolic::error::{SymbolicError, SymbolicErrorKind};
 use crate::symbolic::evaluator::{self, SymbolicOperation};
+use crate::symbolic::solve::{self, SolutionCategory as CoreSolutionCategory};
 
 /// A structured error, safe to display verbatim.
 ///
@@ -115,6 +116,76 @@ pub async fn symbolic_transform(
                     expression: form.expression,
                 })
                 .collect(),
+            details: outcome.details,
+            steps: outcome.steps,
+        })
+        .map_err(|e| SymbolicErrorInfo::from(&e))
+}
+
+/// How many solutions an equation has.
+///
+/// A distinct type rather than a count, so the UI can tell "there is no
+/// solution" and "every value works" apart from "the solver is still working".
+/// Neither of the first two is a failure, and neither may be rendered as one.
+#[frb]
+pub enum SolutionKind {
+    /// Exactly one solution.
+    Unique,
+    /// A finite set of more than one solution.
+    Multiple,
+    /// Every value of the variable satisfies the equation.
+    Infinite,
+    /// Nothing satisfies the equation.
+    None,
+}
+
+impl From<CoreSolutionCategory> for SolutionKind {
+    fn from(kind: CoreSolutionCategory) -> Self {
+        match kind {
+            CoreSolutionCategory::Unique => SolutionKind::Unique,
+            CoreSolutionCategory::Multiple => SolutionKind::Multiple,
+            CoreSolutionCategory::Infinite => SolutionKind::Infinite,
+            CoreSolutionCategory::None => SolutionKind::None,
+        }
+    }
+}
+
+/// The result of solving an equation.
+///
+/// A separate type from [SymbolicResult] because the shapes differ: a solution
+/// set is not one value, and overloading the expression result with optional
+/// fields would leave the UI guessing which combination it was looking at.
+#[frb]
+pub struct SymbolicSolveResult {
+    /// The verified solutions, empty unless `solution_kind` is `unique` or
+    /// `multiple`.
+    pub solutions: Vec<String>,
+    /// Which of the four outcomes this is.
+    pub solution_kind: SolutionKind,
+    /// A short qualifier, e.g. that candidate roots were discarded.
+    pub details: Option<String>,
+    /// Step-by-step working, present only when `show_steps` was requested.
+    pub steps: Option<String>,
+}
+
+/// Solves the equation in `equation` for `variable`.
+///
+/// The equation is given as plain text containing a single `=`, exactly as the
+/// user typed it. Every candidate the solver proposes is substituted back and
+/// checked against the original equation before being reported, so a root
+/// introduced by rearranging the equation is discarded rather than presented.
+///
+/// Runs off the UI thread; see the module docs.
+#[frb]
+pub async fn symbolic_solve(
+    equation: String,
+    variable: Option<String>,
+    show_steps: bool,
+) -> Result<SymbolicSolveResult, SymbolicErrorInfo> {
+    solve::solve(&equation, variable.as_deref(), show_steps)
+        .map(|outcome| SymbolicSolveResult {
+            solutions: outcome.solutions,
+            solution_kind: outcome.kind.into(),
             details: outcome.details,
             steps: outcome.steps,
         })

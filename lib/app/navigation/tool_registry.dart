@@ -16,6 +16,7 @@ import 'package:calc_flut_rs/features/history/presentation/screens/history_scree
 import 'package:calc_flut_rs/features/settings/presentation/screens/settings_screen.dart';
 import 'package:calc_flut_rs/features/symbolic_math/presentation/screens/algebra_screen.dart';
 import 'package:calc_flut_rs/features/symbolic_math/presentation/screens/calculus_screen.dart';
+import 'package:calc_flut_rs/features/symbolic_math/presentation/screens/equation_solver_screen.dart';
 import 'package:calc_flut_rs/features/symbolic_math/presentation/screens/symbolic_math_home_screen.dart';
 import 'package:calc_flut_rs/shared/widgets/app_hub_grid.dart';
 import 'package:calc_flut_rs/shared/widgets/app_notice.dart';
@@ -255,8 +256,7 @@ List<AppTool> _buildSymbolicMathTools() {
       id: 'equation_solver',
       label: 'Equation Solver',
       icon: Icons.balance,
-      isAvailable: false,
-      builder: _buildEmptyToolScreen,
+      builder: _buildEquationSolverScreen,
     ),
     const AppTool(
       id: 'calculus',
@@ -306,6 +306,9 @@ Widget _buildModularArithmeticScreen(BuildContext context) =>
 Widget _buildAlgebraScreen(BuildContext context) => const AlgebraScreen();
 
 Widget _buildCalculusScreen(BuildContext context) => const CalculusScreen();
+
+Widget _buildEquationSolverScreen(BuildContext context) =>
+    const EquationSolverScreen();
 
 Widget _buildEmptyToolScreen(BuildContext context) => const SizedBox.shrink();
 

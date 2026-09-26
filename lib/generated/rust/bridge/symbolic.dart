@@ -6,7 +6,7 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `from`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `from`, `from`
 
 /// The symbolic operations this build supports, for the reference dialog.
 ///
@@ -36,6 +36,24 @@ Future<SymbolicResult> symbolicTransform({
   showSteps: showSteps,
 );
 
+/// Solves the equation in `equation` for `variable`.
+///
+/// The equation is given as plain text containing a single `=`, exactly as the
+/// user typed it. Every candidate the solver proposes is substituted back and
+/// checked against the original equation before being reported, so a root
+/// introduced by rearranging the equation is discarded rather than presented.
+///
+/// Runs off the UI thread; see the module docs.
+Future<SymbolicSolveResult> symbolicSolve({
+  required String equation,
+  String? variable,
+  required bool showSteps,
+}) => RustLib.instance.api.crateBridgeSymbolicSymbolicSolve(
+  equation: equation,
+  variable: variable,
+  showSteps: showSteps,
+);
+
 /// One alternative representation of the same expression, offered as a
 /// tappable chip under the primary result.
 class AlternateForm {
@@ -57,6 +75,25 @@ class AlternateForm {
           runtimeType == other.runtimeType &&
           label == other.label &&
           expression == other.expression;
+}
+
+/// How many solutions an equation has.
+///
+/// A distinct type rather than a count, so the UI can tell "there is no
+/// solution" and "every value works" apart from "the solver is still working".
+/// Neither of the first two is a failure, and neither may be rendered as one.
+enum SolutionKind {
+  /// Exactly one solution.
+  unique,
+
+  /// A finite set of more than one solution.
+  multiple,
+
+  /// Every value of the variable satisfies the equation.
+  infinite,
+
+  /// Nothing satisfies the equation.
+  none,
 }
 
 /// A structured error, safe to display verbatim.
@@ -131,6 +168,50 @@ class SymbolicResult {
           runtimeType == other.runtimeType &&
           value == other.value &&
           alternateForms == other.alternateForms &&
+          details == other.details &&
+          steps == other.steps;
+}
+
+/// The result of solving an equation.
+///
+/// A separate type from [SymbolicResult] because the shapes differ: a solution
+/// set is not one value, and overloading the expression result with optional
+/// fields would leave the UI guessing which combination it was looking at.
+class SymbolicSolveResult {
+  /// The verified solutions, empty unless `solution_kind` is `unique` or
+  /// `multiple`.
+  final List<String> solutions;
+
+  /// Which of the four outcomes this is.
+  final SolutionKind solutionKind;
+
+  /// A short qualifier, e.g. that candidate roots were discarded.
+  final String? details;
+
+  /// Step-by-step working, present only when `show_steps` was requested.
+  final String? steps;
+
+  const SymbolicSolveResult({
+    required this.solutions,
+    required this.solutionKind,
+    this.details,
+    this.steps,
+  });
+
+  @override
+  int get hashCode =>
+      solutions.hashCode ^
+      solutionKind.hashCode ^
+      details.hashCode ^
+      steps.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SymbolicSolveResult &&
+          runtimeType == other.runtimeType &&
+          solutions == other.solutions &&
+          solutionKind == other.solutionKind &&
           details == other.details &&
           steps == other.steps;
 }

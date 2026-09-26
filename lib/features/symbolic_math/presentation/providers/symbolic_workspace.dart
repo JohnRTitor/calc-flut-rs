@@ -6,8 +6,8 @@ import 'package:calc_flut_rs/features/history/domain/history_category.dart';
 import 'package:calc_flut_rs/features/history/presentation/providers/history_provider.dart';
 import 'package:calc_flut_rs/features/settings/presentation/providers/settings_provider.dart';
 import 'package:calc_flut_rs/features/symbolic_math/domain/symbolic_operation.dart';
+import 'package:calc_flut_rs/features/symbolic_math/domain/symbolic_variables.dart';
 import 'package:calc_flut_rs/features/symbolic_math/presentation/providers/symbolic_workspace_state.dart';
-import 'package:calc_flut_rs/generated/rust/bridge/calculator.dart' as rust_calculator;
 import 'package:calc_flut_rs/generated/rust/bridge/history.dart' as rust_history;
 import 'package:calc_flut_rs/generated/rust/bridge/symbolic.dart' as rust_symbolic;
 
@@ -51,41 +51,14 @@ class SymbolicWorkspace extends Notifier<SymbolicWorkspaceState> {
 
   /// Re-scans the expression for variables and picks a sensible default.
   void _refreshVariables() {
-    if (state.expression.trim().isEmpty) {
-      state = state.copyWith(
-        variables: const [],
-        clearSelectedVariable: true,
-      );
-      return;
-    }
-
-    try {
-      final variables = rust_calculator.extractVariables(
-        expression: state.expression,
-      );
-      final selected = _defaultVariable(variables);
-      state = state.copyWith(
-        variables: variables,
-        selectedVariable: selected,
-        clearSelectedVariable: selected == null,
-      );
-    } catch (_) {
-      // Mid-typing input is expected to be unparseable; show no chips until
-      // it parses rather than flashing an error.
-      state = state.copyWith(
-        variables: const [],
-        clearSelectedVariable: true,
-      );
-    }
+    final variables = detectVariables(state.expression);
+    final selected = defaultVariable(variables);
+    state = state.copyWith(
+      variables: variables,
+      selectedVariable: selected,
+      clearSelectedVariable: selected == null,
+    );
   }
-
-  /// Chooses the variable an operation should act on without the user choosing.
-  ///
-  /// Only auto-selects when there is no ambiguity: with several variables in
-  /// play the user must say which one, because differentiating with respect to
-  /// `x` and to `y` give different answers.
-  String? _defaultVariable(List<String> variables) =>
-      variables.length == 1 ? variables.first : null;
 
   /// Sets the variable the next operation acts on.
   void selectVariable(String variable) {

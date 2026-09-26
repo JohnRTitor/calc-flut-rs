@@ -10,9 +10,9 @@ import 'package:calc_flut_rs/features/symbolic_math/presentation/providers/symbo
 import 'package:calc_flut_rs/features/symbolic_math/presentation/providers/symbolic_workspace_state.dart';
 import 'symbolic_action_row.dart';
 import 'symbolic_expression_editor.dart';
+import 'symbolic_help_dialog.dart';
 import 'symbolic_result_card.dart';
 import 'package:calc_flut_rs/generated/rust/bridge/symbolic.dart' as rust_symbolic;
-import 'package:calc_flut_rs/shared/widgets/app_dialog.dart';
 import 'package:calc_flut_rs/shared/widgets/app_notice.dart';
 
 /// Thresholds that govern when a workspace admits it is working.
@@ -137,11 +137,10 @@ class _SymbolicWorkspaceScaffoldState
     showAppNotice(context, 'Result copied', icon: Icons.check);
   }
 
-  /// Lists the operations this tool offers.
+  /// Explains what this tool offers and how much its answers can be trusted.
   ///
-  /// The backend is asked what it supports as well, so the dialog can show
-  /// whether the two agree. The chip labels come from the same enum that drives
-  /// the action row, so the two cannot drift apart.
+  /// The chip labels come from the same enum that drives the action row, and the
+  /// engine is asked what it supports, so the dialog cannot drift from either.
   void _showSupportedOperations() {
     List<String> reportedByEngine;
     try {
@@ -155,83 +154,38 @@ class _SymbolicWorkspaceScaffoldState
       return;
     }
 
-    final uiStyle = ref.read(uiStyleProvider);
-    showAppDialog(
+    final names = widget.operations.map((operation) => operation.label).join(', ');
+    showSymbolicHelpDialog(
       context: context,
-      uiStyle: uiStyle,
+      uiStyle: ref.read(uiStyleProvider),
       title: 'Supported Operations',
-      icon: Icons.functions,
-      primaryButtonText: 'OK',
-      content: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Applied to the expression above. ${widget.operations.length == 1 ? 'This tool offers' : 'This tool offers'} '
-            '${widget.operations.length == 1 ? 'one operation' : '${widget.operations.length} operations'}:',
-          ),
-          const SizedBox(height: 16),
-          for (final operation in widget.operations)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.arrow_right,
-                    size: 18,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          operation.label,
-                          style: Theme.of(context).textTheme.titleSmall,
-                        ),
-                        Text(
-                          operation.description,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          const SizedBox(height: 8),
-          Text(
-            'Reported by the engine: ${reportedByEngine.join(', ')}',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
+      description: 'Applied to the expression above. This tool offers: '
+          '$names. Results also include the other equivalent forms of the same '
+          'expression as chips, so you can compare them without retyping.',
+      notes: [
+        for (final operation in widget.operations)
+          '${operation.label} — ${operation.description}',
+        'Results stay exact: 1/3 rather than 0.333, sqrt(2) rather than 1.41.',
+        'The engine reports these operations in total: ${reportedByEngine.join(', ')}.',
+      ],
     );
   }
 
   void _explainLimit() {
-    showAppDialog(
+    showSymbolicHelpDialog(
       context: context,
       uiStyle: ref.read(uiStyleProvider),
       title: 'Why some expressions are refused',
-      icon: Icons.help_outline,
-      primaryButtonText: 'Got it',
-      content: const Text(
-        'Symbolic work has no natural stopping point: a single extra pair of '
-        'brackets can multiply the work needed. To keep the app responsive, very '
-        'large expressions are refused rather than left running.\n\n'
-        'Break the problem into smaller steps and apply them one at a time — '
-        'the result of each step can be fed straight into the next.\n\n'
-        'Some operations also have no symbolic form at all. Rather than show a '
-        'half-finished answer, those are reported as unsupported.',
-      ),
+      description:
+          'Symbolic work has no natural stopping point: a single extra pair of '
+          'brackets can multiply the work needed. To keep the app responsive, '
+          'very large expressions are refused rather than left running. Some '
+          'operations also have no symbolic form at all; those are reported as '
+          'unsupported rather than answered with a half-finished expression.',
+      notes: const [
+        'Break the problem into smaller steps and apply them one at a time — the '
+            'result of each step can be fed straight into the next.',
+      ],
     );
   }
 
