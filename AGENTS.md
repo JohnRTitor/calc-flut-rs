@@ -218,6 +218,17 @@ syntax out of the message. The existing `replaceAll('AnyhowException(', '')`
 pattern in the modular and function-evaluator providers is the thing to avoid,
 not the pattern to copy.
 
+**No two public types in the crate may share a name.** `flutter_rust_bridge`
+keys every generated type by its *bare* name, ignoring the module. A domain
+struct and the transport struct the bridge declares for it — same name, two
+types — collide, and codegen resolves it by keeping `items_of_key[0]` and
+logging at `info` level. Nothing fails; the loser silently loses its binding
+and the symptom shows up later as a decoding bug, not a naming mistake.
+`test/rust_type_name_uniqueness_test.dart` enforces this and runs with
+`flutter test`. When it fires, either rename the domain type or drop the bridge
+mirror and mark the domain type `#[frb]` — but keep the mirror, since the other
+three domains all use it.
+
 ---
 
 ## UI Rules
