@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import 'package:calc_flut_rs/app/theme/ui_style.dart';
+import 'package:calc_flut_rs/shared/layouts/breakpoints.dart';
 import 'package:calc_flut_rs/shared/widgets/glass_utils.dart';
 
 /// A single card in an [AppHubGrid].
@@ -161,7 +162,9 @@ class AppHubGrid extends StatelessWidget {
                 ),
               );
 
-              if (!animateItems) return card;
+              // Purely decorative: a staggered entrance that says nothing. It
+              // does not run at all under reduced motion.
+              if (!animateItems || context.prefersReducedMotion) return card;
 
               return card
                   .animate()

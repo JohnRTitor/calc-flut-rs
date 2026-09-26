@@ -1,3 +1,4 @@
+import 'package:calc_flut_rs/shared/layouts/breakpoints.dart';
 import 'package:calc_flut_rs/shared/widgets/glass_utils.dart';
 import 'package:calc_flut_rs/app/theme/ui_style.dart';
 import 'package:flutter/material.dart';
@@ -21,6 +22,14 @@ enum ButtonType {
 /// Handles both Material and Liquid Glass UI styles internally. Features a scale-down
 /// animation on press and a shake animation if the assigned action fails.
 class AppCalcButton extends StatefulWidget {
+  /// Vertical padding this button adds around its content, in logical pixels.
+  ///
+  /// Exposed because the keypad lays its rows out as flexes and has to know
+  /// how much of a row's height the button will actually spend on padding in
+  /// order to guarantee a minimum tap target. Hard-coding the number in the
+  /// keypad would let the two drift apart silently.
+  static const double verticalPadding = 6.0;
+
   final String text;
   final bool Function()? onPressed;
   final VoidCallback? onLongPress;
@@ -78,10 +87,12 @@ class _AppCalcButtonState extends State<AppCalcButton>
     if (widget.onPressed == null) return;
     if (_shakeController.isAnimating) return;
 
+    // The press itself always runs: reduced motion is a request about movement,
+    // not about whether controls work. Only the shake afterwards is gated.
     final success = widget.onPressed!();
     if (!success && mounted) {
       HapticFeedback.vibrate();
-      _shakeController.forward(from: 0.0);
+      if (!context.prefersReducedMotion) _shakeController.forward(from: 0.0);
     }
   }
 
@@ -159,14 +170,24 @@ class _AppCalcButtonState extends State<AppCalcButton>
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 6.0),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 4.0,
+        vertical: AppCalcButton.verticalPadding,
+      ),
       child:
           AnimatedScale(
+                // Press feedback is a direct response to a touch the user just
+                // made, so it collapses to an instant snap rather than
+                // disappearing.
                 scale: _scale,
-                duration: const Duration(milliseconds: 300),
+                duration: context.motion(const Duration(milliseconds: 300)),
                 curve: Curves.easeOutBack,
                 child: SizedBox.expand(child: buttonChild),
               )
+              // The shake reports a failed action. It is motion with no
+              // information in it beyond "that did not work", so under reduced
+              // motion it is dropped; the calculator's own error text says the
+              // same thing without moving.
               .animate(controller: _shakeController, autoPlay: false)
               .shakeX(hz: 4, amount: 4),
     );

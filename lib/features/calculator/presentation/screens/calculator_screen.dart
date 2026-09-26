@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:calc_flut_rs/features/calculator/presentation/widgets/display_panel.dart';
 import 'package:calc_flut_rs/features/calculator/presentation/widgets/keypad.dart';
-import 'package:calc_flut_rs/shared/layouts/responsive_keypad_layout.dart';
+import 'package:calc_flut_rs/shared/layouts/responsive_workspace_layout.dart';
 
 import 'package:calc_flut_rs/features/calculator/presentation/screens/function_evaluator_screen.dart';
 import 'package:calc_flut_rs/features/history/presentation/screens/history_screen.dart';
+import 'package:calc_flut_rs/features/history/presentation/widgets/recent_history_panel.dart';
 import 'package:calc_flut_rs/features/history/domain/history_category.dart';
 import 'package:calc_flut_rs/app/navigation/route_transitions.dart';
+import 'package:calc_flut_rs/shared/layouts/breakpoints.dart';
 import 'package:calc_flut_rs/shared/widgets/glass_utils.dart';
 import 'package:calc_flut_rs/app/theme/ui_style.dart';
 import 'package:calc_flut_rs/features/settings/presentation/providers/theme_provider.dart';
@@ -61,7 +63,7 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
         ),
         Expanded(
           child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
+            duration: context.motion(const Duration(milliseconds: 300)),
             child: selectedTabIndex == 0
                 ? const _ScientificLayout()
                 : const FunctionEvaluatorScreen(),
@@ -150,18 +152,24 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
   }
 }
 
-class _ScientificLayout extends StatelessWidget {
+class _ScientificLayout extends ConsumerWidget {
   const _ScientificLayout();
 
   @override
-  Widget build(BuildContext context) {
-    return const ResponsiveKeypadLayout(
-      displayArea: DisplayPanel(),
-      keypad: Column(
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ResponsiveWorkspaceLayout(
+      // Pinned, because a numeric keypad is a fixed instrument: the keys have to
+      // stay under the same thumb, so the display area is what gives way.
+      pinControls: true,
+      controlsMinHeight: 450,
+      controls: const Column(
         mainAxisSize: MainAxisSize.min,
         children: [Expanded(child: Keypad())],
       ),
-      keypadMinHeight: 450,
+      displayArea: const DisplayPanel(),
+      // On a desktop-class window, this tool's own recent results beside it.
+      // Everywhere else the width is worth more to the keys than to a list.
+      sidePanel: RecentHistoryPanel(category: HistoryCategory.calculator),
     );
   }
 }

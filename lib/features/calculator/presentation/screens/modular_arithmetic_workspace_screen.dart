@@ -6,11 +6,15 @@ import 'package:calc_flut_rs/app/navigation/route_transitions.dart';
 import 'package:calc_flut_rs/app/theme/ui_style.dart';
 import 'package:calc_flut_rs/features/history/domain/history_category.dart';
 import 'package:calc_flut_rs/features/history/presentation/screens/history_screen.dart';
+import 'package:calc_flut_rs/features/history/presentation/widgets/recent_history_panel.dart';
 import 'package:calc_flut_rs/features/settings/presentation/providers/theme_provider.dart';
 import 'package:calc_flut_rs/features/calculator/presentation/widgets/modular_arithmetic/structure_explorer.dart';
 import 'package:calc_flut_rs/features/calculator/presentation/widgets/modular_arithmetic/modular_onboarding_overlay.dart';
 import 'package:calc_flut_rs/shared/widgets/app_button.dart';
 import 'package:calc_flut_rs/shared/widgets/app_dropdown_menu.dart';
+import 'package:calc_flut_rs/shared/layouts/breakpoints.dart';
+import 'package:calc_flut_rs/shared/layouts/responsive_workspace_layout.dart';
+import 'package:calc_flut_rs/shared/widgets/glass_utils.dart';
 
 import 'package:calc_flut_rs/features/calculator/presentation/widgets/modular_arithmetic/modular_arithmetic_workspace_switcher.dart';
 import 'package:calc_flut_rs/features/calculator/presentation/widgets/modular_arithmetic/modular_context_card.dart';
@@ -111,7 +115,7 @@ class _ModularArithmeticWorkspaceScreenState
           ),
           Expanded(
             child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
+              duration: context.motion(const Duration(milliseconds: 300)),
               switchInCurve: Curves.easeOut,
               switchOutCurve: Curves.easeIn,
               child: _isEvaluatorSelected
@@ -161,125 +165,113 @@ class _ModularArithmeticWorkspaceScreenState
       ),
     ];
 
-    return CustomScrollView(
-      slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          sliver: SliverToBoxAdapter(
-            child: ModularContextCard(
+    return ResponsiveWorkspaceLayout(
+      padding: EdgeInsets.only(
+        left: 16.0,
+        right: 16.0,
+        top: 8.0,
+        bottom: 8.0 + MediaQuery.paddingOf(context).bottom,
+      ),
+      gap: const SizedBox(height: 16),
+      displayArea: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ModularContextCard(
+            uiStyle: uiStyle,
+            currentTypeLabel: currentLabel,
+            typeEntries: typeEntries,
+            modulusController: _modController,
+            modulusHint: state.mode == ModularMode.field
+                ? 'Prime p'
+                : 'Modulus n',
+            onModulusChanged: (val) {
+              ref
+                  .read(modularArithmeticWorkspaceProvider.notifier)
+                  .updateModulus(val);
+            },
+          ),
+          const SizedBox(height: 16),
+          ModularArithmeticExpressionEditor(
+            uiStyle: uiStyle,
+            controller: _exprController,
+            hintText: state.mode == ModularMode.crt
+                ? 'crt(rem1 mod mod1, ...)'
+                : 'e.g. powmod(2, 10) or 5 + 7',
+            onChanged: (val) {
+              ref
+                  .read(modularArithmeticWorkspaceProvider.notifier)
+                  .updateExpression(val);
+            },
+          ),
+        ],
+      ),
+      // Unpinned, and now deliberately the same choice as the Structure
+      // Explorer tab one switch away. The result's height depends entirely on
+      // what was asked, so a pinned footer would either squeeze it or float
+      // above it at an arbitrary distance.
+      controls: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ModularArithmeticResultCard(
+            uiStyle: uiStyle,
+            error: state.error,
+            result: state.result,
+            details: state.details,
+            steps: state.steps,
+            preview: state.preview,
+            showResult: state.showResult,
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            height: LayoutMetrics.standard.buttonHeight + 8,
+            child: AppCalcButton(
+              text: 'Evaluate',
+              type: ButtonType.equals,
               uiStyle: uiStyle,
-              currentTypeLabel: currentLabel,
-              typeEntries: typeEntries,
-              modulusController: _modController,
-              modulusHint: state.mode == ModularMode.field
-                  ? 'Prime p'
-                  : 'Modulus n',
-              onModulusChanged: (val) {
+              onPressed: () {
                 ref
                     .read(modularArithmeticWorkspaceProvider.notifier)
-                    .updateModulus(val);
+                    .evaluate();
+                return true;
               },
+              icon: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.calculate, size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'Evaluate',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-        SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          sliver: SliverToBoxAdapter(
-            child: ModularArithmeticExpressionEditor(
-              uiStyle: uiStyle,
-              controller: _exprController,
-              hintText: state.mode == ModularMode.crt
-                  ? 'crt(rem1 mod mod1, ...)'
-                  : 'e.g. powmod(2, 10) or 5 + 7',
-              onChanged: (val) {
-                ref
-                    .read(modularArithmeticWorkspaceProvider.notifier)
-                    .updateExpression(val);
-              },
-            ),
-          ),
-        ),
-        SliverPadding(
-          padding: EdgeInsets.only(
-            left: 16.0,
-            right: 16.0,
-            top: 8.0,
-            bottom: 8.0 + MediaQuery.paddingOf(context).bottom,
-          ),
-          sliver: SliverToBoxAdapter(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 16),
-                ModularArithmeticResultCard(
+          const SizedBox(height: 8),
+          Center(
+            child: TextButton.icon(
+              onPressed: () {
+                ModularArithmeticHelpBottomSheet.show(
+                  context,
                   uiStyle: uiStyle,
-                  error: state.error,
-                  result: state.result,
-                  details: state.details,
-                  steps: state.steps,
-                  preview: state.preview,
-                  showResult: state.showResult,
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  height: 64,
-                  child: AppCalcButton(
-                    text: 'Evaluate',
-                    type: ButtonType.equals,
-                    uiStyle: uiStyle,
-                    onPressed: () {
-                      ref
-                          .read(modularArithmeticWorkspaceProvider.notifier)
-                          .evaluate();
-                      return true;
-                    },
-                    icon: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.calculate, size: 20),
-                        SizedBox(width: 8),
-                        Text(
-                          'Evaluate',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Center(
-                  child: TextButton.icon(
-                    onPressed: () {
-                      ModularArithmeticHelpBottomSheet.show(
-                        context,
-                        uiStyle: uiStyle,
-                      );
-                    },
-                    icon: Icon(
-                      Icons.help_outline,
-                      color: uiStyle == UiStyle.liquidGlass
-                          ? Colors.white70
-                          : Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                    label: Text(
-                      'Examples & Help',
-                      style: TextStyle(
-                        color: uiStyle == UiStyle.liquidGlass
-                            ? Colors.white70
-                            : Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
+                );
+              },
+              icon: Icon(
+                Icons.help_outline,
+                color: onGlassSecondary(context, uiStyle),
+              ),
+              label: Text(
+                'Examples & Help',
+                style: TextStyle(color: onGlassSecondary(context, uiStyle)),
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
+      // This tool's own recent results, on a desktop-class window only.
+      sidePanel: RecentHistoryPanel(
+        category: HistoryCategory.modularArithmetic,
+      ),
     );
   }
 }

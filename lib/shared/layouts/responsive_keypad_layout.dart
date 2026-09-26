@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:calc_flut_rs/shared/layouts/breakpoints.dart';
 
-/// A standardized layout engine for screens that contain a top display area
-/// and a bottom keypad area (e.g., calculators, converters).
+import 'package:calc_flut_rs/shared/layouts/responsive_workspace_layout.dart';
+
+/// A [ResponsiveWorkspaceLayout] shaped for a screen whose controls are a
+/// keypad.
 ///
-/// Automatically handles constrained vertical space (e.g., split-screen, landscape)
-/// by switching from a rigid Flex layout to a scrollable layout, preventing the
-/// keypad and display from becoming unreadably compressed.
+/// Retained as a name because three screens legitimately are keypad-shaped — the
+/// loan and investment calculators, and the converter — and saying
+/// "controls" there would lose the information that the keys must stay under one
+/// thumb. It is a thin wrapper, not a second implementation: the
+/// short-screen fallback and the pinned arrangement live in one place, so the
+/// two layouts cannot drift apart the way the originals did.
 class ResponsiveKeypadLayout extends StatelessWidget {
   /// The top section of the screen, usually containing results, inputs, and charts.
   final Widget displayArea;
@@ -35,46 +39,13 @@ class ResponsiveKeypadLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.isShortScreen) {
-          // Constrained Height: Fallback to scrolling to preserve usability.
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                // We do not restrict the display area's height here, allowing it to size to its content
-                displayArea,
-
-                // Keep the keypad at a readable size and ensure it sits above the system nav bar
-                SafeArea(
-                  top: false,
-                  bottom: true,
-                  child: SizedBox(
-                    height: keypadMinHeight ?? 350,
-                    child: keypad,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-
-        // Normal Height: Display area shrinks to content (up to its max proportion),
-        // while the keypad expands to fill all remaining space.
-        return Column(
-          children: [
-            ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight:
-                    constraints.maxHeight *
-                    (displayFlex / (displayFlex + keypadFlex)),
-              ),
-              child: displayArea,
-            ),
-            Expanded(child: SafeArea(top: false, bottom: true, child: keypad)),
-          ],
-        );
-      },
+    return ResponsiveWorkspaceLayout(
+      displayArea: displayArea,
+      controls: keypad,
+      pinControls: true,
+      displayFlex: displayFlex,
+      controlsFlex: keypadFlex,
+      controlsMinHeight: keypadMinHeight ?? 350,
     );
   }
 }

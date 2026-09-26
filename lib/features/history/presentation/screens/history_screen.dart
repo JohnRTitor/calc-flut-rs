@@ -1,45 +1,42 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:calc_flut_rs/features/history/domain/history_category.dart';
 import 'package:calc_flut_rs/features/history/presentation/providers/history_provider.dart';
-import 'package:calc_flut_rs/features/calculator/presentation/providers/calculator_provider.dart';
-import 'package:calc_flut_rs/features/calculator/presentation/providers/function_evaluator_provider.dart';
-import 'package:calc_flut_rs/features/calculator/presentation/providers/modular_arithmetic_workspace_provider.dart';
+import 'package:calc_flut_rs/features/history/presentation/widgets/history_entry_card.dart';
+import 'package:calc_flut_rs/features/history/presentation/widgets/history_filter_bar.dart';
 import 'package:calc_flut_rs/features/settings/presentation/providers/theme_provider.dart';
-import 'package:calc_flut_rs/features/symbolic_math/presentation/providers/symbolic_history.dart';
 import 'package:calc_flut_rs/app/theme/ui_style.dart';
-import 'package:calc_flut_rs/shared/widgets/multi_pill_switcher.dart';
 import 'package:calc_flut_rs/shared/widgets/app_dialog.dart';
-import 'package:calc_flut_rs/shared/widgets/glass_utils.dart';
 import 'package:calc_flut_rs/generated/rust/shared/history.dart';
 
 class HistoryScreen extends ConsumerStatefulWidget {
-  final HistoryCategory initialCategory;
+  /// The tool to open filtered to.
+  ///
+  /// Passing a category also selects its group, so a tool deep-linked to from
+  /// its own app bar lands with both rows already resolved.
+  final HistoryCategory? initialCategory;
 
   /// When true the screen is hosted as a top level section inside `AppShell`,
   /// which already renders the title in its app bar. Suppresses this screen's
   /// own app bar so the title is not shown twice.
   final bool embedded;
 
-  const HistoryScreen({
-    super.key,
-    this.initialCategory = HistoryCategory.calculator,
-    this.embedded = false,
-  });
+  const HistoryScreen({super.key, this.initialCategory, this.embedded = false});
 
   @override
   ConsumerState<HistoryScreen> createState() => _HistoryScreenState();
 }
 
 class _HistoryScreenState extends ConsumerState<HistoryScreen> {
-  late HistoryCategory _selectedCategory;
+  HistoryGroup? _selectedGroup;
+  HistoryCategory? _selectedCategory;
 
   @override
   void initState() {
     super.initState();
     _selectedCategory = widget.initialCategory;
+    _selectedGroup = widget.initialCategory?.group;
   }
 
   @override
@@ -58,28 +55,31 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12),
+            padding: const EdgeInsets.only(top: 8.0),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: MultiPillSwitcher(
+                  child: HistoryFilterBar(
                     uiStyle: uiStyle,
-                    labels: HistoryCategory.values.map((c) => c.label).toList(),
-                    tooltips: HistoryCategory.values
-                        .map((category) => category.tooltip)
-                        .toList(),
-                    selectedIndex: HistoryCategory.values.indexOf(
-                      _selectedCategory,
-                    ),
-                    onChanged: (index) {
-                      setState(() {
-                        _selectedCategory = HistoryCategory.values[index];
-                      });
-                    },
+                    selectedGroup: _selectedGroup,
+                    selectedCategory: _selectedCategory,
+                    onGroupChanged: (group) => setState(() {
+                      _selectedGroup = group;
+                      // Changing group drops any tool-level choice, since a
+                      // tool from the previous group is not a filter of the
+                      // new one.
+                      _selectedCategory = null;
+                    }),
+                    onToolChanged: (category) => setState(() {
+                      _selectedCategory = category;
+                    }),
                   ),
                 ),
                 // In embedded mode the shell owns the app bar, so the clear
-                // action lives here beside the category filter instead.
+                // action lives here beside the category filter instead. The
+                // filter rows scroll, so taking this width from them cannot
+                // truncate a label.
                 if (widget.embedded) ...[
                   const SizedBox(width: 4),
                   _buildClearButton(uiStyle),
@@ -91,32 +91,17 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
             child: historyAsync.when(
               data: (history) {
                 final filteredHistory = history
-                    .where((e) => e.category == _selectedCategory.name)
+                    .where(
+                      (e) => historyEntryMatches(
+                        e.category,
+                        group: _selectedGroup,
+                        category: _selectedCategory,
+                      ),
+                    )
                     .toList();
 
                 if (filteredHistory.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          _selectedCategory.icon,
-                          size: 48,
-                          color: theme.colorScheme.onSurfaceVariant.withValues(
-                            alpha: 0.3,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'No ${_selectedCategory.label} history',
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant
-                                .withValues(alpha: 0.5),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
+                  return _buildEmptyState(theme);
                 }
 
                 return ListView.separated(
@@ -143,6 +128,49 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     );
   }
 
+  /// Names the tools the current filter covers, so the empty state can say
+  /// what is missing rather than just showing a blank list.
+  String get _selectionLabel =>
+      historySelectionLabel(group: _selectedGroup, category: _selectedCategory);
+
+  Widget _buildEmptyState(ThemeData theme) {
+    final icon = _selectedCategory?.icon ?? _selectedGroup?.icon;
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null)
+            Icon(
+              icon,
+              size: 48,
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+            ),
+          const SizedBox(height: 12),
+          Text(
+            _selectedCategory == null && _selectedGroup == null
+                ? 'No history yet'
+                : 'No $_selectionLabel history',
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+            ),
+          ),
+          if (_selectedCategory == null && _selectedGroup == null) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Results you compute in any tool are saved here.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant.withValues(
+                  alpha: 0.4,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildClearButton(UiStyle uiStyle) {
     return IconButton(
       icon: const Icon(Icons.delete_sweep_outlined),
@@ -150,7 +178,13 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       onPressed: () async {
         final historyList = ref.read(historyProvider).value ?? [];
         final filteredList = historyList
-            .where((e) => e.category == _selectedCategory.name)
+            .where(
+              (e) => historyEntryMatches(
+                e.category,
+                group: _selectedGroup,
+                category: _selectedCategory,
+              ),
+            )
             .toList();
 
         if (filteredList.isEmpty) return;
@@ -159,12 +193,20 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           context,
           filteredList.length,
           uiStyle,
-          _selectedCategory.label,
+          _selectionLabel,
         );
-        if (confirm == true) {
-          ref
-              .read(historyProvider.notifier)
-              .clearCategory(_selectedCategory.name);
+        if (confirm != true) return;
+
+        // Clear the names that are *actually on disk*, not the names this build
+        // writes. They are not the same set: entries predating the split are
+        // stored under the shared `symbolic` name, and entries from a tool this
+        // build no longer has are stored under names nothing here knows. Clearing
+        // the current enum instead would report success and leave every one of
+        // those in place — the list would refill the moment it refreshed, and
+        // the user would watch a delete do nothing.
+        final storedNames = {for (final entry in filteredList) entry.category};
+        for (final name in storedNames) {
+          ref.read(historyProvider.notifier).clearCategory(name);
         }
       },
     );
@@ -175,192 +217,16 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     HistoryEntry entry,
     UiStyle uiStyle,
   ) {
-    final theme = Theme.of(context);
-
-    // Parse the preview JSON
-    Map<String, dynamic> previewData = {};
-    try {
-      previewData = jsonDecode(entry.preview);
-    } catch (_) {}
-
-    return Dismissible(
-      key: ValueKey(entry.id),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 24),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.errorContainer,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Icon(
-          Icons.delete_outline,
-          color: theme.colorScheme.onErrorContainer,
-        ),
-      ),
-      onDismissed: (_) {
-        ref.read(historyProvider.notifier).delete(entry.id);
+    return HistoryEntryCard(
+      entry: entry,
+      uiStyle: uiStyle,
+      onRestored: (tool) {
+        // Only a tool-level filter has anything to hand back. Restoring from
+        // the "All" view or a group view must not silently change the tab a
+        // caller is showing.
+        if (tool != null) Navigator.pop(context, tool);
       },
-      child: SharedSurface(
-        uiStyle: uiStyle,
-        glassRole: GlassSurfaceRole.card,
-        borderRadius: BorderRadius.circular(16),
-        padding: EdgeInsets.zero,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () => _restoreSnapshot(entry),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  _selectedCategory.icon,
-                  size: 20,
-                  color: theme.colorScheme.primary.withValues(alpha: 0.7),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: _buildPreviewContent(previewData, theme),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
-  }
-
-  List<Widget> _buildPreviewContent(
-    Map<String, dynamic> previewData,
-    ThemeData theme,
-  ) {
-    switch (_selectedCategory) {
-      case HistoryCategory.calculator:
-        return [
-          Text(
-            previewData['expression']?.toString() ?? '',
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            textAlign: TextAlign.right,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '= ${previewData['result']?.toString() ?? ''}',
-            style: theme.textTheme.titleLarge?.copyWith(
-              color: theme.colorScheme.primary,
-              fontWeight: FontWeight.w500,
-            ),
-            textAlign: TextAlign.right,
-          ),
-        ];
-      case HistoryCategory.functionEvaluator:
-        return [
-          Text(
-            previewData['functionDefinition']?.toString() ?? '',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-            ),
-            textAlign: TextAlign.right,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            previewData['expression']?.toString() ?? '',
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            textAlign: TextAlign.right,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '= ${previewData['result']?.toString() ?? ''}',
-            style: theme.textTheme.titleLarge?.copyWith(
-              color: theme.colorScheme.primary,
-              fontWeight: FontWeight.w500,
-            ),
-            textAlign: TextAlign.right,
-          ),
-        ];
-      case HistoryCategory.modularArithmetic:
-        return [
-          Text(
-            '${previewData['operation']?.toString() ?? ''} mod ${previewData['modulus']?.toString() ?? ''}',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-            ),
-            textAlign: TextAlign.right,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            previewData['inputs']?.toString() ?? '',
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            textAlign: TextAlign.right,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '= ${previewData['result']?.toString() ?? ''}',
-            style: theme.textTheme.titleLarge?.copyWith(
-              color: theme.colorScheme.primary,
-              fontWeight: FontWeight.w500,
-            ),
-            textAlign: TextAlign.right,
-          ),
-        ];
-      case HistoryCategory.symbolic:
-        return [
-          Text(
-            previewData['operation']?.toString() ?? '',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-            ),
-            textAlign: TextAlign.right,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            previewData['expression']?.toString() ?? '',
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            textAlign: TextAlign.right,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '= ${previewData['result']?.toString() ?? ''}',
-            style: theme.textTheme.titleLarge?.copyWith(
-              color: theme.colorScheme.primary,
-              fontWeight: FontWeight.w500,
-            ),
-            textAlign: TextAlign.right,
-          ),
-        ];
-    }
-  }
-
-  void _restoreSnapshot(HistoryEntry entry) {
-    switch (_selectedCategory) {
-      case HistoryCategory.calculator:
-        ref.read(calculatorProvider.notifier).restoreSnapshot(entry.snapshot);
-        break;
-      case HistoryCategory.functionEvaluator:
-        ref
-            .read(functionEvaluatorProvider.notifier)
-            .restoreSnapshot(entry.snapshot);
-        break;
-      case HistoryCategory.modularArithmetic:
-        ref
-            .read(modularArithmeticWorkspaceProvider.notifier)
-            .restoreSnapshot(entry.snapshot);
-        break;
-      case HistoryCategory.symbolic:
-        restoreSymbolicSnapshot(ref, entry.snapshot);
-        break;    }
-    Navigator.pop(context, _selectedCategory);
   }
 
   Future<bool?> _showClearHistoryDialog(

@@ -1,10 +1,27 @@
 import 'package:flutter/material.dart';
+
 import 'package:calc_flut_rs/app/theme/ui_style.dart';
 import 'package:calc_flut_rs/generated/rust/bridge/modular_arithmetic.dart';
-import 'package:calc_flut_rs/shared/widgets/glass_utils.dart';
+import 'package:calc_flut_rs/shared/layouts/breakpoints.dart';
 import 'package:calc_flut_rs/shared/widgets/app_dialog.dart';
 import 'package:calc_flut_rs/features/calculator/presentation/widgets/modular_arithmetic/cayley_table_view.dart';
+import 'package:calc_flut_rs/features/calculator/presentation/widgets/modular_arithmetic/modular_analysis_metrics.dart';
+import 'package:calc_flut_rs/features/calculator/presentation/widgets/modular_arithmetic/modular_analysis_table.dart';
 
+/// The structure of a ring, group or field, as a summary grid plus the detail
+/// behind each figure.
+///
+/// The summary tiles are the only index there is, and each one *is* its
+/// section's expand/collapse trigger. The two used to be separate: a tile
+/// showed "Zero Divisors: 31" and a section below showed "Zero Divisors — 31
+/// items", so the same number appeared twice with nothing joining them.
+///
+/// They were wired together, but the wiring did not work. Tapping a tile set
+/// the section's `isExpanded` flag and passed it to an `ExpansionTile` as
+/// `initiallyExpanded` — a parameter Flutter reads once, at construction. After
+/// the first frame it is ignored, so the tap scrolled to a section that stayed
+/// shut: an affordance that looked live and did nothing. Hence the controlled
+/// section below, which has no such one-shot parameter.
 class ModularArithmeticAnalysisGrid extends StatefulWidget {
   final UiStyle uiStyle;
   final StructureAnalysis analysis;
@@ -22,38 +39,71 @@ class ModularArithmeticAnalysisGrid extends StatefulWidget {
       _ModularArithmeticAnalysisGridState();
 }
 
+/// The detail sections a summary tile can open.
+///
+/// Ordered as they appear in the summary, so the two read as one list.
+enum _Detail {
+  generators,
+  units,
+  zeroDivisors,
+  idempotents,
+  nilpotents,
+  inverses,
+  elementOrders,
+  cayleyTable,
+}
+
 class _ModularArithmeticAnalysisGridState
     extends State<ModularArithmeticAnalysisGrid> {
-  final ScrollController _scrollController = ScrollController();
+  final Set<_Detail> _expanded = <_Detail>{};
 
-  final GlobalKey _generatorsKey = GlobalKey();
-  final GlobalKey _unitsKey = GlobalKey();
-  final GlobalKey _zeroDivisorsKey = GlobalKey();
-  final GlobalKey _idempotentsKey = GlobalKey();
-  final GlobalKey _nilpotentsKey = GlobalKey();
-  final GlobalKey _inversesKey = GlobalKey();
-  final GlobalKey _elementOrdersKey = GlobalKey();
+  final Map<_Detail, GlobalKey> _sectionKeys = {
+    for (final detail in _Detail.values) detail: GlobalKey(),
+  };
 
-  bool _generatorsExpanded = false;
-  bool _unitsExpanded = false;
-  bool _zeroDivisorsExpanded = false;
-  bool _idempotentsExpanded = false;
-  bool _nilpotentsExpanded = false;
-  bool _inversesExpanded = false;
-  bool _elementOrdersExpanded = false;
+  /// The sections this analysis actually has content for.
+  ///
+  /// A tile with nothing behind it is not a trigger, and a section with no tile
+  /// would be unreachable — so both are derived from this one list.
+  List<_Detail> get _availableDetails {
+    final analysis = widget.analysis;
+    return [
+      if (analysis.generators.isNotEmpty) _Detail.generators,
+      if (analysis.units.isNotEmpty) _Detail.units,
+      if (analysis.zeroDivisors.isNotEmpty) _Detail.zeroDivisors,
+      if (analysis.idempotents.isNotEmpty) _Detail.idempotents,
+      if (analysis.nilpotents.isNotEmpty) _Detail.nilpotents,
+      if (analysis.inverses.isNotEmpty) _Detail.inverses,
+      if (analysis.elementOrders.isNotEmpty) _Detail.elementOrders,
+      if (analysis.cayleyTable != null) _Detail.cayleyTable,
+    ];
+  }
 
-  void _scrollToAndExpand(GlobalKey key, Function() expandAction) {
-    expandAction();
-    // Allow time for expansion animation before scrolling
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (key.currentContext != null) {
-        Scrollable.ensureVisible(
-          key.currentContext!,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-          alignment: 0.1, // Scroll so it's near the top
-        );
+  /// Opens or closes a section, then brings it into view when opening.
+  ///
+  /// The scroll is deferred by one frame because the section is taller when
+  /// expanded, and scrolling to a position computed against the collapsed
+  /// height would land in the wrong place.
+  void _toggle(_Detail detail) {
+    final isNowOpen = !_expanded.contains(detail);
+    setState(() {
+      if (isNowOpen) {
+        _expanded.add(detail);
+      } else {
+        _expanded.remove(detail);
       }
+    });
+
+    if (!isNowOpen) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = _sectionKeys[detail]?.currentContext;
+      if (context == null || !mounted) return;
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        alignment: 0.05,
+      );
     });
   }
 
@@ -64,7 +114,11 @@ class _ModularArithmeticAnalysisGridState
       title: 'Data Truncated',
       icon: Icons.info_outline_rounded,
       content: const Text(
-          'Because this mathematical structure is very large, detailed lists of elements (such as inverses or zero divisors) have been capped at 10,000 items to preserve app performance. The counts shown in the metrics grid represent the true mathematical counts.'),
+        'Because this mathematical structure is very large, detailed lists of '
+        'elements (such as inverses or zero divisors) have been capped at '
+        '10,000 items to preserve app performance. The counts shown in the '
+        'metrics grid represent the true mathematical counts.',
+      ),
       primaryButtonText: 'Understood',
       onPrimaryButtonPressed: () => Navigator.of(context).pop(),
     );
@@ -73,570 +127,195 @@ class _ModularArithmeticAnalysisGridState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isField = widget.analysis.classification.toLowerCase().contains('field');
-    final typeStr = isField ? 'Field' : 'Ring';
+    final isField = widget.analysis.classification.toLowerCase().contains(
+      'field',
+    );
 
-    return SingleChildScrollView(
-      controller: _scrollController,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (widget.interpretedAs != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: Text(
-                widget.interpretedAs!,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.primary,
-                  fontStyle: FontStyle.italic,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          if (widget.analysis.isTruncated)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: SharedSurface(
-                uiStyle: widget.uiStyle,
-                glassRole: GlassSurfaceRole.accent,
-                frosted: true,
-                padding: const EdgeInsets.all(12),
-                borderRadius: BorderRadius.circular(12),
-                child: Row(
-                  children: [
-                    Icon(Icons.warning_amber_rounded, color: theme.colorScheme.error),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Large dataset: Item lists are capped at 10,000.',
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: _showTruncationInfo,
-                      child: const Text('Learn More'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (widget.interpretedAs != null) ...[
           Text(
-            'Statistics Grid',
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: widget.uiStyle == UiStyle.liquidGlass
-                  ? Colors.white70
-                  : theme.colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.bold,
+            widget.interpretedAs!,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.primary,
+              fontStyle: FontStyle.italic,
             ),
+            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 12),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              int crossAxisCount = constraints.maxWidth > 600 ? 3 : 2;
-              double width = (constraints.maxWidth - (8 * (crossAxisCount - 1))) /
-                  crossAxisCount;
-
-              return Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  SizedBox(
-                    width: width,
-                    child: _MetricCard(
-                      uiStyle: widget.uiStyle,
-                      title: 'Type:',
-                      value: typeStr,
-                    ),
-                  ),
-                  SizedBox(
-                    width: width,
-                    child: _MetricCard(
-                      uiStyle: widget.uiStyle,
-                      title: 'Elements:',
-                      value: widget.analysis.order,
-                    ),
-                  ),
-                  SizedBox(
-                    width: width,
-                    child: _MetricCard(
-                      uiStyle: widget.uiStyle,
-                      title: 'Generators:',
-                      value: widget.analysis.generators.length.toString(),
-                      onTap: widget.analysis.generators.isNotEmpty
-                          ? () => _scrollToAndExpand(_generatorsKey, () {
-                                setState(() => _generatorsExpanded = true);
-                              })
-                          : null,
-                    ),
-                  ),
-                  SizedBox(
-                    width: width,
-                    child: _MetricCard(
-                      uiStyle: widget.uiStyle,
-                      title: 'Units:',
-                      value: widget.analysis.unitsCount,
-                      onTap: widget.analysis.units.isNotEmpty
-                          ? () => _scrollToAndExpand(_unitsKey, () {
-                                setState(() => _unitsExpanded = true);
-                              })
-                          : null,
-                    ),
-                  ),
-                  SizedBox(
-                    width: width,
-                    child: _MetricCard(
-                      uiStyle: widget.uiStyle,
-                      title: 'Zero Divisors:',
-                      value: widget.analysis.zeroDivisorsCount,
-                      onTap: widget.analysis.zeroDivisors.isNotEmpty
-                          ? () => _scrollToAndExpand(_zeroDivisorsKey, () {
-                                setState(() => _zeroDivisorsExpanded = true);
-                              })
-                          : null,
-                    ),
-                  ),
-                  SizedBox(
-                    width: width,
-                    child: _MetricCard(
-                      uiStyle: widget.uiStyle,
-                      title: 'Idempotents:',
-                      value: widget.analysis.idempotentsCount,
-                      onTap: widget.analysis.idempotents.isNotEmpty
-                          ? () => _scrollToAndExpand(_idempotentsKey, () {
-                                setState(() => _idempotentsExpanded = true);
-                              })
-                          : null,
-                    ),
-                  ),
-                  SizedBox(
-                    width: width,
-                    child: _MetricCard(
-                      uiStyle: widget.uiStyle,
-                      title: 'Nilpotents:',
-                      value: widget.analysis.nilpotentsCount,
-                      onTap: widget.analysis.nilpotents.isNotEmpty
-                          ? () => _scrollToAndExpand(_nilpotentsKey, () {
-                                setState(() => _nilpotentsExpanded = true);
-                              })
-                          : null,
-                    ),
-                  ),
-                  SizedBox(
-                    width: width,
-                    child: _MetricCard(
-                      uiStyle: widget.uiStyle,
-                      title: 'Inverses:',
-                      value: widget.analysis.inverses.length.toString(),
-                      onTap: widget.analysis.inverses.isNotEmpty
-                          ? () => _scrollToAndExpand(_inversesKey, () {
-                                setState(() => _inversesExpanded = true);
-                              })
-                          : null,
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-          const SizedBox(height: 32),
-          Text(
-            'Detailed Structure',
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: widget.uiStyle == UiStyle.liquidGlass
-                  ? Colors.white70
-                  : theme.colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          if (widget.analysis.generators.isNotEmpty)
-            _ExpandableDataSection(
-              key: _generatorsKey,
-              uiStyle: widget.uiStyle,
-              title: 'Generators',
-              count: widget.analysis.generators.length.toString(),
-              isExpanded: _generatorsExpanded,
-              onExpansionChanged: (val) =>
-                  setState(() => _generatorsExpanded = val),
-              child: _DataChipGrid(items: widget.analysis.generators),
-            ),
-          if (widget.analysis.units.isNotEmpty)
-            _ExpandableDataSection(
-              key: _unitsKey,
-              uiStyle: widget.uiStyle,
-              title: 'Units',
-              count: widget.analysis.unitsCount,
-              isExpanded: _unitsExpanded,
-              onExpansionChanged: (val) => setState(() => _unitsExpanded = val),
-              child: _DataChipGrid(items: widget.analysis.units),
-            ),
-          if (widget.analysis.zeroDivisors.isNotEmpty)
-            _ExpandableDataSection(
-              key: _zeroDivisorsKey,
-              uiStyle: widget.uiStyle,
-              title: 'Zero Divisors',
-              count: widget.analysis.zeroDivisorsCount,
-              isExpanded: _zeroDivisorsExpanded,
-              onExpansionChanged: (val) =>
-                  setState(() => _zeroDivisorsExpanded = val),
-              child: _DataChipGrid(items: widget.analysis.zeroDivisors),
-            ),
-          if (widget.analysis.idempotents.isNotEmpty)
-            _ExpandableDataSection(
-              key: _idempotentsKey,
-              uiStyle: widget.uiStyle,
-              title: 'Idempotents',
-              count: widget.analysis.idempotentsCount,
-              isExpanded: _idempotentsExpanded,
-              onExpansionChanged: (val) =>
-                  setState(() => _idempotentsExpanded = val),
-              child: _DataChipGrid(items: widget.analysis.idempotents),
-            ),
-          if (widget.analysis.nilpotents.isNotEmpty)
-            _ExpandableDataSection(
-              key: _nilpotentsKey,
-              uiStyle: widget.uiStyle,
-              title: 'Nilpotents',
-              count: widget.analysis.nilpotentsCount,
-              isExpanded: _nilpotentsExpanded,
-              onExpansionChanged: (val) =>
-                  setState(() => _nilpotentsExpanded = val),
-              child: _DataChipGrid(items: widget.analysis.nilpotents),
-            ),
-          if (widget.analysis.inverses.isNotEmpty)
-            _ExpandableDataSection(
-              key: _inversesKey,
-              uiStyle: widget.uiStyle,
-              title: 'Inverses',
-              count: widget.analysis.inverses.length.toString(),
-              isExpanded: _inversesExpanded,
-              onExpansionChanged: (val) =>
-                  setState(() => _inversesExpanded = val),
-              child: _InverseTable(
-                  uiStyle: widget.uiStyle, inverses: widget.analysis.inverses),
-            ),
-          if (widget.analysis.elementOrders.isNotEmpty)
-            _ExpandableDataSection(
-              key: _elementOrdersKey,
-              uiStyle: widget.uiStyle,
-              title: 'Element Orders',
-              count: widget.analysis.elementOrders.length.toString(),
-              isExpanded: _elementOrdersExpanded,
-              onExpansionChanged: (val) =>
-                  setState(() => _elementOrdersExpanded = val),
-              child: _ElementOrderTable(
-                  uiStyle: widget.uiStyle,
-                  orders: widget.analysis.elementOrders),
-            ),
-          if (widget.analysis.cayleyTable != null)
-            _ExpandableDataSection(
-              key: const ValueKey('cayley_table'),
-              uiStyle: widget.uiStyle,
-              title: 'Cayley Table',
-              count: '1',
-              isExpanded: true,
-              onExpansionChanged: (_) {},
-              child: CayleyTableView(
-                uiStyle: widget.uiStyle,
-                cayleyTable: widget.analysis.cayleyTable!,
-                identity: widget.analysis.identity,
-                inverses: widget.analysis.inverses,
-              ),
-            ),
+          SizedBox(height: LayoutMetrics.standard.spacing),
         ],
-      ),
+        if (widget.analysis.isTruncated) ...[
+          ModularAnalysisTruncationNotice(
+            uiStyle: widget.uiStyle,
+            onExplain: _showTruncationInfo,
+          ),
+          SizedBox(height: LayoutMetrics.standard.spacing),
+        ],
+        _buildSummaryGrid(context, isField ? 'Field' : 'Ring'),
+        SizedBox(height: LayoutMetrics.standard.spacing * 2),
+        for (final detail in _availableDetails) _buildSection(context, detail),
+      ],
     );
   }
-}
 
-class _MetricCard extends StatelessWidget {
-  final UiStyle uiStyle;
-  final String title;
-  final String value;
-  final VoidCallback? onTap;
+  Widget _buildSummaryGrid(BuildContext context, String typeStr) {
+    final analysis = widget.analysis;
+    final tiles = <Widget>[
+      ModularAnalysisMetricTile(
+        uiStyle: widget.uiStyle,
+        title: 'Type:',
+        value: typeStr,
+      ),
+      ModularAnalysisMetricTile(
+        uiStyle: widget.uiStyle,
+        title: 'Elements:',
+        value: analysis.order,
+      ),
+      ModularAnalysisMetricTile(
+        uiStyle: widget.uiStyle,
+        title: 'Generators:',
+        value: analysis.generators.length.toString(),
+        onTap: _availableDetails.contains(_Detail.generators)
+            ? () => _toggle(_Detail.generators)
+            : null,
+        isExpanded: _expanded.contains(_Detail.generators),
+      ),
+      ModularAnalysisMetricTile(
+        uiStyle: widget.uiStyle,
+        title: 'Units:',
+        value: analysis.unitsCount,
+        onTap: _availableDetails.contains(_Detail.units)
+            ? () => _toggle(_Detail.units)
+            : null,
+        isExpanded: _expanded.contains(_Detail.units),
+      ),
+      ModularAnalysisMetricTile(
+        uiStyle: widget.uiStyle,
+        title: 'Zero Divisors:',
+        value: analysis.zeroDivisorsCount,
+        onTap: _availableDetails.contains(_Detail.zeroDivisors)
+            ? () => _toggle(_Detail.zeroDivisors)
+            : null,
+        isExpanded: _expanded.contains(_Detail.zeroDivisors),
+      ),
+      ModularAnalysisMetricTile(
+        uiStyle: widget.uiStyle,
+        title: 'Idempotents:',
+        value: analysis.idempotentsCount,
+        onTap: _availableDetails.contains(_Detail.idempotents)
+            ? () => _toggle(_Detail.idempotents)
+            : null,
+        isExpanded: _expanded.contains(_Detail.idempotents),
+      ),
+      ModularAnalysisMetricTile(
+        uiStyle: widget.uiStyle,
+        title: 'Nilpotents:',
+        value: analysis.nilpotentsCount,
+        onTap: _availableDetails.contains(_Detail.nilpotents)
+            ? () => _toggle(_Detail.nilpotents)
+            : null,
+        isExpanded: _expanded.contains(_Detail.nilpotents),
+      ),
+      ModularAnalysisMetricTile(
+        uiStyle: widget.uiStyle,
+        title: 'Inverses:',
+        value: analysis.inverses.length.toString(),
+        onTap: _availableDetails.contains(_Detail.inverses)
+            ? () => _toggle(_Detail.inverses)
+            : null,
+        isExpanded: _expanded.contains(_Detail.inverses),
+      ),
+      // Every section needs a tile, or it has no way to be opened. The Cayley
+      // table in particular used to be pinned open with its own header, so
+      // dropping that header without adding a tile here would have made it
+      // unreachable — a table the app computes and then never shows.
+      ModularAnalysisMetricTile(
+        uiStyle: widget.uiStyle,
+        title: 'Element Orders:',
+        value: analysis.elementOrders.length.toString(),
+        onTap: _availableDetails.contains(_Detail.elementOrders)
+            ? () => _toggle(_Detail.elementOrders)
+            : null,
+        isExpanded: _expanded.contains(_Detail.elementOrders),
+      ),
+      ModularAnalysisMetricTile(
+        uiStyle: widget.uiStyle,
+        title: 'Cayley Table:',
+        value: analysis.cayleyTable == null ? '—' : '1',
+        onTap: _availableDetails.contains(_Detail.cayleyTable)
+            ? () => _toggle(_Detail.cayleyTable)
+            : null,
+        isExpanded: _expanded.contains(_Detail.cayleyTable),
+      ),
+    ];
 
-  const _MetricCard({
-    required this.uiStyle,
-    required this.title,
-    required this.value,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: SharedSurface(
-        uiStyle: uiStyle,
-        glassRole: GlassSurfaceRole.card,
-        frosted: true,
-        borderRadius: BorderRadius.circular(16),
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const spacing = 8.0;
+        final columns = constraints.maxWidth > 600 ? 3 : 2;
+        final width =
+            (constraints.maxWidth - spacing * (columns - 1)) / columns;
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                if (onTap != null)
-                  Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 12,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: onTap != null
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurface,
-              ),
-            ),
+            for (final tile in tiles) SizedBox(width: width, child: tile),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
-}
 
-class _ExpandableDataSection extends StatelessWidget {
-  final UiStyle uiStyle;
-  final String title;
-  final String count;
-  final bool isExpanded;
-  final ValueChanged<bool> onExpansionChanged;
-  final Widget child;
+  /// One detail section, shown only when its tile has opened it.
+  ///
+  /// Carries no header of its own. Repeating the tile's title and count here is
+  /// exactly the duplication this arrangement exists to remove; the tile is
+  /// labelled, and it is the control.
+  Widget _buildSection(BuildContext context, _Detail detail) {
+    if (!_expanded.contains(detail)) return const SizedBox.shrink();
 
-  const _ExpandableDataSection({
-    super.key,
-    required this.uiStyle,
-    required this.title,
-    required this.count,
-    required this.isExpanded,
-    required this.onExpansionChanged,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Card(
-      elevation: 0,
-      color: Colors.transparent,
-      margin: const EdgeInsets.only(bottom: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-        ),
+    final analysis = widget.analysis;
+    final Widget body = switch (detail) {
+      _Detail.generators => ModularAnalysisDataChips(
+        items: analysis.generators,
       ),
-      child: ExpansionTile(
-        title: Text(
-          title,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        subtitle: Text('$count items'),
-        initiallyExpanded: isExpanded,
-        onExpansionChanged: onExpansionChanged,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        collapsedShape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        childrenPadding: const EdgeInsets.all(16),
-        children: [
-          child,
+      _Detail.units => ModularAnalysisDataChips(items: analysis.units),
+      _Detail.zeroDivisors => ModularAnalysisDataChips(
+        items: analysis.zeroDivisors,
+      ),
+      _Detail.idempotents => ModularAnalysisDataChips(
+        items: analysis.idempotents,
+      ),
+      _Detail.nilpotents => ModularAnalysisDataChips(
+        items: analysis.nilpotents,
+      ),
+      _Detail.inverses => ModularAnalysisTable(
+        uiStyle: widget.uiStyle,
+        columnTitles: const ['Element (a)', 'Inverse (a⁻¹)'],
+        rows: [
+          for (final pair in analysis.inverses) [pair.element, pair.inverse],
         ],
       ),
-    );
-  }
-}
-
-class _DataChipGrid extends StatelessWidget {
-  final List<String> items;
-
-  const _DataChipGrid({required this.items});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: items
-            .map((item) => Chip(
-                  label: Text(item),
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ))
-            .toList(),
-      ),
-    );
-  }
-}
-
-class _InverseTable extends StatelessWidget {
-  final UiStyle uiStyle;
-  final List<InversePair> inverses;
-
-  const _InverseTable({
-    required this.uiStyle,
-    required this.inverses,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // Determine the height based on items to avoid infinite height in Column
-    final height = (inverses.length * 48.0) + 56.0; // Header + Row heights
-    final boundedHeight = height > 400 ? 400.0 : height;
-
-    return SizedBox(
-      height: boundedHeight,
-      width: double.infinity,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: Theme.of(context).dividerColor),
-              ),
-            ),
-            child: const Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Element (a)',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    'Inverse (a⁻¹)',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: inverses.length,
-              itemBuilder: (context, index) {
-                final pair = inverses[index];
-                return Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(pair.element),
-                      ),
-                      Expanded(
-                        child: Text(pair.inverse),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
+      _Detail.elementOrders => ModularAnalysisTable(
+        uiStyle: widget.uiStyle,
+        columnTitles: const ['Element (a)', 'Order (k)'],
+        rows: [
+          for (final pair in analysis.elementOrders) [pair.element, pair.order],
         ],
       ),
-    );
-  }
-}
-
-class _ElementOrderTable extends StatelessWidget {
-  final UiStyle uiStyle;
-  final List<ElementOrderPair> orders;
-
-  const _ElementOrderTable({
-    required this.uiStyle,
-    required this.orders,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final height = (orders.length * 48.0) + 56.0;
-    final boundedHeight = height > 400 ? 400.0 : height;
-
-    return SizedBox(
-      height: boundedHeight,
-      width: double.infinity,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: Theme.of(context).dividerColor),
-              ),
-            ),
-            child: const Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Element (a)',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    'Order (k)',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: orders.length,
-              itemBuilder: (context, index) {
-                final pair = orders[index];
-                return Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(pair.element),
-                      ),
-                      Expanded(
-                        child: Text(pair.order),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
+      _Detail.cayleyTable => CayleyTableView(
+        uiStyle: widget.uiStyle,
+        cayleyTable: analysis.cayleyTable!,
+        identity: analysis.identity,
+        inverses: analysis.inverses,
       ),
+    };
+
+    return Padding(
+      key: _sectionKeys[detail],
+      padding: const EdgeInsets.only(bottom: 12),
+      child: body,
     );
   }
 }

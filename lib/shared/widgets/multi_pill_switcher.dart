@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:calc_flut_rs/app/theme/ui_style.dart';
+import 'package:calc_flut_rs/shared/layouts/breakpoints.dart';
 import 'package:calc_flut_rs/shared/widgets/glass_utils.dart';
 import 'package:calc_flut_rs/app/theme/app_theme_extension.dart';
 
@@ -104,17 +105,17 @@ class MultiPillSwitcher extends StatelessWidget {
     return Material(
       color: bgColor,
       borderRadius: BorderRadius.circular(20),
-      animationDuration: const Duration(milliseconds: 200),
+      animationDuration: context.motion(const Duration(milliseconds: 200)),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
         child: AnimatedSize(
-          duration: const Duration(milliseconds: 200),
+          duration: context.motion(const Duration(milliseconds: 200)),
           curve: Curves.easeOutCubic,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 200),
+              duration: context.motion(const Duration(milliseconds: 200)),
               curve: Curves.easeOutCubic,
               style: theme.textTheme.labelMedium!.copyWith(
                 color: fgColor,

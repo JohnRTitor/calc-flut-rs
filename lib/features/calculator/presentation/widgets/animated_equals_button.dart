@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:calc_flut_rs/shared/layouts/breakpoints.dart';
 import 'package:calc_flut_rs/shared/widgets/glass_utils.dart';
 import 'package:calc_flut_rs/app/theme/ui_style.dart';
 import 'package:calc_flut_rs/features/settings/presentation/providers/theme_provider.dart';
@@ -69,7 +70,11 @@ class _AnimatedEqualsButtonState extends ConsumerState<AnimatedEqualsButton>
     final success = await widget.onEvaluate();
     if (!success && mounted) {
       HapticFeedback.vibrate();
-      _controller.forward(from: 0.0);
+      // The shake and the red flash both report a failed evaluation, but both
+      // are motion. Under reduced motion the report is the haptic and the red
+      // error text the display panel shows anyway — dropping the animation must
+      // not drop the feedback with it.
+      if (!context.prefersReducedMotion) _controller.forward(from: 0.0);
     }
   }
 

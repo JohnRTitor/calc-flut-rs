@@ -21,10 +21,18 @@ import 'package:calc_flut_rs/generated/rust/bridge/symbolic.dart' as rust_symbol
 /// the UI thread: the numeric calculator's synchronous fast path is untouched
 /// and unaffected by this feature.
 class SymbolicWorkspace extends Notifier<SymbolicWorkspaceState> {
-  SymbolicWorkspace(this.operations);
+  SymbolicWorkspace(this.operations, this.historyCategory);
 
   /// The operations this tool offers, in presentation order.
   final List<SymbolicOperation> operations;
+
+  /// The history category this tool's results are filed under.
+  ///
+  /// Algebra and Calculus are the same class with different operation lists, so
+  /// the tool's identity cannot be inferred from the class — it has to be said
+  /// once, here, or both would file under whichever category the constructor
+  /// happened to default to.
+  final HistoryCategory historyCategory;
 
   @override
   SymbolicWorkspaceState build() => SymbolicWorkspaceState(operations: operations);
@@ -200,7 +208,7 @@ class SymbolicWorkspace extends Notifier<SymbolicWorkspaceState> {
   /// Adds the result to the shared, cross-feature history timeline.
   void _recordHistory(SymbolicOperation operation, String result) {
     rust_history.appHistoryAdd(
-      category: HistoryCategory.symbolic.name,
+      category: historyCategory.name,
       preview: jsonEncode({
         'operation': operation.label,
         'expression': state.expression,
@@ -283,11 +291,17 @@ class SymbolicWorkspace extends Notifier<SymbolicWorkspaceState> {
 /// The Algebra workspace: simplify, expand and factor an expression.
 final algebraProvider =
     NotifierProvider<SymbolicWorkspace, SymbolicWorkspaceState>(
-      () => SymbolicWorkspace(SymbolicOperation.algebraOperations),
+      () => SymbolicWorkspace(
+        SymbolicOperation.algebraOperations,
+        HistoryCategory.algebra,
+      ),
     );
 
 /// The Calculus workspace: differentiate an expression.
 final calculusProvider =
     NotifierProvider<SymbolicWorkspace, SymbolicWorkspaceState>(
-      () => SymbolicWorkspace(SymbolicOperation.calculusOperations),
+      () => SymbolicWorkspace(
+        SymbolicOperation.calculusOperations,
+        HistoryCategory.calculus,
+      ),
     );

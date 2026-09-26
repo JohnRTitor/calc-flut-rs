@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:calc_flut_rs/features/history/domain/history_category.dart';
 import 'package:calc_flut_rs/features/settings/presentation/providers/theme_provider.dart';
 import 'package:calc_flut_rs/features/symbolic_math/domain/symbolic_operation.dart';
 import 'package:calc_flut_rs/features/symbolic_math/presentation/providers/symbolic_workspace.dart';
@@ -49,6 +50,7 @@ class _CalculusScreenState extends ConsumerState<CalculusScreen> {
       hintText: 'x^2*sin(x)',
       provider: calculusProvider,
       operations: operations,
+      historyCategory: HistoryCategory.calculus,
       extraControls: Column(
         children: [
           Row(

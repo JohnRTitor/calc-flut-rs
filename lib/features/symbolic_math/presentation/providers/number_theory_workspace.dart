@@ -168,7 +168,7 @@ class NumberTheoryWorkspace extends Notifier<NumberTheoryState> {
     String number,
   ) {
     rust_history.appHistoryAdd(
-      category: HistoryCategory.symbolic.name,
+      category: HistoryCategory.numberTheory.name,
       preview: jsonEncode({
         'operation': 'Number Theory',
         'expression': number,

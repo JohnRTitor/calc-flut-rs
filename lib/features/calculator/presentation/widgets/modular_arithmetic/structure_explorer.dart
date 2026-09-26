@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:calc_flut_rs/features/calculator/presentation/providers/modular_arithmetic_workspace_provider.dart';
+import 'package:calc_flut_rs/features/history/domain/history_category.dart';
+import 'package:calc_flut_rs/features/history/presentation/widgets/recent_history_panel.dart';
 import 'package:calc_flut_rs/features/calculator/presentation/providers/modular_arithmetic_workspace_state.dart';
 import 'package:calc_flut_rs/app/theme/ui_style.dart';
 import 'package:calc_flut_rs/features/settings/presentation/providers/theme_provider.dart';
+import 'package:calc_flut_rs/shared/layouts/breakpoints.dart';
+import 'package:calc_flut_rs/shared/layouts/responsive_workspace_layout.dart';
 import 'package:calc_flut_rs/shared/widgets/app_dropdown_menu.dart';
 import 'package:calc_flut_rs/shared/widgets/app_button.dart';
 
@@ -76,73 +80,74 @@ class _StructureExplorerState extends ConsumerState<StructureExplorer> {
       ),
     ];
 
-    return CustomScrollView(
-      slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          sliver: SliverToBoxAdapter(
-            child: ModularContextCard(
+    return ResponsiveWorkspaceLayout(
+      padding: EdgeInsets.only(
+        left: 16.0,
+        right: 16.0,
+        top: 8.0,
+        bottom: 8.0 + MediaQuery.paddingOf(context).bottom,
+      ),
+      gap: const SizedBox(height: 16),
+      displayArea: ModularContextCard(
+        uiStyle: uiStyle,
+        currentTypeLabel: currentLabel,
+        typeEntries: typeEntries,
+        modulusController: _nController,
+        modulusHint: state.explorerType == 'field' ? 'Prime p' : 'n',
+        onModulusChanged: (val) {
+          ref
+              .read(modularArithmeticWorkspaceProvider.notifier)
+              .setExplorerN(val);
+        },
+      ),
+      // Unpinned, matching the Evaluator tab one switch away. It used to be the
+      // odd one out: a fixed 64px footer pinned below an `Expanded` result
+      // region that was itself a box-scroll nested inside a sliver, so the
+      // button never moved and the results never scrolled with the content.
+      controls: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildResultArea(context, state, uiStyle, theme),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: LayoutMetrics.standard.buttonHeight + 8,
+            child: AppCalcButton(
+              text: state.explorerResult == null
+                  ? 'Analyze Structure'
+                  : 'Analyze Again',
+              type: ButtonType.equals,
               uiStyle: uiStyle,
-              currentTypeLabel: currentLabel,
-              typeEntries: typeEntries,
-              modulusController: _nController,
-              modulusHint: state.explorerType == 'field' ? 'Prime p' : 'n',
-              onModulusChanged: (val) {
+              onPressed: () {
                 ref
                     .read(modularArithmeticWorkspaceProvider.notifier)
-                    .setExplorerN(val);
+                    .analyzeStructure();
+                return true;
               },
-            ),
-          ),
-        ),
-        SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          sliver: SliverFillRemaining(
-            hasScrollBody: true,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 16),
-                Expanded(child: _buildResultArea(context, state, uiStyle, theme)),
-                const SizedBox(height: 16),
-                SizedBox(
-                  height: 64,
-                  child: AppCalcButton(
-                    text: state.explorerResult == null
+              icon: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.analytics, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    state.explorerResult == null
                         ? 'Analyze Structure'
                         : 'Analyze Again',
-                    type: ButtonType.equals,
-                    uiStyle: uiStyle,
-                    onPressed: () {
-                      ref
-                          .read(modularArithmeticWorkspaceProvider.notifier)
-                          .analyzeStructure();
-                      return true;
-                    },
-                    icon: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.analytics, size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          state.explorerResult == null
-                              ? 'Analyze Structure'
-                              : 'Analyze Again',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                ),
-                const SizedBox(height: 16),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
+      // Same panel as the Evaluator tab, one switch away — the two tabs are one
+      // workspace and should offer the same thing.
+      sidePanel: RecentHistoryPanel(
+        category: HistoryCategory.modularArithmetic,
+      ),
     );
   }
 

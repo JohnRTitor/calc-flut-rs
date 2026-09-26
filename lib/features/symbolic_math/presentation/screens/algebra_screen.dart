@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:calc_flut_rs/features/history/domain/history_category.dart';
 import 'package:calc_flut_rs/features/symbolic_math/domain/symbolic_operation.dart';
 import 'package:calc_flut_rs/features/symbolic_math/presentation/providers/symbolic_workspace.dart';
 import '../widgets/symbolic_workspace_scaffold.dart';
@@ -18,5 +19,6 @@ class AlgebraScreen extends StatelessWidget {
     hintText: '(x + 1)^2',
     provider: algebraProvider,
     operations: SymbolicOperation.algebraOperations,
+    historyCategory: HistoryCategory.algebra,
   );
 }

@@ -158,7 +158,7 @@ class MatrixWorkspace extends Notifier<MatrixState> {
   ) {
     final matrix = cells.map((row) => '[${row.join(', ')}]').join(', ');
     rust_history.appHistoryAdd(
-      category: HistoryCategory.symbolic.name,
+      category: HistoryCategory.matrices.name,
       preview: jsonEncode({
         'operation': 'Matrices',
         'expression': matrix,

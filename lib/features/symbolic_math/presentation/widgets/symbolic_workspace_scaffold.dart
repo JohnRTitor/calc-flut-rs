@@ -4,8 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:calc_flut_rs/app/theme/ui_style.dart';
+import 'package:calc_flut_rs/features/history/domain/history_category.dart';
+import 'package:calc_flut_rs/features/history/presentation/screens/history_screen.dart';
+import 'package:calc_flut_rs/features/history/presentation/widgets/recent_history_panel.dart';
 import 'package:calc_flut_rs/features/settings/presentation/providers/theme_provider.dart';
 import 'package:calc_flut_rs/features/symbolic_math/domain/symbolic_operation.dart';
+import 'package:calc_flut_rs/app/navigation/route_transitions.dart';
+import 'package:calc_flut_rs/shared/layouts/breakpoints.dart';
+import 'package:calc_flut_rs/shared/layouts/responsive_workspace_layout.dart';
+import 'package:calc_flut_rs/shared/widgets/glass_utils.dart';
 import 'package:calc_flut_rs/features/symbolic_math/presentation/providers/symbolic_workspace.dart';
 import 'package:calc_flut_rs/features/symbolic_math/presentation/providers/symbolic_workspace_state.dart';
 import 'symbolic_action_row.dart';
@@ -13,8 +21,16 @@ import 'symbolic_expression_editor.dart';
 import 'symbolic_help_dialog.dart';
 import 'symbolic_plot_sheet.dart';
 import 'symbolic_result_card.dart';
-import 'package:calc_flut_rs/generated/rust/bridge/symbolic.dart' as rust_symbolic;
+import 'package:calc_flut_rs/generated/rust/bridge/symbolic.dart'
+    as rust_symbolic;
 import 'package:calc_flut_rs/shared/widgets/app_notice.dart';
+
+/// Gap between the editor, a tool's extra controls, and the variable chips.
+///
+/// Tighter than [LayoutMetrics.standard.spacing] because these are parts of one
+/// input block, not separate sections; the section gap belongs between the
+/// inputs and the result, which the layout supplies.
+const double _gutter = 12;
 
 /// Thresholds that govern when a workspace admits it is working.
 ///
@@ -65,12 +81,21 @@ class SymbolicWorkspaceScaffold extends ConsumerStatefulWidget {
   /// the host decides what its inputs look like.
   final Widget? extraControls;
 
+  /// The history category this tool's results are filed under.
+  ///
+  /// Drives the app bar's history action, so each of the five tools in this
+  /// section opens its *own* filtered history rather than making the user leave
+  /// and pick a filter by hand. Set once here because all five screens are
+  /// built from this scaffold.
+  final HistoryCategory historyCategory;
+
   const SymbolicWorkspaceScaffold({
     super.key,
     required this.title,
     required this.hintText,
     required this.provider,
     required this.operations,
+    required this.historyCategory,
     this.extraControls,
   });
 
@@ -119,9 +144,7 @@ class _SymbolicWorkspaceScaffoldState
       setState(() => _callIsSlow = true);
     });
 
-    final succeeded = await ref
-        .read(widget.provider.notifier)
-        .run(operation);
+    final succeeded = await ref.read(widget.provider.notifier).run(operation);
 
     _indicatorTimer?.cancel();
     _slowCallTimer?.cancel();
@@ -177,12 +200,15 @@ class _SymbolicWorkspaceScaffoldState
       return;
     }
 
-    final names = widget.operations.map((operation) => operation.label).join(', ');
+    final names = widget.operations
+        .map((operation) => operation.label)
+        .join(', ');
     showSymbolicHelpDialog(
       context: context,
       uiStyle: ref.read(uiStyleProvider),
       title: 'Supported Operations',
-      description: 'Applied to the expression above. This tool offers: '
+      description:
+          'Applied to the expression above. This tool offers: '
           '$names. Results also include the other equivalent forms of the same '
           'expression as chips, so you can compare them without retyping.',
       notes: [
@@ -212,6 +238,29 @@ class _SymbolicWorkspaceScaffoldState
     );
   }
 
+  /// Opens this tool's own history, pre-filtered to it.
+  ///
+  /// Labelled with the tool rather than a bare "History" so the destination is
+  /// unambiguous, and given a tooltip for the same reason. Matches the icon
+  /// action already on the Calculator and Modular Arithmetic workspaces, so
+  /// history access looks the same from every tool that has it.
+  Widget _buildHistoryAction(UiStyle uiStyle) {
+    return IconButton(
+      icon: const Icon(Icons.history),
+      tooltip: '${widget.historyCategory.label} history',
+      onPressed: () {
+        Navigator.of(context).push(
+          FadePageRoute(
+            page: HistoryScreen(initialCategory: widget.historyCategory),
+          ),
+        );
+      },
+      color: uiStyle == UiStyle.liquidGlass
+          ? onGlassEmphasis(context, uiStyle)
+          : null,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(widget.provider);
@@ -219,78 +268,84 @@ class _SymbolicWorkspaceScaffoldState
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          // A scroll view cannot lay out against a non-positive extent. The
-          // shell builds sections inside an IndexedStack, so the first frame
-          // can still measure zero while Android insets settle.
-          if (!constraints.hasBoundedHeight || constraints.maxHeight <= 0) {
-            return const SizedBox.shrink();
-          }
-
-          return SingleChildScrollView(
-            padding: EdgeInsets.only(
-              left: 16,
-              right: 16,
-              top: 8,
-              bottom: 16 + MediaQuery.paddingOf(context).bottom,
+      appBar: AppBar(
+        title: Text(widget.title),
+        actions: [_buildHistoryAction(uiStyle)],
+      ),
+      // The shared workspace layout, as every other tool-shaped screen uses.
+      // Unpinned, so the answer sits directly beneath the expression and the
+      // variables that produced it — this is the one screen where the user is
+      // reasoning about a symbolic relationship, and putting the result at the
+      // bottom of the viewport separates it from the question.
+      body: ResponsiveWorkspaceLayout(
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 8,
+          bottom: 16 + MediaQuery.paddingOf(context).bottom,
+        ),
+        gap: SizedBox(height: LayoutMetrics.standard.spacing),
+        displayArea: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SymbolicExpressionEditor(
+              uiStyle: uiStyle,
+              expression: state.expression,
+              hintText: widget.hintText,
+              onChanged: (value) =>
+                  ref.read(widget.provider.notifier).setExpression(value),
+              onShowHelp: _showSupportedOperations,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SymbolicExpressionEditor(
-                  uiStyle: uiStyle,
-                  expression: state.expression,
-                  hintText: widget.hintText,
-                  onChanged: (value) =>
-                      ref.read(widget.provider.notifier).setExpression(value),
-                  onShowHelp: _showSupportedOperations,
-                ),
-                const SizedBox(height: 12),
-                if (widget.extraControls != null) ...[
-                  widget.extraControls!,
-                  const SizedBox(height: 12),
-                ],
-                SymbolicVariableSelector(
-                  uiStyle: uiStyle,
-                  variables: state.variables,
-                  selectedVariable: state.selectedVariable,
-                  onSelected: (variable) => ref
-                      .read(widget.provider.notifier)
-                      .selectVariable(variable),
-                ),
-                SymbolicActionRow(
-                  uiStyle: uiStyle,
-                  state: state,
-                  onRun: _run,
-                  computingOperation: _computingOperation,
-                ),
-                if (_callIsSlow) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    'Still working — this can take a moment for complex '
-                    'expressions',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-                const SizedBox(height: 16),
-                SymbolicResultCard(
-                  uiStyle: uiStyle,
-                  state: state,
-                  onCopy: _copyResult,
-                  onShowForm: (index) =>
-                      ref.read(widget.provider.notifier).showForm(index),
-                  onExplainLimit: _explainLimit,
-                  onPlot: _plot,
-                ),
-              ],
+            if (widget.extraControls != null) ...[
+              const SizedBox(height: _gutter),
+              widget.extraControls!,
+            ],
+            const SizedBox(height: _gutter),
+            SymbolicVariableSelector(
+              uiStyle: uiStyle,
+              variables: state.variables,
+              selectedVariable: state.selectedVariable,
+              onSelected: (variable) =>
+                  ref.read(widget.provider.notifier).selectVariable(variable),
             ),
-          );
-        },
+          ],
+        ),
+        controls: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SymbolicActionRow(
+              uiStyle: uiStyle,
+              state: state,
+              onRun: _run,
+              computingOperation: _computingOperation,
+            ),
+            if (_callIsSlow) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Still working — this can take a moment for complex '
+                'expressions',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+            SizedBox(height: LayoutMetrics.standard.spacing),
+            SymbolicResultCard(
+              uiStyle: uiStyle,
+              state: state,
+              onCopy: _copyResult,
+              onShowForm: (index) =>
+                  ref.read(widget.provider.notifier).showForm(index),
+              onExplainLimit: _explainLimit,
+              onPlot: _plot,
+            ),
+          ],
+        ),
+        // This tool's own recent results, on a desktop-class window only. Set
+        // once here because all five tools in this section are built from this
+        // scaffold, and each already declares the history category it uses.
+        sidePanel: RecentHistoryPanel(category: widget.historyCategory),
       ),
     );
   }

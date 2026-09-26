@@ -122,7 +122,7 @@ class EquationSolver extends Notifier<EquationSolverState> {
   void _recordHistory(rust_symbolic.SymbolicSolveResult result) {
     final kind = result.solutionKind;
     rust_history.appHistoryAdd(
-      category: HistoryCategory.symbolic.name,
+      category: HistoryCategory.equationSolver.name,
       preview: jsonEncode({
         'operation': 'Solve',
         'expression': state.equation,
