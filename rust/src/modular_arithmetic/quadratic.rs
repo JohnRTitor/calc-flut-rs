@@ -2,6 +2,7 @@ use crate::modular_arithmetic::{
     error::ModError,
     mod_arith::{is_prime, mod_pow, mod_reduce},
 };
+use num_modular::ModularSymbols;
 
 /// Returns the quadratic residues modulo n.
 pub fn quadratic_residues(n: i128) -> Vec<i128> {
@@ -30,51 +31,39 @@ pub fn is_quadratic_residue(a: i128, n: i128) -> bool {
 
 /// Computes the Legendre symbol (a/p).
 /// Returns 1 if a is a QR mod p, -1 if a is a QNR mod p, and 0 if a ≡ 0 mod p.
+///
+/// Keep the primality gate. `ModularSymbols` computes the symbol from Euler's
+/// criterion but does not check that `p` is prime, so without the gate a
+/// composite modulus yields a meaningless answer instead of a complaint the
+/// user can act on.
 pub fn legendre_symbol(a: i128, p: i128) -> Result<i8, ModError> {
     if p <= 2 || !is_prime(p) {
         return Err(ModError::InvalidModulus(
             "Legendre symbol requires an odd prime modulus".to_string(),
         ));
     }
-    let a_red = mod_reduce(a, p);
-    if a_red == 0 {
-        return Ok(0);
-    }
-
-    let l = mod_pow(a_red, (p - 1) / 2, p)?;
-    if l == p - 1 { Ok(-1) } else { Ok(1) }
+    (mod_reduce(a, p) as u128)
+        .checked_legendre(&(p as u128))
+        // Unreachable for a genuine prime: Euler's criterion always lands on
+        // 0, 1 or p-1. Reaching it means `is_prime` was wrong, so report that
+        // rather than answer with a symbol that means nothing.
+        .ok_or_else(|| {
+            ModError::InvalidModulus(format!("{p} passed the primality check but is not prime"))
+        })
 }
 
 /// Computes the Jacobi symbol (a/n).
-pub fn jacobi_symbol(mut a: i128, mut n: i128) -> Result<i8, ModError> {
+pub fn jacobi_symbol(a: i128, n: i128) -> Result<i8, ModError> {
     if n <= 0 || n % 2 == 0 {
         return Err(ModError::InvalidModulus(
             "Jacobi symbol requires an odd positive modulus".to_string(),
         ));
     }
-
-    a = mod_reduce(a, n);
-    let mut t = 1;
-
-    while a != 0 {
-        while a % 2 == 0 {
-            a /= 2;
-            let r = n % 8;
-            if r == 3 || r == 5 {
-                t = -t;
-            }
-        }
-
-        std::mem::swap(&mut a, &mut n);
-
-        if a % 4 == 3 && n % 4 == 3 {
-            t = -t;
-        }
-
-        a %= n;
-    }
-
-    if n == 1 { Ok(t) } else { Ok(0) }
+    (mod_reduce(a, n) as u128)
+        .checked_jacobi(&(n as u128))
+        .ok_or_else(|| {
+            ModError::InvalidModulus("Jacobi symbol requires an odd positive modulus".to_string())
+        })
 }
 
 /// Computes modular square roots using the Tonelli-Shanks algorithm.

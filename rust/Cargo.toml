@@ -20,6 +20,15 @@ bigdecimal = "0.4"
 # Exact symbolic mathematics: expression trees, simplification, expansion,
 # factorisation, calculus and equation solving over Ratio<BigInt>.
 symplex = "0.28"
+# The modular kernel under modular_arithmetic/. It multiplies through a full
+# double-width intermediate, which is what keeps a large modulus exact; the
+# hand-rolled i128 kernel wrapped instead, silently, because the release profile
+# compiles with overflow checks off.
+#
+# `num-bigint` is required for the BigUint backend. `std` stays off — the crate
+# is no_std, and there is nothing here that needs a hosted target. num-bigint
+# already pulls in num-integer and num-traits, so neither is named here.
+num-modular = { version = "0.6.5", default-features = false, features = ["num-bigint"] }
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }

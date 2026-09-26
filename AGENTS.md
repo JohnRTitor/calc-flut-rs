@@ -154,6 +154,32 @@ stays synchronous and keypress-latency sensitive.
 backend panics when handles from two contexts meet, so take variable *names*
 across a boundary rather than handles.
 
+`modular_arithmetic/mod_arith.rs` is backed by `num-modular`, whose algorithms
+are exact and whose API is deliberately not what this app needs. The module owns
+four contracts, all observable, and all pinned by `tests/modular_kernel_tests.rs`:
+
+- **Zero modulus.** `num-modular` panics on it, and the release profile is
+  `panic = "abort"`, so an unguarded call is a process kill on Android. The ring
+  helpers pass their operands through unreduced; `mod_pow` and `mod_inv` return
+  an error. Callers rely on getting their own message about `mod 0`.
+- **Negative modulus.** The workspace's modulus is a free-text field, so `-7`
+  is reachable. It names the ring of its magnitude, i.e. `rem_euclid(|n|)`.
+- **Signedness.** `num-modular` is unsigned-only and `ModularInteger` cannot
+  represent a signed operand. Keep the `i128` API and normalise through
+  `residue()`. Do not adopt `ModularInteger` here: the evaluator has no fixed
+  modulus to hoist, and its per-node `Option<i128>` modulus makes the type
+  safety decorative.
+- **Integer width.** `mod_pow` narrows to `u64` only when the modulus *and* the
+  exponent both fit. Narrowing a wide exponent drops its high bits and turns
+  `2^(2^100)` into `2^0`. This is roughly a 2× difference on the calculator's
+  keypress preview, so it is not optional.
+
+Do not hand-roll a modular multiply. Two reduced operands below `n` need `n²` of
+room, so the product belongs in a double-width intermediate, which is what
+`mulm` gives you. Multiplying in the operand type instead wraps for any modulus
+above about `2^63.5` — silently, because the release profile compiles with
+overflow checks off.
+
 **Verify the backend's answers, do not relay them — but only where the check
 is sound.** `symplex` reports "I cannot do this" by returning the request
 unevaluated, and its solver reaches answers by rearranging the equation — which
@@ -173,8 +199,9 @@ ever closes that loop, a test asserting the current false negative
 the question again.
 
 **Overflow** — never wrap, saturate, or truncate. Factorial accumulates `BigInt`
-(`Expr::Factorial`). Modular exponentiation uses `mod_pow()` with
-square-and-multiply. If a value cannot be computed, return a descriptive error.
+(`Expr::Factorial`). Modular exponentiation uses `mod_pow()`, which square-and-
+multiplies through a double-width intermediate. If a value cannot be computed,
+return a descriptive error.
 
 **Adding a mathematical domain**
 
@@ -302,8 +329,17 @@ the widget that does not depend on it.
 - Rust: `rust/src/tests/` for integration, `#[cfg(test)] mod tests` for unit.
 - Flutter: `test/`, mirroring `lib/`.
 
+A test file that is not listed in `rust/src/tests/mod.rs` does not compile, does
+not run, and does not count as coverage. Register the module in the same commit
+that writes it.
+
 Prioritise exact-value checks, then edge cases (zero, negative, boundary),
-overflow scenarios, and invalid input.
+overflow scenarios, and invalid input. For arithmetic, check against exact
+`BigInt` and against mathematical identities — `(a+b) mod m == ((a mod m)+(b
+mod m)) mod m`, `a^(x+y) mod m == (a^x · a^y) mod m`, `a · inv(a) == 1 (mod m)`
+when `gcd(a,m) == 1` — never against a second copy of the same algorithm, which
+would pass when both copies are wrong. Use a fixed-seed PRNG so a failure is
+reproducible.
 
 ---
 

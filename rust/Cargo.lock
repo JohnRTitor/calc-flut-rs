@@ -182,6 +182,7 @@ dependencies = [
  "getrandom",
  "js-sys",
  "num-bigint",
+ "num-modular",
  "num-rational",
  "num-traits",
  "serde",
@@ -570,6 +571,17 @@ version = "0.1.46"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7969661fd2958a5cb096e56c8e1ad0444ac2bbcd0061bd28660485a44879858f"
 dependencies = [
+ "num-traits",
+]
+
+[[package]]
+name = "num-modular"
+version = "0.6.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bd8e500409e6cd603b03e477c26a6caecdc27ac58979a53e881c75eafc079f44"
+dependencies = [
+ "num-bigint",
+ "num-integer",
  "num-traits",
 ]
 
