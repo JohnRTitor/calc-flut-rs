@@ -269,7 +269,10 @@ both.
    Material-mode fill.
 2. Branch on `uiStyle` only for fundamentally different widget trees.
 3. Colors from `colorScheme`; component-specific semantics from
-   `AppThemeExtension`; glass colors from `resolveGlassStyle()`.
+   `AppThemeExtension`; glass colors from `resolveGlassStyle()`. Text on a glass
+   surface comes from `onGlassSecondary`/`onGlassEmphasis`, never from an inline
+   `uiStyle == liquidGlass ? Colors.white70 : …` ternary — that contrast
+   trade-off is decided once, in `glass_utils.dart`.
 4. Full-screen surfaces (drawer, rail, search) need `frosted: true` and
    `resolveOverlaySurfaceFill()` — `GlassSurfaceRole.panel` is too translucent
    over page content.
@@ -295,9 +298,30 @@ actions · `primary` primary actions and operators · `destructive` clear/delete
 | `MultiPillSwitcher` | `shared/widgets/multi_pill_switcher.dart` |
 | `AppChip` | `shared/widgets/app_chip.dart` |
 | `MathExpressionText` | `shared/widgets/math_expression_text.dart` |
-| `AppBreakpoints`, `ResponsiveKeypadLayout` | `shared/layouts/breakpoints.dart` |
+| `ScrollableMathResult`, `ResultOverflowFade` | `shared/widgets/scrollable_math_result.dart` |
+| `onGlassSecondary`, `onGlassEmphasis` | `shared/widgets/glass_utils.dart` |
+| `AppBreakpoints`, `LayoutMetrics`, `BuildContextResponsiveX` | `shared/layouts/breakpoints.dart` |
+| `ResponsiveKeypadLayout` | `shared/layouts/responsive_keypad_layout.dart` |
+| `ResponsiveWorkspaceLayout` | `shared/layouts/responsive_workspace_layout.dart` |
+| `RecentHistoryPanel` | `features/history/presentation/widgets/recent_history_panel.dart` |
 
 New shared widgets go in `lib/shared/widgets/`.
+
+### Displaying a result
+
+A value that can be wider than its card goes through
+`ScrollableMathResult`, never a raw `SingleChildScrollView` and never a bare
+`Text` with `overflow: ellipsis`. It walks a ladder and stops at the first rung
+that fits: **fits** → **shrunk** (a step down the display type scale) →
+**wrapped** (a second line, the card grows) → **scrollable**.
+
+The last rung scrolls **from the start**, never `reverse: true`, and fades
+whichever edge has content off screen via `ResultOverflowFade`. A reversed
+scroll view comes up already showing the *end* of the expression, so the head of
+a factored answer sat off screen with nothing marking it as missing — the visible
+text read as a complete result while being a fragment of one. For an app whose
+claim is exact, un-approximated results, that is a correctness problem, not a
+cosmetic one.
 
 **Viewports and degenerate constraints.** A grid or list inside an
 `IndexedStack` builds on the first frame, when the window can still measure
@@ -311,7 +335,95 @@ introduce a second solution.
 
 **Accessibility** — keyboard navigation, semantic labels, and responsive
 portrait/landscape layouts for all widgets. `AppNavigationTile` is the
-reference: `Semantics(selected:)` plus Enter/Space activation.
+reference: `Semantics(selected:)` plus Enter/Space activation. Interactive
+controls introduced or restructured meet Material's 48dp tap target — except
+inside the calculator keypad, which is budgeted explicitly (see below).
+
+**Motion.** Decorative motion — a staggered entrance, a scale pulse — does not
+run at all when `context.prefersReducedMotion`. State-communicating motion
+collapses to an instant change via `context.motion(duration)`, because the
+information still has to arrive. Never gate by returning early from a press
+handler: that disables the control, which is not what "reduced motion" means.
+
+### Workspace layout
+
+Any screen shaped "enter something, see a result, act on it" goes through
+`ResponsiveWorkspaceLayout`, not a hand-rolled `Column`/`Expanded`/
+`CustomScrollView` of its own. It answers the one decision a screen actually
+has to make — **does the primary action stay put?** — via `pinControls`:
+
+- `true` — the control area holds its place and the display area shrinks. For a
+  fixed instrument, like the numeric keypad, whose keys must stay under one
+  thumb.
+- `false` (default) — the whole screen is one content-sized scroll, so the
+  result sits directly beneath the inputs that produced it. For a data-dense
+  result of unpredictable height; pinning a button under one produces a footer
+  floating at an arbitrary distance.
+
+Both modes keep `ResponsiveKeypadLayout`'s short-screen fallback verbatim:
+below `AppBreakpoints.shortScreenMaxHeight` the screen scrolls rather than
+compressing, with the controls held to a minimum height.
+`ResponsiveKeypadLayout` is a thin wrapper over this one — kept as a name for
+the screens that genuinely are keypad-shaped, so "the keys stay under one
+thumb" is still said out loud. Add behaviour here, never there.
+
+**Wide windows.** A workspace may pass `sidePanel`; the layout shows it only
+above `AppBreakpoints.expandedMinWidth`, and only when taking its width still
+leaves the workspace at least `AppBreakpoints.compactMaxWidth`. The current
+use is `RecentHistoryPanel`, which shows one tool's own recent results. What
+belongs beside a calculator is not what belongs beside a matrix workspace, so
+the layout takes a slot and the caller decides — it does not know what a
+history list is.
+
+A result wider than its card is never left to the layout. `ScrollableMathResult`
+owns that, and a screen that hand-rolls a scroll view around a result has
+reintroduced the bug that component was written to remove.
+
+### Gestures
+
+No gesture without a visible cue. Every long-press, swipe or secondary action
+must be discoverable from something already on screen — a tooltip, a label, an
+on-screen affordance. A gesture that does something other than what a reader
+would infer from the control it is attached to is worse than no gesture: remove
+it or label it. A key's label is a promise; only the one action it names may
+hide behind it.
+
+### The calculator keypad
+
+`Keypad` renders rows of `CalcKeySpec` (`calc_key_spec.dart`) through one
+generic builder. The key layout is **data**, not nested widgets: add or reorder
+a key in a list, never in the widget tree. The specs carry a key's label,
+`ButtonType`, action, active state and tooltip — and nothing else, which is what
+makes "one key, one named action" checkable.
+
+The digit and operator rows are budgeted against a 48dp floor, measured in
+`test/features/calculator/keypad_test.dart`. Distributing the available height
+by flex weight alone cannot express that floor — the bracket row carries the
+smallest weight, so it becomes the shortest key — so the rows are provisioned at
+the floor first and only the surplus is shared out. The scientific utility row
+is the one thing allowed to yield when space is short, because its functions are
+also reachable by typing.
+
+### History
+
+`HistoryCategory` is one value per **tool**, not per section: the Calculator
+section's two modes are separate tools, and so is each of the five behind the
+Symbolic Math hub. The enum member name is the string written to the Rust store,
+so it is also the persistence key — renaming one orphans its history, and
+`HistoryGroup.legacyCategoryNames` is how the one already-split category is
+still read.
+
+Tools are grouped for *display* only, by `HistoryGroup`, mirroring the shell's
+sections. The filter shows `All` plus the groups, and adds a tool-level chip row
+only for groups holding more than one tool. `All` is the default, so an empty
+screen can answer "have I computed anything at all?" and not merely "in this
+category". A group row scrolls; it must never squeeze a label to an ellipsis,
+however many tools are registered.
+
+Restoring an entry dispatches on the **entry's** category, not the current
+filter, so restoring a Matrices entry from the `All` view opens Matrices.
+
+---
 
 ---
 
