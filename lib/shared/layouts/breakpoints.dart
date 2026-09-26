@@ -60,6 +60,28 @@ extension BuildContextResponsiveX on BuildContext {
   /// Returns the screen size.
   Size get screenSize => MediaQuery.sizeOf(this);
 
+  /// Whether the user has asked the platform for reduced motion.
+  ///
+  /// The single place the app reads that setting, so "respect the accessibility
+  /// preference" cannot be implemented in some call sites and forgotten in
+  /// others. Motion is not decoration here — the app's staggered entrances,
+  /// scale pulses and cross-fades are the sort of thing that provokes
+  /// vestibular symptoms.
+  ///
+  /// What to do about it depends on what the motion was for:
+  ///
+  /// * **decorative** — a card fading up as a page opens, a value pulsing as it
+  ///   changes. Do not run it at all. Gate the animation itself.
+  /// * **state-communicating** — a cross-fade showing one value became another,
+  ///   an error flash. The *information* still has to arrive, so collapse the
+  ///   duration with [motion] rather than dropping the animation. An instant
+  ///   change communicates the same thing; a missing one does not.
+  bool get prefersReducedMotion => MediaQuery.disableAnimationsOf(this);
+
+  /// [duration], or [Duration.zero] when the user has asked for reduced motion.
+  Duration motion(Duration duration) =>
+      prefersReducedMotion ? Duration.zero : duration;
+
   /// Returns true if the screen height is less than [AppBreakpoints.shortScreenMaxHeight].
   bool get isShortScreen =>
       screenSize.height < AppBreakpoints.shortScreenMaxHeight;
