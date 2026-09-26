@@ -39,7 +39,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.13.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1833968171;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -859048275;
 
 // Section: executor
 
@@ -829,6 +829,42 @@ fn wire__crate__bridge__converter__get_converter_categories_impl(
         },
     )
 }
+fn wire__crate__bridge__symbolic__matrix_analyse_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "matrix_analyse",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_input = <crate::bridge::symbolic::MatrixInput>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::bridge::symbolic::SymbolicErrorInfo>(
+                    (move || async move {
+                        let output_ok = crate::bridge::symbolic::matrix_analyse(api_input).await?;
+                        std::result::Result::Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__bridge__calculator__memory_add_impl(
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1020,6 +1056,156 @@ fn wire__crate__bridge__modular_arithmetic__modular_evaluate_impl(
                 )?;
                 std::result::Result::Ok(output_ok)
             })())
+        },
+    )
+}
+fn wire__crate__bridge__symbolic__number_analyse_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "number_analyse",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_number = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::bridge::symbolic::SymbolicErrorInfo>(
+                    (move || async move {
+                        let output_ok = crate::bridge::symbolic::number_analyse(api_number).await?;
+                        std::result::Result::Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__bridge__symbolic__number_coprime_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "number_coprime",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_first = <String>::sse_decode(&mut deserializer);
+            let api_second = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::bridge::symbolic::SymbolicErrorInfo>(
+                    (move || async move {
+                        let output_ok =
+                            crate::bridge::symbolic::number_coprime(api_first, api_second).await?;
+                        std::result::Result::Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__bridge__symbolic__number_gcd_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "number_gcd",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_first = <String>::sse_decode(&mut deserializer);
+            let api_second = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::bridge::symbolic::SymbolicErrorInfo>(
+                    (move || async move {
+                        let output_ok =
+                            crate::bridge::symbolic::number_gcd(api_first, api_second).await?;
+                        std::result::Result::Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__bridge__symbolic__number_lcm_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "number_lcm",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_first = <String>::sse_decode(&mut deserializer);
+            let api_second = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::bridge::symbolic::SymbolicErrorInfo>(
+                    (move || async move {
+                        let output_ok =
+                            crate::bridge::symbolic::number_lcm(api_first, api_second).await?;
+                        std::result::Result::Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
         },
     )
 }
@@ -1304,6 +1490,20 @@ impl SseDecode for crate::bridge::currency::DiscountResult {
     }
 }
 
+impl SseDecode for crate::bridge::symbolic::EigenPair {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_eigenvalue = <String>::sse_decode(deserializer);
+        let mut var_vector = <Vec<String>>::sse_decode(deserializer);
+        let mut var_eigenspaceDimension = <u32>::sse_decode(deserializer);
+        return crate::bridge::symbolic::EigenPair {
+            eigenvalue: var_eigenvalue,
+            vector: var_vector,
+            eigenspace_dimension: var_eigenspaceDimension,
+        };
+    }
+}
+
 impl SseDecode for crate::bridge::modular_arithmetic::ElementOrderPair {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1461,6 +1661,20 @@ impl SseDecode for Vec<crate::bridge::symbolic::AlternateForm> {
     }
 }
 
+impl SseDecode for Vec<crate::bridge::symbolic::EigenPair> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<crate::bridge::symbolic::EigenPair>::sse_decode(
+                deserializer,
+            ));
+        }
+        return ans_;
+    }
+}
+
 impl SseDecode for Vec<crate::bridge::modular_arithmetic::ElementOrderPair> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1527,6 +1741,18 @@ impl SseDecode for Vec<crate::bridge::modular_arithmetic::InversePair> {
     }
 }
 
+impl SseDecode for Vec<Vec<String>> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<Vec<String>>::sse_decode(deserializer));
+        }
+        return ans_;
+    }
+}
+
 impl SseDecode for Vec<crate::bridge::symbolic::PlotPoint> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1548,6 +1774,20 @@ impl SseDecode for Vec<u8> {
         let mut ans_ = Vec::with_capacity(len_ as usize);
         for idx_ in 0..len_ {
             ans_.push(<u8>::sse_decode(deserializer));
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::bridge::symbolic::PrimePower> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<crate::bridge::symbolic::PrimePower>::sse_decode(
+                deserializer,
+            ));
         }
         return ans_;
     }
@@ -1579,6 +1819,39 @@ impl SseDecode for crate::bridge::currency::LoanResult {
     }
 }
 
+impl SseDecode for crate::bridge::symbolic::MatrixAnalysisResponse {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_determinant = <Option<String>>::sse_decode(deserializer);
+        let mut var_rank = <u32>::sse_decode(deserializer);
+        let mut var_trace = <Option<String>>::sse_decode(deserializer);
+        let mut var_inverse = <Option<Vec<Vec<String>>>>::sse_decode(deserializer);
+        let mut var_reduced = <Vec<Vec<String>>>::sse_decode(deserializer);
+        let mut var_eigenvalues = <Option<Vec<String>>>::sse_decode(deserializer);
+        let mut var_eigenvectors =
+            <Option<Vec<crate::bridge::symbolic::EigenPair>>>::sse_decode(deserializer);
+        let mut var_details = <Option<String>>::sse_decode(deserializer);
+        return crate::bridge::symbolic::MatrixAnalysisResponse {
+            determinant: var_determinant,
+            rank: var_rank,
+            trace: var_trace,
+            inverse: var_inverse,
+            reduced: var_reduced,
+            eigenvalues: var_eigenvalues,
+            eigenvectors: var_eigenvectors,
+            details: var_details,
+        };
+    }
+}
+
+impl SseDecode for crate::bridge::symbolic::MatrixInput {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_cells = <Vec<Vec<String>>>::sse_decode(deserializer);
+        return crate::bridge::symbolic::MatrixInput { cells: var_cells };
+    }
+}
+
 impl SseDecode for crate::bridge::modular_arithmetic::ModularResult {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1591,6 +1864,38 @@ impl SseDecode for crate::bridge::modular_arithmetic::ModularResult {
             details: var_details,
             modulus_used: var_modulusUsed,
             steps: var_steps,
+        };
+    }
+}
+
+impl SseDecode for crate::bridge::symbolic::NumberAnalysisResponse {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_isPrime = <bool>::sse_decode(deserializer);
+        let mut var_isSquare = <bool>::sse_decode(deserializer);
+        let mut var_isPerfect = <bool>::sse_decode(deserializer);
+        let mut var_isCarmichael = <bool>::sse_decode(deserializer);
+        let mut var_factors = <Vec<crate::bridge::symbolic::PrimePower>>::sse_decode(deserializer);
+        let mut var_divisors = <Vec<String>>::sse_decode(deserializer);
+        let mut var_divisorCount = <u32>::sse_decode(deserializer);
+        let mut var_divisorSum = <String>::sse_decode(deserializer);
+        let mut var_totient = <String>::sse_decode(deserializer);
+        let mut var_nextPrime = <String>::sse_decode(deserializer);
+        let mut var_previousPrime = <String>::sse_decode(deserializer);
+        let mut var_details = <Option<String>>::sse_decode(deserializer);
+        return crate::bridge::symbolic::NumberAnalysisResponse {
+            is_prime: var_isPrime,
+            is_square: var_isSquare,
+            is_perfect: var_isPerfect,
+            is_carmichael: var_isCarmichael,
+            factors: var_factors,
+            divisors: var_divisors,
+            divisor_count: var_divisorCount,
+            divisor_sum: var_divisorSum,
+            totient: var_totient,
+            next_prime: var_nextPrime,
+            previous_prime: var_previousPrime,
+            details: var_details,
         };
     }
 }
@@ -1665,6 +1970,41 @@ impl SseDecode for Option<u32> {
     }
 }
 
+impl SseDecode for Option<Vec<String>> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<Vec<String>>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for Option<Vec<crate::bridge::symbolic::EigenPair>> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<Vec<crate::bridge::symbolic::EigenPair>>::sse_decode(
+                deserializer,
+            ));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for Option<Vec<Vec<String>>> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<Vec<Vec<String>>>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
 impl SseDecode for crate::bridge::symbolic::PlotData {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1689,6 +2029,18 @@ impl SseDecode for crate::bridge::symbolic::PlotPoint {
         let mut var_x = <f64>::sse_decode(deserializer);
         let mut var_y = <Option<f64>>::sse_decode(deserializer);
         return crate::bridge::symbolic::PlotPoint { x: var_x, y: var_y };
+    }
+}
+
+impl SseDecode for crate::bridge::symbolic::PrimePower {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_prime = <String>::sse_decode(deserializer);
+        let mut var_power = <u32>::sse_decode(deserializer);
+        return crate::bridge::symbolic::PrimePower {
+            prime: var_prime,
+            power: var_power,
+        };
     }
 }
 
@@ -1863,9 +2215,14 @@ fn pde_ffi_dispatcher_primary_impl(
     match func_id {
         8 => wire__crate__bridge__history__app_history_load_impl(port, ptr, rust_vec_len, data_len),
         9 => wire__crate__bridge__history__app_history_save_impl(port, ptr, rust_vec_len, data_len),
-        31 => wire__crate__bridge__symbolic__symbolic_plot_impl(port, ptr, rust_vec_len, data_len),
-        32 => wire__crate__bridge__symbolic__symbolic_solve_impl(port, ptr, rust_vec_len, data_len),
-        33 => wire__crate__bridge__symbolic__symbolic_transform_impl(
+        24 => wire__crate__bridge__symbolic__matrix_analyse_impl(port, ptr, rust_vec_len, data_len),
+        31 => wire__crate__bridge__symbolic__number_analyse_impl(port, ptr, rust_vec_len, data_len),
+        32 => wire__crate__bridge__symbolic__number_coprime_impl(port, ptr, rust_vec_len, data_len),
+        33 => wire__crate__bridge__symbolic__number_gcd_impl(port, ptr, rust_vec_len, data_len),
+        34 => wire__crate__bridge__symbolic__number_lcm_impl(port, ptr, rust_vec_len, data_len),
+        36 => wire__crate__bridge__symbolic__symbolic_plot_impl(port, ptr, rust_vec_len, data_len),
+        37 => wire__crate__bridge__symbolic__symbolic_solve_impl(port, ptr, rust_vec_len, data_len),
+        38 => wire__crate__bridge__symbolic__symbolic_transform_impl(
             port,
             ptr,
             rust_vec_len,
@@ -1932,17 +2289,17 @@ fn pde_ffi_dispatcher_sync_impl(
             rust_vec_len,
             data_len,
         ),
-        24 => wire__crate__bridge__calculator__memory_add_impl(ptr, rust_vec_len, data_len),
-        25 => wire__crate__bridge__calculator__memory_clear_impl(ptr, rust_vec_len, data_len),
-        26 => wire__crate__bridge__calculator__memory_recall_impl(ptr, rust_vec_len, data_len),
-        27 => wire__crate__bridge__calculator__memory_store_impl(ptr, rust_vec_len, data_len),
-        28 => wire__crate__bridge__calculator__memory_subtract_impl(ptr, rust_vec_len, data_len),
-        29 => wire__crate__bridge__modular_arithmetic__modular_evaluate_impl(
+        25 => wire__crate__bridge__calculator__memory_add_impl(ptr, rust_vec_len, data_len),
+        26 => wire__crate__bridge__calculator__memory_clear_impl(ptr, rust_vec_len, data_len),
+        27 => wire__crate__bridge__calculator__memory_recall_impl(ptr, rust_vec_len, data_len),
+        28 => wire__crate__bridge__calculator__memory_store_impl(ptr, rust_vec_len, data_len),
+        29 => wire__crate__bridge__calculator__memory_subtract_impl(ptr, rust_vec_len, data_len),
+        30 => wire__crate__bridge__modular_arithmetic__modular_evaluate_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        30 => wire__crate__bridge__symbolic__symbolic_operations_impl(ptr, rust_vec_len, data_len),
+        35 => wire__crate__bridge__symbolic__symbolic_operations_impl(ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -2097,6 +2454,28 @@ impl flutter_rust_bridge::IntoIntoDart<crate::bridge::currency::DiscountResult>
     for crate::bridge::currency::DiscountResult
 {
     fn into_into_dart(self) -> crate::bridge::currency::DiscountResult {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::bridge::symbolic::EigenPair {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.eigenvalue.into_into_dart().into_dart(),
+            self.vector.into_into_dart().into_dart(),
+            self.eigenspace_dimension.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::bridge::symbolic::EigenPair
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::bridge::symbolic::EigenPair>
+    for crate::bridge::symbolic::EigenPair
+{
+    fn into_into_dart(self) -> crate::bridge::symbolic::EigenPair {
         self
     }
 }
@@ -2283,6 +2662,50 @@ impl flutter_rust_bridge::IntoIntoDart<crate::bridge::currency::LoanResult>
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::bridge::symbolic::MatrixAnalysisResponse {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.determinant.into_into_dart().into_dart(),
+            self.rank.into_into_dart().into_dart(),
+            self.trace.into_into_dart().into_dart(),
+            self.inverse.into_into_dart().into_dart(),
+            self.reduced.into_into_dart().into_dart(),
+            self.eigenvalues.into_into_dart().into_dart(),
+            self.eigenvectors.into_into_dart().into_dart(),
+            self.details.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::bridge::symbolic::MatrixAnalysisResponse
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::bridge::symbolic::MatrixAnalysisResponse>
+    for crate::bridge::symbolic::MatrixAnalysisResponse
+{
+    fn into_into_dart(self) -> crate::bridge::symbolic::MatrixAnalysisResponse {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::bridge::symbolic::MatrixInput {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [self.cells.into_into_dart().into_dart()].into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::bridge::symbolic::MatrixInput
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::bridge::symbolic::MatrixInput>
+    for crate::bridge::symbolic::MatrixInput
+{
+    fn into_into_dart(self) -> crate::bridge::symbolic::MatrixInput {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::bridge::modular_arithmetic::ModularResult {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -2302,6 +2725,37 @@ impl flutter_rust_bridge::IntoIntoDart<crate::bridge::modular_arithmetic::Modula
     for crate::bridge::modular_arithmetic::ModularResult
 {
     fn into_into_dart(self) -> crate::bridge::modular_arithmetic::ModularResult {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::bridge::symbolic::NumberAnalysisResponse {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.is_prime.into_into_dart().into_dart(),
+            self.is_square.into_into_dart().into_dart(),
+            self.is_perfect.into_into_dart().into_dart(),
+            self.is_carmichael.into_into_dart().into_dart(),
+            self.factors.into_into_dart().into_dart(),
+            self.divisors.into_into_dart().into_dart(),
+            self.divisor_count.into_into_dart().into_dart(),
+            self.divisor_sum.into_into_dart().into_dart(),
+            self.totient.into_into_dart().into_dart(),
+            self.next_prime.into_into_dart().into_dart(),
+            self.previous_prime.into_into_dart().into_dart(),
+            self.details.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::bridge::symbolic::NumberAnalysisResponse
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::bridge::symbolic::NumberAnalysisResponse>
+    for crate::bridge::symbolic::NumberAnalysisResponse
+{
+    fn into_into_dart(self) -> crate::bridge::symbolic::NumberAnalysisResponse {
         self
     }
 }
@@ -2347,6 +2801,27 @@ impl flutter_rust_bridge::IntoIntoDart<crate::bridge::symbolic::PlotPoint>
     for crate::bridge::symbolic::PlotPoint
 {
     fn into_into_dart(self) -> crate::bridge::symbolic::PlotPoint {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::bridge::symbolic::PrimePower {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.prime.into_into_dart().into_dart(),
+            self.power.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::bridge::symbolic::PrimePower
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::bridge::symbolic::PrimePower>
+    for crate::bridge::symbolic::PrimePower
+{
+    fn into_into_dart(self) -> crate::bridge::symbolic::PrimePower {
         self
     }
 }
@@ -2587,6 +3062,15 @@ impl SseEncode for crate::bridge::currency::DiscountResult {
     }
 }
 
+impl SseEncode for crate::bridge::symbolic::EigenPair {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.eigenvalue, serializer);
+        <Vec<String>>::sse_encode(self.vector, serializer);
+        <u32>::sse_encode(self.eigenspace_dimension, serializer);
+    }
+}
+
 impl SseEncode for crate::bridge::modular_arithmetic::ElementOrderPair {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -2697,6 +3181,16 @@ impl SseEncode for Vec<crate::bridge::symbolic::AlternateForm> {
     }
 }
 
+impl SseEncode for Vec<crate::bridge::symbolic::EigenPair> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::bridge::symbolic::EigenPair>::sse_encode(item, serializer);
+        }
+    }
+}
+
 impl SseEncode for Vec<crate::bridge::modular_arithmetic::ElementOrderPair> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -2747,6 +3241,16 @@ impl SseEncode for Vec<crate::bridge::modular_arithmetic::InversePair> {
     }
 }
 
+impl SseEncode for Vec<Vec<String>> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <Vec<String>>::sse_encode(item, serializer);
+        }
+    }
+}
+
 impl SseEncode for Vec<crate::bridge::symbolic::PlotPoint> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -2763,6 +3267,16 @@ impl SseEncode for Vec<u8> {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
             <u8>::sse_encode(item, serializer);
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::bridge::symbolic::PrimePower> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::bridge::symbolic::PrimePower>::sse_encode(item, serializer);
         }
     }
 }
@@ -2786,6 +3300,30 @@ impl SseEncode for crate::bridge::currency::LoanResult {
     }
 }
 
+impl SseEncode for crate::bridge::symbolic::MatrixAnalysisResponse {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Option<String>>::sse_encode(self.determinant, serializer);
+        <u32>::sse_encode(self.rank, serializer);
+        <Option<String>>::sse_encode(self.trace, serializer);
+        <Option<Vec<Vec<String>>>>::sse_encode(self.inverse, serializer);
+        <Vec<Vec<String>>>::sse_encode(self.reduced, serializer);
+        <Option<Vec<String>>>::sse_encode(self.eigenvalues, serializer);
+        <Option<Vec<crate::bridge::symbolic::EigenPair>>>::sse_encode(
+            self.eigenvectors,
+            serializer,
+        );
+        <Option<String>>::sse_encode(self.details, serializer);
+    }
+}
+
+impl SseEncode for crate::bridge::symbolic::MatrixInput {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Vec<Vec<String>>>::sse_encode(self.cells, serializer);
+    }
+}
+
 impl SseEncode for crate::bridge::modular_arithmetic::ModularResult {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -2793,6 +3331,24 @@ impl SseEncode for crate::bridge::modular_arithmetic::ModularResult {
         <Option<String>>::sse_encode(self.details, serializer);
         <Option<String>>::sse_encode(self.modulus_used, serializer);
         <Option<String>>::sse_encode(self.steps, serializer);
+    }
+}
+
+impl SseEncode for crate::bridge::symbolic::NumberAnalysisResponse {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_prime, serializer);
+        <bool>::sse_encode(self.is_square, serializer);
+        <bool>::sse_encode(self.is_perfect, serializer);
+        <bool>::sse_encode(self.is_carmichael, serializer);
+        <Vec<crate::bridge::symbolic::PrimePower>>::sse_encode(self.factors, serializer);
+        <Vec<String>>::sse_encode(self.divisors, serializer);
+        <u32>::sse_encode(self.divisor_count, serializer);
+        <String>::sse_encode(self.divisor_sum, serializer);
+        <String>::sse_encode(self.totient, serializer);
+        <String>::sse_encode(self.next_prime, serializer);
+        <String>::sse_encode(self.previous_prime, serializer);
+        <Option<String>>::sse_encode(self.details, serializer);
     }
 }
 
@@ -2856,6 +3412,36 @@ impl SseEncode for Option<u32> {
     }
 }
 
+impl SseEncode for Option<Vec<String>> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <Vec<String>>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<Vec<crate::bridge::symbolic::EigenPair>> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <Vec<crate::bridge::symbolic::EigenPair>>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<Vec<Vec<String>>> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <Vec<Vec<String>>>::sse_encode(value, serializer);
+        }
+    }
+}
+
 impl SseEncode for crate::bridge::symbolic::PlotData {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -2872,6 +3458,14 @@ impl SseEncode for crate::bridge::symbolic::PlotPoint {
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <f64>::sse_encode(self.x, serializer);
         <Option<f64>>::sse_encode(self.y, serializer);
+    }
+}
+
+impl SseEncode for crate::bridge::symbolic::PrimePower {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.prime, serializer);
+        <u32>::sse_encode(self.power, serializer);
     }
 }
 

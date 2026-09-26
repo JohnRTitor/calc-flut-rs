@@ -20,6 +20,22 @@ pub enum SymbolicError {
     NoVariable,
     /// A definite operation needs lower and upper bounds, but they were absent.
     NoBounds,
+    /// The matrix grid held no cells.
+    EmptyMatrix,
+    /// One of the matrix's rows was a different length from the others.
+    RaggedMatrix {
+        /// The width every row was expected to have.
+        expected: usize,
+    },
+    /// One of the matrix's cells was left blank.
+    EmptyCell,
+    /// No integer was entered.
+    EmptyNumber,
+    /// The text was not a whole number.
+    NotAnInteger {
+        /// What was entered, for the message.
+        value: String,
+    },
     /// The input was an expression where an equation was required.
     NotEquation,
     /// The requested operation is valid but cannot be carried out as asked.
@@ -46,6 +62,16 @@ impl fmt::Display for SymbolicError {
             SymbolicError::NoVariable => write!(f, "This expression has no variable to work with"),
             SymbolicError::NoBounds => {
                 write!(f, "Give a lower and an upper bound to integrate between")
+            }
+            SymbolicError::EmptyMatrix => write!(f, "Enter at least one cell of the matrix"),
+            SymbolicError::RaggedMatrix { expected } => write!(
+                f,
+                "Every row needs the same number of cells; this one needs {expected}"
+            ),
+            SymbolicError::EmptyCell => write!(f, "One of the cells was left empty"),
+            SymbolicError::EmptyNumber => write!(f, "Enter a whole number"),
+            SymbolicError::NotAnInteger { value } => {
+                write!(f, "'{value}' is not a whole number")
             }
             SymbolicError::NotEquation => write!(
                 f,
@@ -145,12 +171,16 @@ impl SymbolicError {
     /// Classifies this error for the UI layer.
     pub const fn kind(&self) -> SymbolicErrorKind {
         match self {
-            SymbolicError::EmptyExpression | SymbolicError::InvalidExpression(_) => {
-                SymbolicErrorKind::Input
-            }
+            SymbolicError::EmptyExpression
+            | SymbolicError::InvalidExpression(_)
+            | SymbolicError::EmptyNumber
+            | SymbolicError::NotAnInteger { .. } => SymbolicErrorKind::Input,
             SymbolicError::UnknownOperation(_)
             | SymbolicError::NoVariable
             | SymbolicError::NoBounds
+            | SymbolicError::EmptyMatrix
+            | SymbolicError::RaggedMatrix { .. }
+            | SymbolicError::EmptyCell
             | SymbolicError::NotEquation
             | SymbolicError::NotSupported(_) => SymbolicErrorKind::Unsupported,
             SymbolicError::ComputationFailed(_) => SymbolicErrorKind::Computation,
@@ -173,6 +203,16 @@ impl SymbolicError {
                 Some("Include a letter, for example x^2 + 3*x".into())
             }
             SymbolicError::NoBounds => Some("For example 0 and 1, or pi and 2*pi".into()),
+            SymbolicError::EmptyMatrix | SymbolicError::EmptyCell => {
+                Some("Tap a cell and type a number, or a fraction like 1/2".into())
+            }
+            SymbolicError::RaggedMatrix { .. } => {
+                Some("Add or remove cells so every row is the same length".into())
+            }
+            SymbolicError::EmptyNumber => Some("For example 360 or 97".into()),
+            SymbolicError::NotAnInteger { .. } => {
+                Some("Digits only, and a minus sign if it is negative".into())
+            }
             SymbolicError::NotEquation => Some("Try something like x^2 - 4 = 0".into()),
             SymbolicError::NotSupported(_) => None,
             SymbolicError::ComputationFailed(_) => {

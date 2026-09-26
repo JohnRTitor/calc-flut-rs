@@ -11,10 +11,19 @@
 
 pub mod error;
 pub mod evaluator;
+pub mod matrix;
+pub mod ntheory;
 pub mod plot;
 pub mod solve;
 
 pub use error::{SymbolicError, SymbolicErrorKind};
+pub use matrix::{
+    EigenEntry, MAX_CELLS, MatrixAnalysis, MatrixSpec, analyse as analyse_matrix,
+};
+pub use ntheory::{
+    MAX_DIGITS as MAX_NUMBER_DIGITS, NumberAnalysis, PrimeFactor, analyse as analyse_number, coprime, gcd,
+    lcm,
+};
 pub use plot::{DEFAULT_SAMPLES, PlotCurve, PlotSample, plot};
 pub use solve::{SolutionCategory, SolveOutcome, solve};
 pub use evaluator::{

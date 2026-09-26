@@ -70,7 +70,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.13.0';
 
   @override
-  int get rustContentHash => 1833968171;
+  int get rustContentHash => -859048275;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -185,6 +185,10 @@ abstract class RustLibApi extends BaseApi {
 
   List<FfiConverterCategory> crateBridgeConverterGetConverterCategories();
 
+  Future<MatrixAnalysisResponse> crateBridgeSymbolicMatrixAnalyse({
+    required MatrixInput input,
+  });
+
   void crateBridgeCalculatorMemoryAdd({required double value});
 
   void crateBridgeCalculatorMemoryClear();
@@ -200,6 +204,25 @@ abstract class RustLibApi extends BaseApi {
     String? contextModulus,
     required String mode,
     required bool showSteps,
+  });
+
+  Future<NumberAnalysisResponse> crateBridgeSymbolicNumberAnalyse({
+    required String number,
+  });
+
+  Future<bool> crateBridgeSymbolicNumberCoprime({
+    required String first,
+    required String second,
+  });
+
+  Future<String> crateBridgeSymbolicNumberGcd({
+    required String first,
+    required String second,
+  });
+
+  Future<String> crateBridgeSymbolicNumberLcm({
+    required String first,
+    required String second,
   });
 
   List<String> crateBridgeSymbolicSymbolicOperations();
@@ -908,13 +931,43 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "get_converter_categories", argNames: []);
 
   @override
+  Future<MatrixAnalysisResponse> crateBridgeSymbolicMatrixAnalyse({
+    required MatrixInput input,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_matrix_input(input, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 24,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_matrix_analysis_response,
+          decodeErrorData: sse_decode_symbolic_error_info,
+        ),
+        constMeta: kCrateBridgeSymbolicMatrixAnalyseConstMeta,
+        argValues: [input],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateBridgeSymbolicMatrixAnalyseConstMeta =>
+      const TaskConstMeta(debugName: "matrix_analyse", argNames: ["input"]);
+
+  @override
   void crateBridgeCalculatorMemoryAdd({required double value}) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_f_64(value, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 24)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 25)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
@@ -936,7 +989,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 25)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 26)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
@@ -958,7 +1011,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 26)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 27)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_opt_box_autoadd_f_64,
@@ -981,7 +1034,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_f_64(value, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 27)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 28)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
@@ -1004,7 +1057,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_f_64(value, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 28)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 29)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
@@ -1035,7 +1088,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_opt_String(contextModulus, serializer);
           sse_encode_String(mode, serializer);
           sse_encode_bool(showSteps, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 29)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 30)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_modular_result,
@@ -1055,12 +1108,147 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<NumberAnalysisResponse> crateBridgeSymbolicNumberAnalyse({
+    required String number,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(number, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 31,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_number_analysis_response,
+          decodeErrorData: sse_decode_symbolic_error_info,
+        ),
+        constMeta: kCrateBridgeSymbolicNumberAnalyseConstMeta,
+        argValues: [number],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateBridgeSymbolicNumberAnalyseConstMeta =>
+      const TaskConstMeta(debugName: "number_analyse", argNames: ["number"]);
+
+  @override
+  Future<bool> crateBridgeSymbolicNumberCoprime({
+    required String first,
+    required String second,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(first, serializer);
+          sse_encode_String(second, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 32,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_bool,
+          decodeErrorData: sse_decode_symbolic_error_info,
+        ),
+        constMeta: kCrateBridgeSymbolicNumberCoprimeConstMeta,
+        argValues: [first, second],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateBridgeSymbolicNumberCoprimeConstMeta =>
+      const TaskConstMeta(
+        debugName: "number_coprime",
+        argNames: ["first", "second"],
+      );
+
+  @override
+  Future<String> crateBridgeSymbolicNumberGcd({
+    required String first,
+    required String second,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(first, serializer);
+          sse_encode_String(second, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 33,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_String,
+          decodeErrorData: sse_decode_symbolic_error_info,
+        ),
+        constMeta: kCrateBridgeSymbolicNumberGcdConstMeta,
+        argValues: [first, second],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateBridgeSymbolicNumberGcdConstMeta =>
+      const TaskConstMeta(
+        debugName: "number_gcd",
+        argNames: ["first", "second"],
+      );
+
+  @override
+  Future<String> crateBridgeSymbolicNumberLcm({
+    required String first,
+    required String second,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(first, serializer);
+          sse_encode_String(second, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 34,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_String,
+          decodeErrorData: sse_decode_symbolic_error_info,
+        ),
+        constMeta: kCrateBridgeSymbolicNumberLcmConstMeta,
+        argValues: [first, second],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateBridgeSymbolicNumberLcmConstMeta =>
+      const TaskConstMeta(
+        debugName: "number_lcm",
+        argNames: ["first", "second"],
+      );
+
+  @override
   List<String> crateBridgeSymbolicSymbolicOperations() {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 30)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 35)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_list_String,
@@ -1092,7 +1280,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 31,
+            funcId: 36,
             port: port_,
           );
         },
@@ -1129,7 +1317,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 32,
+            funcId: 37,
             port: port_,
           );
         },
@@ -1170,7 +1358,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 33,
+            funcId: 38,
             port: port_,
           );
         },
@@ -1278,6 +1466,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  MatrixInput dco_decode_box_autoadd_matrix_input(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_matrix_input(raw);
+  }
+
+  @protected
   StructureAnalysis dco_decode_box_autoadd_structure_analysis(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_structure_analysis(raw);
@@ -1338,6 +1532,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     return DiscountResult(
       amountSaved: dco_decode_f_64(arr[0]),
       finalPrice: dco_decode_f_64(arr[1]),
+    );
+  }
+
+  @protected
+  EigenPair dco_decode_eigen_pair(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return EigenPair(
+      eigenvalue: dco_decode_String(arr[0]),
+      vector: dco_decode_list_String(arr[1]),
+      eigenspaceDimension: dco_decode_u_32(arr[2]),
     );
   }
 
@@ -1469,6 +1676,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<EigenPair> dco_decode_list_eigen_pair(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_eigen_pair).toList();
+  }
+
+  @protected
   List<ElementOrderPair> dco_decode_list_element_order_pair(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return (raw as List<dynamic>).map(dco_decode_element_order_pair).toList();
@@ -1503,6 +1716,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<List<String>> dco_decode_list_list_String(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_list_String).toList();
+  }
+
+  @protected
   List<PlotPoint> dco_decode_list_plot_point(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return (raw as List<dynamic>).map(dco_decode_plot_point).toList();
@@ -1512,6 +1731,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as Uint8List;
+  }
+
+  @protected
+  List<PrimePower> dco_decode_list_prime_power(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_prime_power).toList();
   }
 
   @protected
@@ -1534,6 +1759,33 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  MatrixAnalysisResponse dco_decode_matrix_analysis_response(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 8)
+      throw Exception('unexpected arr length: expect 8 but see ${arr.length}');
+    return MatrixAnalysisResponse(
+      determinant: dco_decode_opt_String(arr[0]),
+      rank: dco_decode_u_32(arr[1]),
+      trace: dco_decode_opt_String(arr[2]),
+      inverse: dco_decode_opt_list_list_String(arr[3]),
+      reduced: dco_decode_list_list_String(arr[4]),
+      eigenvalues: dco_decode_opt_list_String(arr[5]),
+      eigenvectors: dco_decode_opt_list_eigen_pair(arr[6]),
+      details: dco_decode_opt_String(arr[7]),
+    );
+  }
+
+  @protected
+  MatrixInput dco_decode_matrix_input(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 1)
+      throw Exception('unexpected arr length: expect 1 but see ${arr.length}');
+    return MatrixInput(cells: dco_decode_list_list_String(arr[0]));
+  }
+
+  @protected
   ModularResult dco_decode_modular_result(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
@@ -1544,6 +1796,28 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       details: dco_decode_opt_String(arr[1]),
       modulusUsed: dco_decode_opt_String(arr[2]),
       steps: dco_decode_opt_String(arr[3]),
+    );
+  }
+
+  @protected
+  NumberAnalysisResponse dco_decode_number_analysis_response(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 12)
+      throw Exception('unexpected arr length: expect 12 but see ${arr.length}');
+    return NumberAnalysisResponse(
+      isPrime: dco_decode_bool(arr[0]),
+      isSquare: dco_decode_bool(arr[1]),
+      isPerfect: dco_decode_bool(arr[2]),
+      isCarmichael: dco_decode_bool(arr[3]),
+      factors: dco_decode_list_prime_power(arr[4]),
+      divisors: dco_decode_list_String(arr[5]),
+      divisorCount: dco_decode_u_32(arr[6]),
+      divisorSum: dco_decode_String(arr[7]),
+      totient: dco_decode_String(arr[8]),
+      nextPrime: dco_decode_String(arr[9]),
+      previousPrime: dco_decode_String(arr[10]),
+      details: dco_decode_opt_String(arr[11]),
     );
   }
 
@@ -1586,6 +1860,24 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<String>? dco_decode_opt_list_String(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_list_String(raw);
+  }
+
+  @protected
+  List<EigenPair>? dco_decode_opt_list_eigen_pair(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_list_eigen_pair(raw);
+  }
+
+  @protected
+  List<List<String>>? dco_decode_opt_list_list_String(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_list_list_String(raw);
+  }
+
+  @protected
   PlotData dco_decode_plot_data(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
@@ -1609,6 +1901,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     return PlotPoint(
       x: dco_decode_f_64(arr[0]),
       y: dco_decode_opt_box_autoadd_f_64(arr[1]),
+    );
+  }
+
+  @protected
+  PrimePower dco_decode_prime_power(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return PrimePower(
+      prime: dco_decode_String(arr[0]),
+      power: dco_decode_u_32(arr[1]),
     );
   }
 
@@ -1806,6 +2110,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  MatrixInput sse_decode_box_autoadd_matrix_input(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_matrix_input(deserializer));
+  }
+
+  @protected
   StructureAnalysis sse_decode_box_autoadd_structure_analysis(
     SseDeserializer deserializer,
   ) {
@@ -1868,6 +2180,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     return DiscountResult(
       amountSaved: var_amountSaved,
       finalPrice: var_finalPrice,
+    );
+  }
+
+  @protected
+  EigenPair sse_decode_eigen_pair(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_eigenvalue = sse_decode_String(deserializer);
+    var var_vector = sse_decode_list_String(deserializer);
+    var var_eigenspaceDimension = sse_decode_u_32(deserializer);
+    return EigenPair(
+      eigenvalue: var_eigenvalue,
+      vector: var_vector,
+      eigenspaceDimension: var_eigenspaceDimension,
     );
   }
 
@@ -2015,6 +2340,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<EigenPair> sse_decode_list_eigen_pair(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <EigenPair>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_eigen_pair(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
   List<ElementOrderPair> sse_decode_list_element_order_pair(
     SseDeserializer deserializer,
   ) {
@@ -2081,6 +2418,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<List<String>> sse_decode_list_list_String(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <List<String>>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_list_String(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
   List<PlotPoint> sse_decode_list_plot_point(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
@@ -2097,6 +2446,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var len_ = sse_decode_i_32(deserializer);
     return deserializer.buffer.getUint8List(len_);
+  }
+
+  @protected
+  List<PrimePower> sse_decode_list_prime_power(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <PrimePower>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_prime_power(deserializer));
+    }
+    return ans_;
   }
 
   @protected
@@ -2127,6 +2488,38 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  MatrixAnalysisResponse sse_decode_matrix_analysis_response(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_determinant = sse_decode_opt_String(deserializer);
+    var var_rank = sse_decode_u_32(deserializer);
+    var var_trace = sse_decode_opt_String(deserializer);
+    var var_inverse = sse_decode_opt_list_list_String(deserializer);
+    var var_reduced = sse_decode_list_list_String(deserializer);
+    var var_eigenvalues = sse_decode_opt_list_String(deserializer);
+    var var_eigenvectors = sse_decode_opt_list_eigen_pair(deserializer);
+    var var_details = sse_decode_opt_String(deserializer);
+    return MatrixAnalysisResponse(
+      determinant: var_determinant,
+      rank: var_rank,
+      trace: var_trace,
+      inverse: var_inverse,
+      reduced: var_reduced,
+      eigenvalues: var_eigenvalues,
+      eigenvectors: var_eigenvectors,
+      details: var_details,
+    );
+  }
+
+  @protected
+  MatrixInput sse_decode_matrix_input(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_cells = sse_decode_list_list_String(deserializer);
+    return MatrixInput(cells: var_cells);
+  }
+
+  @protected
   ModularResult sse_decode_modular_result(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_value = sse_decode_String(deserializer);
@@ -2138,6 +2531,39 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       details: var_details,
       modulusUsed: var_modulusUsed,
       steps: var_steps,
+    );
+  }
+
+  @protected
+  NumberAnalysisResponse sse_decode_number_analysis_response(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_isPrime = sse_decode_bool(deserializer);
+    var var_isSquare = sse_decode_bool(deserializer);
+    var var_isPerfect = sse_decode_bool(deserializer);
+    var var_isCarmichael = sse_decode_bool(deserializer);
+    var var_factors = sse_decode_list_prime_power(deserializer);
+    var var_divisors = sse_decode_list_String(deserializer);
+    var var_divisorCount = sse_decode_u_32(deserializer);
+    var var_divisorSum = sse_decode_String(deserializer);
+    var var_totient = sse_decode_String(deserializer);
+    var var_nextPrime = sse_decode_String(deserializer);
+    var var_previousPrime = sse_decode_String(deserializer);
+    var var_details = sse_decode_opt_String(deserializer);
+    return NumberAnalysisResponse(
+      isPrime: var_isPrime,
+      isSquare: var_isSquare,
+      isPerfect: var_isPerfect,
+      isCarmichael: var_isCarmichael,
+      factors: var_factors,
+      divisors: var_divisors,
+      divisorCount: var_divisorCount,
+      divisorSum: var_divisorSum,
+      totient: var_totient,
+      nextPrime: var_nextPrime,
+      previousPrime: var_previousPrime,
+      details: var_details,
     );
   }
 
@@ -2212,6 +2638,43 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<String>? sse_decode_opt_list_String(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_list_String(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  List<EigenPair>? sse_decode_opt_list_eigen_pair(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_list_eigen_pair(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  List<List<String>>? sse_decode_opt_list_list_String(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_list_list_String(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
   PlotData sse_decode_plot_data(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_points = sse_decode_list_plot_point(deserializer);
@@ -2234,6 +2697,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_x = sse_decode_f_64(deserializer);
     var var_y = sse_decode_opt_box_autoadd_f_64(deserializer);
     return PlotPoint(x: var_x, y: var_y);
+  }
+
+  @protected
+  PrimePower sse_decode_prime_power(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_prime = sse_decode_String(deserializer);
+    var var_power = sse_decode_u_32(deserializer);
+    return PrimePower(prime: var_prime, power: var_power);
   }
 
   @protected
@@ -2456,6 +2927,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_box_autoadd_matrix_input(
+    MatrixInput self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_matrix_input(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_structure_analysis(
     StructureAnalysis self,
     SseSerializer serializer,
@@ -2506,6 +2986,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_f_64(self.amountSaved, serializer);
     sse_encode_f_64(self.finalPrice, serializer);
+  }
+
+  @protected
+  void sse_encode_eigen_pair(EigenPair self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.eigenvalue, serializer);
+    sse_encode_list_String(self.vector, serializer);
+    sse_encode_u_32(self.eigenspaceDimension, serializer);
   }
 
   @protected
@@ -2619,6 +3107,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_list_eigen_pair(
+    List<EigenPair> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_eigen_pair(item, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_list_element_order_pair(
     List<ElementOrderPair> self,
     SseSerializer serializer,
@@ -2676,6 +3176,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_list_list_String(
+    List<List<String>> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_list_String(item, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_list_plot_point(
     List<PlotPoint> self,
     SseSerializer serializer,
@@ -2695,6 +3207,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_32(self.length, serializer);
     serializer.buffer.putUint8List(self);
+  }
+
+  @protected
+  void sse_encode_list_prime_power(
+    List<PrimePower> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_prime_power(item, serializer);
+    }
   }
 
   @protected
@@ -2718,12 +3242,54 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_matrix_analysis_response(
+    MatrixAnalysisResponse self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_opt_String(self.determinant, serializer);
+    sse_encode_u_32(self.rank, serializer);
+    sse_encode_opt_String(self.trace, serializer);
+    sse_encode_opt_list_list_String(self.inverse, serializer);
+    sse_encode_list_list_String(self.reduced, serializer);
+    sse_encode_opt_list_String(self.eigenvalues, serializer);
+    sse_encode_opt_list_eigen_pair(self.eigenvectors, serializer);
+    sse_encode_opt_String(self.details, serializer);
+  }
+
+  @protected
+  void sse_encode_matrix_input(MatrixInput self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_list_list_String(self.cells, serializer);
+  }
+
+  @protected
   void sse_encode_modular_result(ModularResult self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(self.value, serializer);
     sse_encode_opt_String(self.details, serializer);
     sse_encode_opt_String(self.modulusUsed, serializer);
     sse_encode_opt_String(self.steps, serializer);
+  }
+
+  @protected
+  void sse_encode_number_analysis_response(
+    NumberAnalysisResponse self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_bool(self.isPrime, serializer);
+    sse_encode_bool(self.isSquare, serializer);
+    sse_encode_bool(self.isPerfect, serializer);
+    sse_encode_bool(self.isCarmichael, serializer);
+    sse_encode_list_prime_power(self.factors, serializer);
+    sse_encode_list_String(self.divisors, serializer);
+    sse_encode_u_32(self.divisorCount, serializer);
+    sse_encode_String(self.divisorSum, serializer);
+    sse_encode_String(self.totient, serializer);
+    sse_encode_String(self.nextPrime, serializer);
+    sse_encode_String(self.previousPrime, serializer);
+    sse_encode_opt_String(self.details, serializer);
   }
 
   @protected
@@ -2796,6 +3362,45 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_opt_list_String(
+    List<String>? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_list_String(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_list_eigen_pair(
+    List<EigenPair>? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_list_eigen_pair(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_list_list_String(
+    List<List<String>>? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_list_list_String(self, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_plot_data(PlotData self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_list_plot_point(self.points, serializer);
@@ -2810,6 +3415,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_f_64(self.x, serializer);
     sse_encode_opt_box_autoadd_f_64(self.y, serializer);
+  }
+
+  @protected
+  void sse_encode_prime_power(PrimePower self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.prime, serializer);
+    sse_encode_u_32(self.power, serializer);
   }
 
   @protected

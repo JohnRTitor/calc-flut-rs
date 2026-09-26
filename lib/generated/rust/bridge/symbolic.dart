@@ -76,6 +76,42 @@ Future<PlotData> symbolicPlot({
   samples: samples,
 );
 
+/// Analyses a matrix.
+///
+/// Every value is exact: a determinant over thirty digits comes back as thirty
+/// digits, not a float that has lost the end of them.
+///
+/// Runs off the UI thread; see the module docs.
+Future<MatrixAnalysisResponse> matrixAnalyse({required MatrixInput input}) =>
+    RustLib.instance.api.crateBridgeSymbolicMatrixAnalyse(input: input);
+
+/// Analyses one integer.
+///
+/// Runs off the UI thread; see the module docs.
+Future<NumberAnalysisResponse> numberAnalyse({required String number}) =>
+    RustLib.instance.api.crateBridgeSymbolicNumberAnalyse(number: number);
+
+/// The greatest common divisor of two integers. Never negative.
+Future<String> numberGcd({required String first, required String second}) =>
+    RustLib.instance.api.crateBridgeSymbolicNumberGcd(
+      first: first,
+      second: second,
+    );
+
+/// The least common multiple of two integers. Never negative.
+Future<String> numberLcm({required String first, required String second}) =>
+    RustLib.instance.api.crateBridgeSymbolicNumberLcm(
+      first: first,
+      second: second,
+    );
+
+/// Whether two integers share no common factor other than 1.
+Future<bool> numberCoprime({required String first, required String second}) =>
+    RustLib.instance.api.crateBridgeSymbolicNumberCoprime(
+      first: first,
+      second: second,
+    );
+
 /// One alternative representation of the same expression, offered as a
 /// tappable chip under the primary result.
 class AlternateForm {
@@ -122,6 +158,219 @@ class Bounds {
           runtimeType == other.runtimeType &&
           lower == other.lower &&
           upper == other.upper;
+}
+
+/// A representative eigenvector together with the eigenvalue it belongs to.
+class EigenPair {
+  /// The eigenvalue this vector belongs to.
+  final String eigenvalue;
+
+  /// One vector from its eigenspace, as a single row.
+  final List<String> vector;
+
+  /// How many independent vectors the eigenspace actually has, which may be
+  /// more than the one shown.
+  final int eigenspaceDimension;
+
+  const EigenPair({
+    required this.eigenvalue,
+    required this.vector,
+    required this.eigenspaceDimension,
+  });
+
+  @override
+  int get hashCode =>
+      eigenvalue.hashCode ^ vector.hashCode ^ eigenspaceDimension.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is EigenPair &&
+          runtimeType == other.runtimeType &&
+          eigenvalue == other.eigenvalue &&
+          vector == other.vector &&
+          eigenspaceDimension == other.eigenspaceDimension;
+}
+
+/// Everything worth knowing about a matrix, in one response.
+///
+/// One request rather than one per quantity: a user who types a matrix wants
+/// to see all of it, and six round trips would be six times the work for the
+/// same answer.
+class MatrixAnalysisResponse {
+  /// The determinant, when the matrix is square.
+  final String? determinant;
+
+  /// The rank, always defined.
+  final int rank;
+
+  /// The trace, when the matrix is square.
+  final String? trace;
+
+  /// The inverse, row-major, when one exists.
+  final List<List<String>>? inverse;
+
+  /// The reduced row-echelon form, row-major.
+  final List<List<String>> reduced;
+
+  /// The eigenvalues, or `None` when they could not all be determined.
+  ///
+  /// Absent means "could not work it out", which is not the same as "there
+  /// are none" and must not be shown as an empty list.
+  final List<String>? eigenvalues;
+
+  /// One representative eigenvector per *distinct* eigenvalue.
+  ///
+  /// Keyed by its own eigenvalue rather than listed in step with
+  /// [MatrixAnalysisResponse::eigenvalues], because those two do not line up:
+  /// the eigenvalues come back with multiplicity while the eigenvectors come
+  /// back per distinct value.
+  final List<EigenPair>? eigenvectors;
+
+  /// Facts explaining any of the above being absent.
+  final String? details;
+
+  const MatrixAnalysisResponse({
+    this.determinant,
+    required this.rank,
+    this.trace,
+    this.inverse,
+    required this.reduced,
+    this.eigenvalues,
+    this.eigenvectors,
+    this.details,
+  });
+
+  @override
+  int get hashCode =>
+      determinant.hashCode ^
+      rank.hashCode ^
+      trace.hashCode ^
+      inverse.hashCode ^
+      reduced.hashCode ^
+      eigenvalues.hashCode ^
+      eigenvectors.hashCode ^
+      details.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MatrixAnalysisResponse &&
+          runtimeType == other.runtimeType &&
+          determinant == other.determinant &&
+          rank == other.rank &&
+          trace == other.trace &&
+          inverse == other.inverse &&
+          reduced == other.reduced &&
+          eigenvalues == other.eigenvalues &&
+          eigenvectors == other.eigenvectors &&
+          details == other.details;
+}
+
+/// A matrix of exact entries, as entered.
+class MatrixInput {
+  /// The cells, row-major. Every row must be the same length.
+  final List<List<String>> cells;
+
+  const MatrixInput({required this.cells});
+
+  @override
+  int get hashCode => cells.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MatrixInput &&
+          runtimeType == other.runtimeType &&
+          cells == other.cells;
+}
+
+/// Everything worth knowing about one integer, in one response.
+class NumberAnalysisResponse {
+  /// Whether it is prime. Zero, one and negatives are not.
+  final bool isPrime;
+
+  /// Whether it is a perfect square.
+  final bool isSquare;
+
+  /// Whether it is a perfect number.
+  final bool isPerfect;
+
+  /// Whether it is a Carmichael number.
+  final bool isCarmichael;
+
+  /// The prime factorisation, leading with `-1` for a negative number.
+  final List<PrimePower> factors;
+
+  /// Every positive divisor, in order. Empty for zero, which has infinitely
+  /// many.
+  final List<String> divisors;
+
+  /// How many divisors it has.
+  final int divisorCount;
+
+  /// The sum of its divisors. Empty for zero, where the sum diverges.
+  final String divisorSum;
+
+  /// Euler's totient. Empty for zero, where it is not defined.
+  final String totient;
+
+  /// The next prime above it.
+  final String nextPrime;
+
+  /// The largest prime below it. Empty when there is none.
+  final String previousPrime;
+
+  /// Facts explaining any of the above being absent.
+  final String? details;
+
+  const NumberAnalysisResponse({
+    required this.isPrime,
+    required this.isSquare,
+    required this.isPerfect,
+    required this.isCarmichael,
+    required this.factors,
+    required this.divisors,
+    required this.divisorCount,
+    required this.divisorSum,
+    required this.totient,
+    required this.nextPrime,
+    required this.previousPrime,
+    this.details,
+  });
+
+  @override
+  int get hashCode =>
+      isPrime.hashCode ^
+      isSquare.hashCode ^
+      isPerfect.hashCode ^
+      isCarmichael.hashCode ^
+      factors.hashCode ^
+      divisors.hashCode ^
+      divisorCount.hashCode ^
+      divisorSum.hashCode ^
+      totient.hashCode ^
+      nextPrime.hashCode ^
+      previousPrime.hashCode ^
+      details.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is NumberAnalysisResponse &&
+          runtimeType == other.runtimeType &&
+          isPrime == other.isPrime &&
+          isSquare == other.isSquare &&
+          isPerfect == other.isPerfect &&
+          isCarmichael == other.isCarmichael &&
+          factors == other.factors &&
+          divisors == other.divisors &&
+          divisorCount == other.divisorCount &&
+          divisorSum == other.divisorSum &&
+          totient == other.totient &&
+          nextPrime == other.nextPrime &&
+          previousPrime == other.previousPrime &&
+          details == other.details;
 }
 
 /// A sampled curve and the window it was taken over.
@@ -193,6 +442,28 @@ class PlotPoint {
           runtimeType == other.runtimeType &&
           x == other.x &&
           y == other.y;
+}
+
+/// One prime-power term of a factorisation.
+class PrimePower {
+  /// The prime, as written. `-1` leads when the number was negative.
+  final String prime;
+
+  /// How many times it occurs.
+  final int power;
+
+  const PrimePower({required this.prime, required this.power});
+
+  @override
+  int get hashCode => prime.hashCode ^ power.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PrimePower &&
+          runtimeType == other.runtimeType &&
+          prime == other.prime &&
+          power == other.power;
 }
 
 /// How many solutions an equation has.

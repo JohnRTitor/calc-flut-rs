@@ -15,6 +15,7 @@ use flutter_rust_bridge::frb;
 
 use crate::symbolic::error::{SymbolicError, SymbolicErrorKind};
 use crate::symbolic::evaluator::{self, LimitRange, SymbolicOperation};
+use crate::symbolic::matrix::MatrixSpec as CoreMatrixSpec;
 use crate::symbolic::solve::{self, SolutionCategory};
 
 /// A structured error, safe to display verbatim.
@@ -271,5 +272,191 @@ pub async fn symbolic_plot(
             y_min: data.y_min,
             y_max: data.y_max,
         })
+        .map_err(|e| SymbolicErrorInfo::from(&e))
+}
+
+/// A matrix of exact entries, as entered.
+#[frb]
+pub struct MatrixInput {
+    /// The cells, row-major. Every row must be the same length.
+    pub cells: Vec<Vec<String>>,
+}
+
+/// Everything worth knowing about a matrix, in one response.
+///
+/// One request rather than one per quantity: a user who types a matrix wants
+/// to see all of it, and six round trips would be six times the work for the
+/// same answer.
+#[frb]
+pub struct MatrixAnalysisResponse {
+    /// The determinant, when the matrix is square.
+    pub determinant: Option<String>,
+    /// The rank, always defined.
+    pub rank: u32,
+    /// The trace, when the matrix is square.
+    pub trace: Option<String>,
+    /// The inverse, row-major, when one exists.
+    pub inverse: Option<Vec<Vec<String>>>,
+    /// The reduced row-echelon form, row-major.
+    pub reduced: Vec<Vec<String>>,
+    /// The eigenvalues, or `None` when they could not all be determined.
+    ///
+    /// Absent means "could not work it out", which is not the same as "there
+    /// are none" and must not be shown as an empty list.
+    pub eigenvalues: Option<Vec<String>>,
+    /// One representative eigenvector per *distinct* eigenvalue.
+    ///
+    /// Keyed by its own eigenvalue rather than listed in step with
+    /// [MatrixAnalysisResponse::eigenvalues], because those two do not line up:
+    /// the eigenvalues come back with multiplicity while the eigenvectors come
+    /// back per distinct value.
+    pub eigenvectors: Option<Vec<EigenPair>>,
+    /// Facts explaining any of the above being absent.
+    pub details: Option<String>,
+}
+
+/// A representative eigenvector together with the eigenvalue it belongs to.
+#[frb]
+pub struct EigenPair {
+    /// The eigenvalue this vector belongs to.
+    pub eigenvalue: String,
+    /// One vector from its eigenspace, as a single row.
+    pub vector: Vec<String>,
+    /// How many independent vectors the eigenspace actually has, which may be
+    /// more than the one shown.
+    pub eigenspace_dimension: u32,
+}
+
+/// Analyses a matrix.
+///
+/// Every value is exact: a determinant over thirty digits comes back as thirty
+/// digits, not a float that has lost the end of them.
+///
+/// Runs off the UI thread; see the module docs.
+#[frb]
+pub async fn matrix_analyse(
+    input: MatrixInput,
+) -> Result<MatrixAnalysisResponse, SymbolicErrorInfo> {
+    crate::symbolic::matrix::analyse(&CoreMatrixSpec::new(input.cells))
+        .map(|analysis| MatrixAnalysisResponse {
+            determinant: analysis.determinant,
+            rank: analysis.rank as u32,
+            trace: analysis.trace,
+            inverse: analysis.inverse,
+            reduced: analysis.reduced,
+            eigenvalues: analysis.eigenvalues,
+            eigenvectors: analysis.eigenvectors.map(|entries| {
+                entries
+                    .into_iter()
+                    .map(|entry| EigenPair {
+                        eigenvalue: entry.eigenvalue,
+                        vector: entry.vector,
+                        eigenspace_dimension: entry.eigenspace_dimension as u32,
+                    })
+                    .collect()
+            }),
+            details: analysis.details,
+        })
+        .map_err(|e| SymbolicErrorInfo::from(&e))
+}
+
+/// One prime-power term of a factorisation.
+#[frb]
+pub struct PrimePower {
+    /// The prime, as written. `-1` leads when the number was negative.
+    pub prime: String,
+    /// How many times it occurs.
+    pub power: u32,
+}
+
+/// Everything worth knowing about one integer, in one response.
+#[frb]
+pub struct NumberAnalysisResponse {
+    /// Whether it is prime. Zero, one and negatives are not.
+    pub is_prime: bool,
+    /// Whether it is a perfect square.
+    pub is_square: bool,
+    /// Whether it is a perfect number.
+    pub is_perfect: bool,
+    /// Whether it is a Carmichael number.
+    pub is_carmichael: bool,
+    /// The prime factorisation, leading with `-1` for a negative number.
+    pub factors: Vec<PrimePower>,
+    /// Every positive divisor, in order. Empty for zero, which has infinitely
+    /// many.
+    pub divisors: Vec<String>,
+    /// How many divisors it has.
+    pub divisor_count: u32,
+    /// The sum of its divisors. Empty for zero, where the sum diverges.
+    pub divisor_sum: String,
+    /// Euler's totient. Empty for zero, where it is not defined.
+    pub totient: String,
+    /// The next prime above it.
+    pub next_prime: String,
+    /// The largest prime below it. Empty when there is none.
+    pub previous_prime: String,
+    /// Facts explaining any of the above being absent.
+    pub details: Option<String>,
+}
+
+/// Analyses one integer.
+///
+/// Runs off the UI thread; see the module docs.
+#[frb]
+pub async fn number_analyse(
+    number: String,
+) -> Result<NumberAnalysisResponse, SymbolicErrorInfo> {
+    crate::symbolic::ntheory::analyse(&number)
+        .map(|analysis| NumberAnalysisResponse {
+            is_prime: analysis.is_prime,
+            is_square: analysis.is_square,
+            is_perfect: analysis.is_perfect,
+            is_carmichael: analysis.is_carmichael,
+            factors: analysis
+                .factors
+                .into_iter()
+                .map(|factor| PrimePower {
+                    prime: factor.prime,
+                    power: factor.power,
+                })
+                .collect(),
+            divisors: analysis.divisors,
+            divisor_count: analysis.divisor_count as u32,
+            divisor_sum: analysis.divisor_sum,
+            totient: analysis.totient,
+            next_prime: analysis.next_prime,
+            previous_prime: analysis.previous_prime,
+            details: analysis.details,
+        })
+        .map_err(|e| SymbolicErrorInfo::from(&e))
+}
+
+/// The greatest common divisor of two integers. Never negative.
+#[frb]
+pub async fn number_gcd(
+    first: String,
+    second: String,
+) -> Result<String, SymbolicErrorInfo> {
+    crate::symbolic::ntheory::gcd(&first, &second)
+        .map_err(|e| SymbolicErrorInfo::from(&e))
+}
+
+/// The least common multiple of two integers. Never negative.
+#[frb]
+pub async fn number_lcm(
+    first: String,
+    second: String,
+) -> Result<String, SymbolicErrorInfo> {
+    crate::symbolic::ntheory::lcm(&first, &second)
+        .map_err(|e| SymbolicErrorInfo::from(&e))
+}
+
+/// Whether two integers share no common factor other than 1.
+#[frb]
+pub async fn number_coprime(
+    first: String,
+    second: String,
+) -> Result<bool, SymbolicErrorInfo> {
+    crate::symbolic::ntheory::coprime(&first, &second)
         .map_err(|e| SymbolicErrorInfo::from(&e))
 }

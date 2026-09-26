@@ -373,7 +373,7 @@ pub fn transform(
             "as entered:  {}\n{}:     {}\nresult:      {rendered}",
             trimmed,
             operation.verb().to_lowercase(),
-            target.map_or_else(|| String::new(), |var| format!("with respect to {var}"))
+            target.map_or_else(String::new, |var| format!("with respect to {var}"))
         )),
         (false, _) => None,
     };
