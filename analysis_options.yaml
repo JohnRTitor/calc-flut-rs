@@ -7,6 +7,27 @@
 
 # The following line activates a set of recommended lints for Flutter apps,
 # packages, and plugins designed to encourage good coding practices.
+#
+# Two directories are excluded, both because what they contain is not ours to
+# fix. The platform folders — android, ios, web, windows, macos, linux — are
+# deliberately absent: they hold no Dart at all today, and excluding them by
+# name rather than by content would silently stop checking real code the day a
+# plugin puts a web implementation in web/ or tooling lands under android/.
+analyzer:
+  exclude:
+    # Generated, gitignored, and rebuilt on every build: a copy of the cargokit
+    # build tool. Analysing it twice reports the same diagnostics under two
+    # paths.
+    - build/**
+    # Vendored cargokit. Third-party source we cannot fix, so a lint failure
+    # there is noise rather than a finding.
+    - rust_builder/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
 include: package:flutter_lints/flutter.yaml
 
 linter:
