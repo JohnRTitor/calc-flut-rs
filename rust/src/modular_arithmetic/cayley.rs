@@ -55,7 +55,7 @@ pub fn unit_group_table(n: i128) -> Result<(Vec<i128>, Vec<Vec<i128>>), ModError
         )));
     }
 
-    let units = unit_group(n);
+    let units = unit_group(n)?;
     let mut table = Vec::with_capacity(units.len());
 
     for &u1 in &units {

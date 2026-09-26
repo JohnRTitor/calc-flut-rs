@@ -115,10 +115,10 @@ pub fn evaluate_mod_expr(
         }
         ModExpr::Totient(a) => {
             let val_a = eval(a, context_modulus)?;
-            let phi = crate::modular_arithmetic::number_theory_ext::euler_totient(val_a);
+            let phi = crate::modular_arithmetic::number_theory_ext::euler_totient(val_a)?;
             let steps = if show_steps {
                 let factors =
-                    crate::modular_arithmetic::number_theory_ext::prime_factorization(val_a);
+                    crate::modular_arithmetic::number_theory_ext::prime_factorization(val_a)?;
                 let mut s = format!("Prime factorization of {}:\n", val_a);
                 for (p, e) in &factors {
                     s.push_str(&format!("{}^{} ", p, e));
@@ -153,7 +153,7 @@ pub fn evaluate_mod_expr(
         }
         ModExpr::Units(m) => {
             let val_m = eval(m, context_modulus)?;
-            let u = crate::modular_arithmetic::number_theory_ext::unit_group(val_m);
+            let u = crate::modular_arithmetic::number_theory_ext::unit_group(val_m)?;
             Ok(ModResult::with_modulus(
                 format_set(&u),
                 format!("|Z_{}*| = {}", val_m, u.len()),
@@ -180,7 +180,7 @@ pub fn evaluate_mod_expr(
         }
         ModExpr::Nilpotents(m) => {
             let val_m = eval(m, context_modulus)?;
-            let ni = crate::modular_arithmetic::ring_analysis::nilpotents_limited(val_m, 10000);
+            let ni = crate::modular_arithmetic::ring_analysis::nilpotents_limited(val_m, 10000)?;
             let ni_str = format!(
                 "{{{}}}",
                 ni.iter()
@@ -265,7 +265,7 @@ pub fn evaluate_mod_expr(
         }
         ModExpr::QuadraticResidues(m) => {
             let val_m = eval(m, context_modulus)?;
-            let qr = crate::modular_arithmetic::quadratic::quadratic_residues(val_m);
+            let qr = crate::modular_arithmetic::quadratic::quadratic_residues(val_m)?;
             Ok(ModResult::with_modulus(
                 format_set(&qr),
                 format!("{} quadratic residues mod {}", qr.len(), val_m),
@@ -274,7 +274,7 @@ pub fn evaluate_mod_expr(
         }
         ModExpr::Analyze(m) => {
             let val_m = eval(m, context_modulus)?;
-            let info = crate::modular_arithmetic::ring_analysis::ring_classify(val_m);
+            let info = crate::modular_arithmetic::ring_analysis::ring_classify(val_m)?;
             Ok(ModResult::with_modulus(
                 format!("Z_{} Analysis", val_m),
                 format!(

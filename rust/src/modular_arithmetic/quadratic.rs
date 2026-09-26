@@ -1,3 +1,4 @@
+use crate::modular_arithmetic::number_theory_ext::MAX_LISTED;
 use crate::modular_arithmetic::{
     error::ModError,
     mod_arith::{is_prime, mod_pow, mod_reduce},
@@ -5,11 +6,24 @@ use crate::modular_arithmetic::{
 use num_modular::ModularSymbols;
 
 /// Returns the quadratic residues modulo n.
-pub fn quadratic_residues(n: i128) -> Vec<i128> {
+///
+/// Refused above `MAX_LISTED`, for the same reason as `unit_group`: the result is
+/// rendered as one comma-joined string, and there is no partial set of residues
+/// that is still the answer.
+pub fn quadratic_residues(n: i128) -> Result<Vec<i128>, ModError> {
+    let Some(n) = n.checked_abs() else {
+        return Err(ModError::TooLarge(format!(
+            "{n} has no representable absolute value"
+        )));
+    };
     let mut residues = std::collections::HashSet::new();
-    let n = n.abs();
     if n <= 1 {
-        return vec![];
+        return Ok(vec![]);
+    }
+    if n > MAX_LISTED {
+        return Err(ModError::TooLarge(format!(
+            "Z_{n} has too many elements to list residues for; the limit is {MAX_LISTED}."
+        )));
     }
 
     // 0 is typically excluded or included depending on definition. We will include it.
@@ -19,14 +33,13 @@ pub fn quadratic_residues(n: i128) -> Vec<i128> {
 
     let mut result: Vec<i128> = residues.into_iter().collect();
     result.sort_unstable();
-    result
+    Ok(result)
 }
 
 /// Checks if a is a quadratic residue modulo n.
 pub fn is_quadratic_residue(a: i128, n: i128) -> bool {
     let a_red = mod_reduce(a, n);
-    let residues = quadratic_residues(n);
-    residues.contains(&a_red)
+    quadratic_residues(n).is_ok_and(|residues| residues.contains(&a_red))
 }
 
 /// Computes the Legendre symbol (a/p).

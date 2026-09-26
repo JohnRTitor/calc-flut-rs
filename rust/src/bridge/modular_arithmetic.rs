@@ -164,7 +164,18 @@ pub fn analyze_structure(
     // 3. Analyze
     let analysis = match structure_type.to_lowercase().as_str() {
         "ring" => {
-            let info = crate::modular_arithmetic::ring_analysis::ring_classify(modulus);
+            let info = match crate::modular_arithmetic::ring_analysis::ring_classify(modulus) {
+                Ok(info) => info,
+                Err(e) => {
+                    return Ok(StructureAnalysisResponse {
+                        success: false,
+                        analysis: None,
+                        error_message: Some(e.to_string()),
+                        suggestion: None,
+                        interpreted_as: None,
+                    });
+                }
+            };
             let mut inverses = Vec::new();
             for &u in &info.units {
                 if let Ok(inv) = crate::modular_arithmetic::mod_arith::mod_inv(u, modulus) {
@@ -218,7 +229,18 @@ pub fn analyze_structure(
             }
         }
         "group" => {
-            let units = crate::modular_arithmetic::number_theory_ext::unit_group(modulus);
+            let units = match crate::modular_arithmetic::number_theory_ext::unit_group(modulus) {
+                Ok(units) => units,
+                Err(e) => {
+                    return Ok(StructureAnalysisResponse {
+                        success: false,
+                        analysis: None,
+                        error_message: Some(e.to_string()),
+                        suggestion: None,
+                        interpreted_as: None,
+                    });
+                }
+            };
             let generators = crate::modular_arithmetic::number_theory_ext::primitive_roots(modulus)
                 .ok()
                 .unwrap_or_default();
