@@ -43,9 +43,7 @@ class NumberResultPanel extends StatelessWidget {
           Text(
             'Number',
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: uiStyle == UiStyle.liquidGlass
-                  ? Colors.white70
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
+              color: onGlassSecondary(context, uiStyle),
             ),
           ),
           const SizedBox(height: 12),

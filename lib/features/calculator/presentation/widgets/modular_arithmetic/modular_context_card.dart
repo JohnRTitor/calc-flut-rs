@@ -24,7 +24,6 @@ class ModularContextCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isGlass = uiStyle == UiStyle.liquidGlass;
 
     return SharedSurface(
       uiStyle: uiStyle,
@@ -40,7 +39,7 @@ class ModularContextCard extends StatelessWidget {
               Text(
                 'Context',
                 style: theme.textTheme.labelMedium?.copyWith(
-                  color: isGlass ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
+                  color: onGlassSecondary(context, uiStyle),
                 ),
               ),
               const Spacer(),
@@ -55,26 +54,26 @@ class ModularContextCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           SharedSurface(
-             uiStyle: uiStyle,
-             glassRole: GlassSurfaceRole.card,
-             frosted: true,
-             borderRadius: BorderRadius.circular(16),
-             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-             child: TextField(
-               controller: modulusController,
-               keyboardType: TextInputType.text,
-               decoration: InputDecoration(
-                 border: InputBorder.none,
-                 hintText: modulusHint,
-                 prefixText: 'Modulus: ',
-                 prefixStyle: theme.textTheme.bodyLarge?.copyWith(
-                   fontWeight: FontWeight.bold,
-                   color: isGlass ? Colors.white : theme.colorScheme.onSurface,
-                 ),
-               ),
-               style: theme.textTheme.bodyLarge,
-               onChanged: onModulusChanged,
-             ),
+            uiStyle: uiStyle,
+            glassRole: GlassSurfaceRole.card,
+            frosted: true,
+            borderRadius: BorderRadius.circular(16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: TextField(
+              controller: modulusController,
+              keyboardType: TextInputType.text,
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                hintText: modulusHint,
+                prefixText: 'Modulus: ',
+                prefixStyle: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: onGlassEmphasis(context, uiStyle),
+                ),
+              ),
+              style: theme.textTheme.bodyLarge,
+              onChanged: onModulusChanged,
+            ),
           ),
         ],
       ),

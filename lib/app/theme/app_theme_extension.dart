@@ -20,6 +20,19 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
   /// Text color for variable chips.
   final Color chipText;
 
+  /// Text color for a refused request that is not the user's mistake.
+  ///
+  /// Distinct from `colorScheme.error`, which means "this input was wrong". A
+  /// symbolic expression refused for being too large, or for having no
+  /// supported form, is a different situation: the mathematics may be perfectly
+  /// valid and the answer simply is not something this tool can produce. The
+  /// user needs to hear "try something smaller", not "check your syntax", so
+  /// the two must not share a colour.
+  final Color limitationText;
+
+  /// Background color for a limitation notice.
+  final Color limitationContainer;
+
   const AppThemeExtension({
     required this.calculatorCard,
     required this.calculatorCardBorder,
@@ -27,6 +40,8 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
     required this.resultText,
     required this.chipBackground,
     required this.chipText,
+    required this.limitationText,
+    required this.limitationContainer,
   });
 
   @override
@@ -37,6 +52,8 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
     Color? resultText,
     Color? chipBackground,
     Color? chipText,
+    Color? limitationText,
+    Color? limitationContainer,
   }) {
     return AppThemeExtension(
       calculatorCard: calculatorCard ?? this.calculatorCard,
@@ -45,6 +62,8 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
       resultText: resultText ?? this.resultText,
       chipBackground: chipBackground ?? this.chipBackground,
       chipText: chipText ?? this.chipText,
+      limitationText: limitationText ?? this.limitationText,
+      limitationContainer: limitationContainer ?? this.limitationContainer,
     );
   }
 
@@ -65,6 +84,12 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
       resultText: Color.lerp(resultText, other.resultText, t)!,
       chipBackground: Color.lerp(chipBackground, other.chipBackground, t)!,
       chipText: Color.lerp(chipText, other.chipText, t)!,
+      limitationText: Color.lerp(limitationText, other.limitationText, t)!,
+      limitationContainer: Color.lerp(
+        limitationContainer,
+        other.limitationContainer,
+        t,
+      )!,
     );
   }
 }

@@ -192,6 +192,11 @@ class AppTheme {
           resultText: colorScheme.onPrimaryContainer,
           chipBackground: colorScheme.secondaryContainer,
           chipText: colorScheme.onSecondaryContainer,
+          // Material 3 reserves `tertiary` for advisory content and
+          // `error` for things that are actually wrong, which is exactly the
+          // split between "refused, try a smaller input" and "invalid input".
+          limitationText: colorScheme.tertiary,
+          limitationContainer: colorScheme.tertiaryContainer,
         ),
       ],
     );

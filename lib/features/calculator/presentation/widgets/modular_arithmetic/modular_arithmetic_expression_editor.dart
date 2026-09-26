@@ -33,7 +33,7 @@ class ModularArithmeticExpressionEditor extends StatelessWidget {
               Text(
                 'Expression Workspace',
                 style: theme.textTheme.labelMedium?.copyWith(
-                  color: uiStyle == UiStyle.liquidGlass ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
+                  color: onGlassSecondary(context, uiStyle),
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -41,10 +41,7 @@ class ModularArithmeticExpressionEditor extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           ConstrainedBox(
-            constraints: const BoxConstraints(
-              minHeight: 80,
-              maxHeight: 300,
-            ),
+            constraints: const BoxConstraints(minHeight: 80, maxHeight: 300),
             child: TextField(
               controller: controller,
               maxLines: null,

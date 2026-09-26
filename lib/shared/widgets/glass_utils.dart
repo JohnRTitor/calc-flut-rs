@@ -75,6 +75,31 @@ class SharedGlassBackground extends StatelessWidget {
   }
 }
 
+/// Text colour for a quiet qualifier sitting on a Liquid Glass surface.
+///
+/// Liquid Glass panels are translucent tints over the app's background gradient
+/// rather than opaque Material container colours, so the Material answer
+/// ([ColorScheme.onSurfaceVariant]) can fall short on contrast. This is the one
+/// place that trade-off is decided; call sites must not re-derive it.
+///
+/// This existed as a copy-pasted
+/// `uiStyle == UiStyle.liquidGlass ? Colors.white70 : colorScheme.onSurfaceVariant`
+/// ternary in a dozen widgets, so any future contrast or accessibility pass
+/// would have had to find and edit all of them.
+Color onGlassSecondary(BuildContext context, UiStyle uiStyle) {
+  if (uiStyle == UiStyle.liquidGlass) return Colors.white70;
+  return Theme.of(context).colorScheme.onSurfaceVariant;
+}
+
+/// Text colour for primary-emphasis copy on a Liquid Glass surface.
+///
+/// The full-strength counterpart to [onGlassSecondary], for text that must win
+/// the eye against a translucent panel — values, counts, active labels.
+Color onGlassEmphasis(BuildContext context, UiStyle uiStyle) {
+  if (uiStyle == UiStyle.liquidGlass) return Colors.white;
+  return Theme.of(context).colorScheme.onSurface;
+}
+
 /// Resolves the specific visual properties (`GlassStyle`) for a given surface role.
 ///
 /// Adapts the colors and borders based on the current theme brightness, color scheme,

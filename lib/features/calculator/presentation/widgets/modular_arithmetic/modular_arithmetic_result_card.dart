@@ -42,7 +42,7 @@ class ModularArithmeticResultCard extends StatelessWidget {
           Text(
             'Result:',
             style: theme.textTheme.labelMedium?.copyWith(
-              color: uiStyle == UiStyle.liquidGlass ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
+              color: onGlassSecondary(context, uiStyle),
             ),
           ),
           const SizedBox(height: 16),
@@ -55,9 +55,9 @@ class ModularArithmeticResultCard extends StatelessWidget {
               textAlign: TextAlign.center,
             )
           else if (showResult)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
                   result,
                   style: theme.textTheme.displaySmall?.copyWith(
