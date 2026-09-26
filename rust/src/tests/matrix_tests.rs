@@ -35,12 +35,22 @@ mod tests {
             let rows: Vec<Vec<String>> = (0..n)
                 .map(|i| {
                     (0..n)
-                        .map(|j| if i == j { "1".to_string() } else { "0".to_string() })
+                        .map(|j| {
+                            if i == j {
+                                "1".to_string()
+                            } else {
+                                "0".to_string()
+                            }
+                        })
                         .collect()
                 })
                 .collect();
             let analysis = analyse(&MatrixSpec::new(rows)).unwrap();
-            assert_eq!(analysis.determinant.as_deref(), Some("1"), "{n}x{n} identity");
+            assert_eq!(
+                analysis.determinant.as_deref(),
+                Some("1"),
+                "{n}x{n} identity"
+            );
         }
     }
 
@@ -91,7 +101,38 @@ mod tests {
     fn test_inverse_of_a_known_matrix() {
         let analysis = analyse_rows(vec![vec!["2", "-1"], vec!["1", "0"]]);
         let inverse = analysis.inverse.expect("this matrix is invertible");
-        assert_eq!(inverse, vec![vec!["0", "1"], vec!["-1", "2"]]);
+        assert_eq!(inverse, vec!["0", "1", "-1", "2"]);
+    }
+
+    #[test]
+    fn test_flat_matrices_carry_their_width() {
+        // Matrices cross the bridge as one flat row-major list, because the
+        // bridge cannot encode a nested vector. The width travels alongside, so
+        // the shape is still recoverable. This is a 2x3 and a 3x1, which a
+        // square-only fixture would let through untested.
+        let wide = analyse_rows(vec![vec!["1", "2", "3"], vec!["4", "5", "6"]]);
+        assert_eq!(wide.columns, 3);
+        assert_eq!(wide.reduced.len(), 2 * 3);
+
+        let tall = analyse_rows(vec![vec!["1"], vec!["2"], vec!["3"]]);
+        assert_eq!(tall.columns, 1);
+        assert_eq!(tall.reduced.len(), 3 * tall.columns);
+    }
+
+    #[test]
+    fn test_flattening_preserves_the_row_major_order() {
+        // The cells are real numbers, not position labels, because these are
+        // parsed as expressions: "r1c1" would just be the product r*c, and the
+        // matrix would collapse. A non-square matrix is what catches a
+        // column-major reading, since a square one has the same entries in the
+        // same places either way round.
+        let analysis = analyse_rows(vec![vec!["1", "2", "3"], vec!["4", "5", "6"]]);
+        assert_eq!(analysis.columns, 3);
+        assert_eq!(
+            analysis.reduced,
+            vec!["1", "0", "-1", "0", "1", "2"],
+            "the first three entries must be the first row, not the first column",
+        );
     }
 
     #[test]
@@ -111,18 +152,20 @@ mod tests {
             vec!["4".into(), "7".into()],
             vec!["2".into(), "6".into()],
         ]);
-        let inverse = build(analyse_rows(vec![vec!["4", "7"], vec!["2", "6"]])
-            .inverse
-            .unwrap());
+        let analysis = analyse_rows(vec![vec!["4", "7"], vec!["2", "6"]]);
+        // Flattened cells are put back into rows before being rebuilt, which is
+        // exactly what the Dart side does, so the round trip is covered here.
+        let inverse = build(
+            analysis
+                .inverse
+                .unwrap()
+                .chunks(analysis.columns)
+                .map(|row| row.to_vec())
+                .collect(),
+        );
         let product = original.matmul(&inverse).unwrap();
         let shown: Vec<Vec<String>> = (0..product.nrows())
-            .map(|r| {
-                product
-                    .row(r)
-                    .iter()
-                    .map(|e| e.to_string())
-                    .collect()
-            })
+            .map(|r| product.row(r).iter().map(|e| e.to_string()).collect())
             .collect();
         assert_eq!(shown, vec![vec!["1", "0"], vec!["0", "1"]]);
     }
@@ -146,7 +189,11 @@ mod tests {
 
     #[test]
     fn test_eigenvalues_of_a_diagonal_matrix_are_its_diagonal() {
-        let analysis = analyse_rows(vec![vec!["2", "0", "0"], vec!["0", "3", "0"], vec!["0", "0", "4"]]);
+        let analysis = analyse_rows(vec![
+            vec!["2", "0", "0"],
+            vec!["0", "3", "0"],
+            vec!["0", "0", "4"],
+        ]);
         let mut values = analysis.eigenvalues.expect("should be determinable");
         values.sort();
         assert_eq!(values, vec!["2", "3", "4"]);

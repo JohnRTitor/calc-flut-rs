@@ -28,7 +28,7 @@
 // Section: imports
 
 use flutter_rust_bridge::for_generated::byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
-use flutter_rust_bridge::for_generated::{transform_result_dco, Lifetimeable, Lockable};
+use flutter_rust_bridge::for_generated::{Lifetimeable, Lockable, transform_result_dco};
 use flutter_rust_bridge::{Handler, IntoIntoDart};
 
 // Section: boilerplate
@@ -1741,18 +1741,6 @@ impl SseDecode for Vec<crate::bridge::modular_arithmetic::InversePair> {
     }
 }
 
-impl SseDecode for Vec<Vec<String>> {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        let mut len_ = <i32>::sse_decode(deserializer);
-        let mut ans_ = Vec::with_capacity(len_ as usize);
-        for idx_ in 0..len_ {
-            ans_.push(<Vec<String>>::sse_decode(deserializer));
-        }
-        return ans_;
-    }
-}
-
 impl SseDecode for Vec<crate::bridge::symbolic::PlotPoint> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1825,8 +1813,9 @@ impl SseDecode for crate::bridge::symbolic::MatrixAnalysisResponse {
         let mut var_determinant = <Option<String>>::sse_decode(deserializer);
         let mut var_rank = <u32>::sse_decode(deserializer);
         let mut var_trace = <Option<String>>::sse_decode(deserializer);
-        let mut var_inverse = <Option<Vec<Vec<String>>>>::sse_decode(deserializer);
-        let mut var_reduced = <Vec<Vec<String>>>::sse_decode(deserializer);
+        let mut var_inverse = <Option<Vec<String>>>::sse_decode(deserializer);
+        let mut var_reduced = <Vec<String>>::sse_decode(deserializer);
+        let mut var_columns = <u32>::sse_decode(deserializer);
         let mut var_eigenvalues = <Option<Vec<String>>>::sse_decode(deserializer);
         let mut var_eigenvectors =
             <Option<Vec<crate::bridge::symbolic::EigenPair>>>::sse_decode(deserializer);
@@ -1837,6 +1826,7 @@ impl SseDecode for crate::bridge::symbolic::MatrixAnalysisResponse {
             trace: var_trace,
             inverse: var_inverse,
             reduced: var_reduced,
+            columns: var_columns,
             eigenvalues: var_eigenvalues,
             eigenvectors: var_eigenvectors,
             details: var_details,
@@ -1847,8 +1837,14 @@ impl SseDecode for crate::bridge::symbolic::MatrixAnalysisResponse {
 impl SseDecode for crate::bridge::symbolic::MatrixInput {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        let mut var_cells = <Vec<Vec<String>>>::sse_decode(deserializer);
-        return crate::bridge::symbolic::MatrixInput { cells: var_cells };
+        let mut var_rows = <u32>::sse_decode(deserializer);
+        let mut var_columns = <u32>::sse_decode(deserializer);
+        let mut var_cells = <Vec<String>>::sse_decode(deserializer);
+        return crate::bridge::symbolic::MatrixInput {
+            rows: var_rows,
+            columns: var_columns,
+            cells: var_cells,
+        };
     }
 }
 
@@ -1988,17 +1984,6 @@ impl SseDecode for Option<Vec<crate::bridge::symbolic::EigenPair>> {
             return Some(<Vec<crate::bridge::symbolic::EigenPair>>::sse_decode(
                 deserializer,
             ));
-        } else {
-            return None;
-        }
-    }
-}
-
-impl SseDecode for Option<Vec<Vec<String>>> {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        if (<bool>::sse_decode(deserializer)) {
-            return Some(<Vec<Vec<String>>>::sse_decode(deserializer));
         } else {
             return None;
         }
@@ -2670,6 +2655,7 @@ impl flutter_rust_bridge::IntoDart for crate::bridge::symbolic::MatrixAnalysisRe
             self.trace.into_into_dart().into_dart(),
             self.inverse.into_into_dart().into_dart(),
             self.reduced.into_into_dart().into_dart(),
+            self.columns.into_into_dart().into_dart(),
             self.eigenvalues.into_into_dart().into_dart(),
             self.eigenvectors.into_into_dart().into_dart(),
             self.details.into_into_dart().into_dart(),
@@ -2691,7 +2677,12 @@ impl flutter_rust_bridge::IntoIntoDart<crate::bridge::symbolic::MatrixAnalysisRe
 // Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::bridge::symbolic::MatrixInput {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        [self.cells.into_into_dart().into_dart()].into_dart()
+        [
+            self.rows.into_into_dart().into_dart(),
+            self.columns.into_into_dart().into_dart(),
+            self.cells.into_into_dart().into_dart(),
+        ]
+        .into_dart()
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
@@ -3241,16 +3232,6 @@ impl SseEncode for Vec<crate::bridge::modular_arithmetic::InversePair> {
     }
 }
 
-impl SseEncode for Vec<Vec<String>> {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <i32>::sse_encode(self.len() as _, serializer);
-        for item in self {
-            <Vec<String>>::sse_encode(item, serializer);
-        }
-    }
-}
-
 impl SseEncode for Vec<crate::bridge::symbolic::PlotPoint> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -3306,8 +3287,9 @@ impl SseEncode for crate::bridge::symbolic::MatrixAnalysisResponse {
         <Option<String>>::sse_encode(self.determinant, serializer);
         <u32>::sse_encode(self.rank, serializer);
         <Option<String>>::sse_encode(self.trace, serializer);
-        <Option<Vec<Vec<String>>>>::sse_encode(self.inverse, serializer);
-        <Vec<Vec<String>>>::sse_encode(self.reduced, serializer);
+        <Option<Vec<String>>>::sse_encode(self.inverse, serializer);
+        <Vec<String>>::sse_encode(self.reduced, serializer);
+        <u32>::sse_encode(self.columns, serializer);
         <Option<Vec<String>>>::sse_encode(self.eigenvalues, serializer);
         <Option<Vec<crate::bridge::symbolic::EigenPair>>>::sse_encode(
             self.eigenvectors,
@@ -3320,7 +3302,9 @@ impl SseEncode for crate::bridge::symbolic::MatrixAnalysisResponse {
 impl SseEncode for crate::bridge::symbolic::MatrixInput {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <Vec<Vec<String>>>::sse_encode(self.cells, serializer);
+        <u32>::sse_encode(self.rows, serializer);
+        <u32>::sse_encode(self.columns, serializer);
+        <Vec<String>>::sse_encode(self.cells, serializer);
     }
 }
 
@@ -3428,16 +3412,6 @@ impl SseEncode for Option<Vec<crate::bridge::symbolic::EigenPair>> {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
             <Vec<crate::bridge::symbolic::EigenPair>>::sse_encode(value, serializer);
-        }
-    }
-}
-
-impl SseEncode for Option<Vec<Vec<String>>> {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <bool>::sse_encode(self.is_some(), serializer);
-        if let Some(value) = self {
-            <Vec<Vec<String>>>::sse_encode(value, serializer);
         }
     }
 }
@@ -3602,7 +3576,7 @@ mod io {
     use flutter_rust_bridge::for_generated::byteorder::{
         NativeEndian, ReadBytesExt, WriteBytesExt,
     };
-    use flutter_rust_bridge::for_generated::{transform_result_dco, Lifetimeable, Lockable};
+    use flutter_rust_bridge::for_generated::{Lifetimeable, Lockable, transform_result_dco};
     use flutter_rust_bridge::{Handler, IntoIntoDart};
 
     // Section: boilerplate
@@ -3626,7 +3600,7 @@ mod web {
     };
     use flutter_rust_bridge::for_generated::wasm_bindgen;
     use flutter_rust_bridge::for_generated::wasm_bindgen::prelude::*;
-    use flutter_rust_bridge::for_generated::{transform_result_dco, Lifetimeable, Lockable};
+    use flutter_rust_bridge::for_generated::{Lifetimeable, Lockable, transform_result_dco};
     use flutter_rust_bridge::{Handler, IntoIntoDart};
 
     // Section: boilerplate

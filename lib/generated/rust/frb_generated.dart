@@ -1716,12 +1716,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  List<List<String>> dco_decode_list_list_String(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return (raw as List<dynamic>).map(dco_decode_list_String).toList();
-  }
-
-  @protected
   List<PlotPoint> dco_decode_list_plot_point(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return (raw as List<dynamic>).map(dco_decode_plot_point).toList();
@@ -1762,17 +1756,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   MatrixAnalysisResponse dco_decode_matrix_analysis_response(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 8)
-      throw Exception('unexpected arr length: expect 8 but see ${arr.length}');
+    if (arr.length != 9)
+      throw Exception('unexpected arr length: expect 9 but see ${arr.length}');
     return MatrixAnalysisResponse(
       determinant: dco_decode_opt_String(arr[0]),
       rank: dco_decode_u_32(arr[1]),
       trace: dco_decode_opt_String(arr[2]),
-      inverse: dco_decode_opt_list_list_String(arr[3]),
-      reduced: dco_decode_list_list_String(arr[4]),
-      eigenvalues: dco_decode_opt_list_String(arr[5]),
-      eigenvectors: dco_decode_opt_list_eigen_pair(arr[6]),
-      details: dco_decode_opt_String(arr[7]),
+      inverse: dco_decode_opt_list_String(arr[3]),
+      reduced: dco_decode_list_String(arr[4]),
+      columns: dco_decode_u_32(arr[5]),
+      eigenvalues: dco_decode_opt_list_String(arr[6]),
+      eigenvectors: dco_decode_opt_list_eigen_pair(arr[7]),
+      details: dco_decode_opt_String(arr[8]),
     );
   }
 
@@ -1780,9 +1775,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   MatrixInput dco_decode_matrix_input(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 1)
-      throw Exception('unexpected arr length: expect 1 but see ${arr.length}');
-    return MatrixInput(cells: dco_decode_list_list_String(arr[0]));
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return MatrixInput(
+      rows: dco_decode_u_32(arr[0]),
+      columns: dco_decode_u_32(arr[1]),
+      cells: dco_decode_list_String(arr[2]),
+    );
   }
 
   @protected
@@ -1869,12 +1868,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   List<EigenPair>? dco_decode_opt_list_eigen_pair(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw == null ? null : dco_decode_list_eigen_pair(raw);
-  }
-
-  @protected
-  List<List<String>>? dco_decode_opt_list_list_String(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return raw == null ? null : dco_decode_list_list_String(raw);
   }
 
   @protected
@@ -2418,18 +2411,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  List<List<String>> sse_decode_list_list_String(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-
-    var len_ = sse_decode_i_32(deserializer);
-    var ans_ = <List<String>>[];
-    for (var idx_ = 0; idx_ < len_; ++idx_) {
-      ans_.add(sse_decode_list_String(deserializer));
-    }
-    return ans_;
-  }
-
-  @protected
   List<PlotPoint> sse_decode_list_plot_point(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
@@ -2495,8 +2476,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_determinant = sse_decode_opt_String(deserializer);
     var var_rank = sse_decode_u_32(deserializer);
     var var_trace = sse_decode_opt_String(deserializer);
-    var var_inverse = sse_decode_opt_list_list_String(deserializer);
-    var var_reduced = sse_decode_list_list_String(deserializer);
+    var var_inverse = sse_decode_opt_list_String(deserializer);
+    var var_reduced = sse_decode_list_String(deserializer);
+    var var_columns = sse_decode_u_32(deserializer);
     var var_eigenvalues = sse_decode_opt_list_String(deserializer);
     var var_eigenvectors = sse_decode_opt_list_eigen_pair(deserializer);
     var var_details = sse_decode_opt_String(deserializer);
@@ -2506,6 +2488,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       trace: var_trace,
       inverse: var_inverse,
       reduced: var_reduced,
+      columns: var_columns,
       eigenvalues: var_eigenvalues,
       eigenvectors: var_eigenvectors,
       details: var_details,
@@ -2515,8 +2498,10 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   @protected
   MatrixInput sse_decode_matrix_input(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    var var_cells = sse_decode_list_list_String(deserializer);
-    return MatrixInput(cells: var_cells);
+    var var_rows = sse_decode_u_32(deserializer);
+    var var_columns = sse_decode_u_32(deserializer);
+    var var_cells = sse_decode_list_String(deserializer);
+    return MatrixInput(rows: var_rows, columns: var_columns, cells: var_cells);
   }
 
   @protected
@@ -2656,19 +2641,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
     if (sse_decode_bool(deserializer)) {
       return (sse_decode_list_eigen_pair(deserializer));
-    } else {
-      return null;
-    }
-  }
-
-  @protected
-  List<List<String>>? sse_decode_opt_list_list_String(
-    SseDeserializer deserializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-
-    if (sse_decode_bool(deserializer)) {
-      return (sse_decode_list_list_String(deserializer));
     } else {
       return null;
     }
@@ -3176,18 +3148,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_list_list_String(
-    List<List<String>> self,
-    SseSerializer serializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_i_32(self.length, serializer);
-    for (final item in self) {
-      sse_encode_list_String(item, serializer);
-    }
-  }
-
-  @protected
   void sse_encode_list_plot_point(
     List<PlotPoint> self,
     SseSerializer serializer,
@@ -3250,8 +3210,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_opt_String(self.determinant, serializer);
     sse_encode_u_32(self.rank, serializer);
     sse_encode_opt_String(self.trace, serializer);
-    sse_encode_opt_list_list_String(self.inverse, serializer);
-    sse_encode_list_list_String(self.reduced, serializer);
+    sse_encode_opt_list_String(self.inverse, serializer);
+    sse_encode_list_String(self.reduced, serializer);
+    sse_encode_u_32(self.columns, serializer);
     sse_encode_opt_list_String(self.eigenvalues, serializer);
     sse_encode_opt_list_eigen_pair(self.eigenvectors, serializer);
     sse_encode_opt_String(self.details, serializer);
@@ -3260,7 +3221,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   @protected
   void sse_encode_matrix_input(MatrixInput self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_list_list_String(self.cells, serializer);
+    sse_encode_u_32(self.rows, serializer);
+    sse_encode_u_32(self.columns, serializer);
+    sse_encode_list_String(self.cells, serializer);
   }
 
   @protected
@@ -3384,19 +3347,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_bool(self != null, serializer);
     if (self != null) {
       sse_encode_list_eigen_pair(self, serializer);
-    }
-  }
-
-  @protected
-  void sse_encode_opt_list_list_String(
-    List<List<String>>? self,
-    SseSerializer serializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-
-    sse_encode_bool(self != null, serializer);
-    if (self != null) {
-      sse_encode_list_list_String(self, serializer);
     }
   }
 

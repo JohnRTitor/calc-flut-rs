@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:calc_flut_rs/app/theme/ui_style.dart';
 import 'package:calc_flut_rs/features/settings/presentation/providers/theme_provider.dart';
 import 'package:calc_flut_rs/features/symbolic_math/presentation/providers/equation_solver.dart';
 import 'package:calc_flut_rs/features/symbolic_math/presentation/widgets/symbolic_expression_editor.dart';
@@ -11,7 +10,7 @@ import 'package:calc_flut_rs/features/symbolic_math/presentation/widgets/symboli
 import 'package:calc_flut_rs/features/symbolic_math/presentation/widgets/symbolic_help_dialog.dart';
 import 'package:calc_flut_rs/features/symbolic_math/presentation/widgets/symbolic_workspace_scaffold.dart';
 import 'package:calc_flut_rs/shared/widgets/app_notice.dart';
-import 'package:calc_flut_rs/shared/widgets/glass_utils.dart';
+import 'package:calc_flut_rs/shared/widgets/symbolic_primary_action.dart';
 
 /// The Equation Solver workspace: solve an equation for one variable.
 ///
@@ -136,8 +135,9 @@ class _EquationSolverScreenState extends ConsumerState<EquationSolverScreen> {
                       .selectVariable(variable),
                 ),
                 const SizedBox(height: 16),
-                _SolveButton(
+                SymbolicPrimaryAction(
                   uiStyle: uiStyle,
+                  label: 'Solve',
                   isBusy: state.isComputing,
                   isEnabled: state.canRun,
                   reason: state.unavailableReason(),
@@ -160,78 +160,6 @@ class _EquationSolverScreenState extends ConsumerState<EquationSolverScreen> {
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-/// The primary Solve action.
-///
-/// A full-width button rather than a one-chip action row: there is a single
-/// action here, and the row would be all chip and no substance.
-class _SolveButton extends StatelessWidget {
-  final UiStyle uiStyle;
-  final bool isBusy;
-  final bool isEnabled;
-  final String? reason;
-  final VoidCallback onPressed;
-
-  const _SolveButton({
-    required this.uiStyle,
-    required this.isBusy,
-    required this.isEnabled,
-    required this.reason,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final label = reason ?? 'Solve';
-
-    final child = Center(
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (isBusy) ...[
-            SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: theme.colorScheme.onPrimary,
-              ),
-            ),
-            const SizedBox(width: 12),
-          ],
-          Flexible(
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    // A disabled action must still say why, so the label doubles as the
-    // explanation rather than the button going silently inert.
-    return Tooltip(
-      message: reason ?? 'Solve this equation for the selected variable',
-      child: SizedBox(
-        height: 56,
-        child: SharedSurface(
-          uiStyle: uiStyle,
-          isInteractive: true,
-          isSelected: true,
-          glassRole: GlassSurfaceRole.primary,
-          borderRadius: BorderRadius.circular(16),
-          onTap: isEnabled ? onPressed : null,
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: child,
-        ),
       ),
     );
   }

@@ -41,10 +41,10 @@ pub struct MatrixAnalysis {
     pub rank: usize,
     /// The trace, when the matrix is square.
     pub trace: Option<String>,
-    /// The inverse, when one exists.
-    pub inverse: Option<Vec<Vec<String>>>,
-    /// The reduced row-echelon form.
-    pub reduced: Vec<Vec<String>>,
+    /// The inverse, row-major and flattened. See [MatrixAnalysis::columns].
+    pub inverse: Option<Vec<String>>,
+    /// The reduced row-echelon form, row-major and flattened.
+    pub reduced: Vec<String>,
     /// The eigenvalues, when they could all be found.
     ///
     /// `None` means the eigenvalues could not be determined, which is not the
@@ -59,6 +59,14 @@ pub struct MatrixAnalysis {
     /// eigenspace, so pairing them by position would report the wrong vector
     /// against the wrong value.
     pub eigenvectors: Option<Vec<EigenEntry>>,
+    /// How many columns the flattened matrices have.
+    ///
+    /// flutter_rust_bridge cannot encode a nested vector, so matrices cross the
+    /// bridge as one flat row-major list. The width is carried alongside rather
+    /// than inferred, because unlike the Cayley table there is no header row to
+    /// count.
+    pub columns: usize,
+
     /// Facts about the shape that explain any omissions above.
     pub details: Option<String>,
 }
@@ -91,9 +99,7 @@ fn build(spec: &MatrixSpec) -> Result<(Context, Matrix), SymbolicError> {
         return Err(SymbolicError::EmptyMatrix);
     }
     if spec.cells.iter().any(|row| row.len() != width) {
-        return Err(SymbolicError::RaggedMatrix {
-            expected: width,
-        });
+        return Err(SymbolicError::RaggedMatrix { expected: width });
     }
     if spec.cells.len() * width > MAX_CELLS {
         return Err(SymbolicError::TooLarge(format!(
@@ -110,9 +116,11 @@ fn build(spec: &MatrixSpec) -> Result<(Context, Matrix), SymbolicError> {
             if trimmed.is_empty() {
                 return Err(SymbolicError::EmptyCell);
             }
-            parsed.push(ctx.parse(trimmed).map_err(|e| {
-                SymbolicError::from(CommonError::InvalidExpression(e.to_string()))
-            })?);
+            parsed.push(
+                ctx.parse(trimmed).map_err(|e| {
+                    SymbolicError::from(CommonError::InvalidExpression(e.to_string()))
+                })?,
+            );
         }
         rows.push(parsed);
     }
@@ -122,15 +130,19 @@ fn build(spec: &MatrixSpec) -> Result<(Context, Matrix), SymbolicError> {
     Ok((ctx, matrix))
 }
 
-/// Renders a matrix back to cell text.
-fn render(matrix: &Matrix) -> Vec<Vec<String>> {
+/// Renders a matrix back to one flat, row-major list of cells.
+///
+/// Flat because flutter_rust_bridge cannot encode a nested vector, which makes
+/// the web build fail to compile. The width travels alongside as
+/// [MatrixAnalysis::columns], so the shape is still recoverable.
+fn render(matrix: &Matrix) -> Vec<String> {
     (0..matrix.nrows())
-        .map(|row| {
+        .flat_map(|row| {
             matrix
                 .row(row)
                 .iter()
                 .map(|entry| entry.to_string())
-                .collect()
+                .collect::<Vec<String>>()
         })
         .collect()
 }
@@ -228,12 +240,14 @@ pub fn analyse(spec: &MatrixSpec) -> Result<MatrixAnalysis, SymbolicError> {
                             .to_string(),
                     );
                 }
-                (Some(values.into_iter().map(|v| v.to_string()).collect()), vectors)
+                (
+                    Some(values.into_iter().map(|v| v.to_string()).collect()),
+                    vectors,
+                )
             }
             Err(_) => {
-                details_parts.push(
-                    "The eigenvalues could not all be expressed in closed form.".to_string(),
-                );
+                details_parts
+                    .push("The eigenvalues could not all be expressed in closed form.".to_string());
                 (None, None)
             }
         }
@@ -250,6 +264,7 @@ pub fn analyse(spec: &MatrixSpec) -> Result<MatrixAnalysis, SymbolicError> {
         trace,
         inverse,
         reduced,
+        columns: matrix.ncols(),
         eigenvalues,
         eigenvectors,
         details,

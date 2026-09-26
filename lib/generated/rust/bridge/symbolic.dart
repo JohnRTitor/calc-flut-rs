@@ -207,11 +207,17 @@ class MatrixAnalysisResponse {
   /// The trace, when the matrix is square.
   final String? trace;
 
-  /// The inverse, row-major, when one exists.
-  final List<List<String>>? inverse;
+  /// The inverse, row-major and flattened, when one exists.
+  final List<String>? inverse;
 
-  /// The reduced row-echelon form, row-major.
-  final List<List<String>> reduced;
+  /// The reduced row-echelon form, row-major and flattened.
+  final List<String> reduced;
+
+  /// How many columns the flattened matrices have.
+  ///
+  /// Matrices cross as one flat list because a nested vector cannot be
+  /// encoded, so the width is carried alongside to recover the shape.
+  final int columns;
 
   /// The eigenvalues, or `None` when they could not all be determined.
   ///
@@ -236,6 +242,7 @@ class MatrixAnalysisResponse {
     this.trace,
     this.inverse,
     required this.reduced,
+    required this.columns,
     this.eigenvalues,
     this.eigenvectors,
     this.details,
@@ -248,6 +255,7 @@ class MatrixAnalysisResponse {
       trace.hashCode ^
       inverse.hashCode ^
       reduced.hashCode ^
+      columns.hashCode ^
       eigenvalues.hashCode ^
       eigenvectors.hashCode ^
       details.hashCode;
@@ -262,26 +270,44 @@ class MatrixAnalysisResponse {
           trace == other.trace &&
           inverse == other.inverse &&
           reduced == other.reduced &&
+          columns == other.columns &&
           eigenvalues == other.eigenvalues &&
           eigenvectors == other.eigenvectors &&
           details == other.details;
 }
 
 /// A matrix of exact entries, as entered.
+///
+/// Flat, with the shape carried alongside, because flutter_rust_bridge cannot
+/// encode a nested vector. The grid widget holds a genuine two-dimensional
+/// structure and flattens it on the way out; nothing about the input is lost,
+/// only the wire format is narrower than the shape.
 class MatrixInput {
-  /// The cells, row-major. Every row must be the same length.
-  final List<List<String>> cells;
+  /// How many rows the matrix has.
+  final int rows;
 
-  const MatrixInput({required this.cells});
+  /// How many columns the matrix has.
+  final int columns;
+
+  /// The cells, row-major. Length must be `rows * columns`.
+  final List<String> cells;
+
+  const MatrixInput({
+    required this.rows,
+    required this.columns,
+    required this.cells,
+  });
 
   @override
-  int get hashCode => cells.hashCode;
+  int get hashCode => rows.hashCode ^ columns.hashCode ^ cells.hashCode;
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is MatrixInput &&
           runtimeType == other.runtimeType &&
+          rows == other.rows &&
+          columns == other.columns &&
           cells == other.cells;
 }
 

@@ -17,6 +17,8 @@ import 'package:calc_flut_rs/features/settings/presentation/screens/settings_scr
 import 'package:calc_flut_rs/features/symbolic_math/presentation/screens/algebra_screen.dart';
 import 'package:calc_flut_rs/features/symbolic_math/presentation/screens/calculus_screen.dart';
 import 'package:calc_flut_rs/features/symbolic_math/presentation/screens/equation_solver_screen.dart';
+import 'package:calc_flut_rs/features/symbolic_math/presentation/screens/matrix_screen.dart';
+import 'package:calc_flut_rs/features/symbolic_math/presentation/screens/number_theory_screen.dart';
 import 'package:calc_flut_rs/features/symbolic_math/presentation/screens/symbolic_math_home_screen.dart';
 import 'package:calc_flut_rs/shared/widgets/app_hub_grid.dart';
 import 'package:calc_flut_rs/shared/widgets/app_notice.dart';
@@ -268,15 +270,13 @@ List<AppTool> _buildSymbolicMathTools() {
       id: 'matrices',
       label: 'Matrices',
       icon: Icons.grid_on,
-      isAvailable: false,
-      builder: _buildEmptyToolScreen,
+      builder: _buildMatrixScreen,
     ),
     const AppTool(
       id: 'number_theory',
       label: 'Number Theory',
       icon: Icons.tag,
-      isAvailable: false,
-      builder: _buildEmptyToolScreen,
+      builder: _buildNumberTheoryScreen,
     ),
   ];
 }
@@ -309,6 +309,11 @@ Widget _buildCalculusScreen(BuildContext context) => const CalculusScreen();
 
 Widget _buildEquationSolverScreen(BuildContext context) =>
     const EquationSolverScreen();
+
+Widget _buildMatrixScreen(BuildContext context) => const MatrixScreen();
+
+Widget _buildNumberTheoryScreen(BuildContext context) =>
+    const NumberTheoryScreen();
 
 Widget _buildEmptyToolScreen(BuildContext context) => const SizedBox.shrink();
 

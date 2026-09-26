@@ -137,9 +137,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<InversePair> dco_decode_list_inverse_pair(dynamic raw);
 
   @protected
-  List<List<String>> dco_decode_list_list_String(dynamic raw);
-
-  @protected
   List<PlotPoint> dco_decode_list_plot_point(dynamic raw);
 
   @protected
@@ -189,9 +186,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<EigenPair>? dco_decode_opt_list_eigen_pair(dynamic raw);
-
-  @protected
-  List<List<String>>? dco_decode_opt_list_list_String(dynamic raw);
 
   @protected
   PlotData dco_decode_plot_data(dynamic raw);
@@ -355,9 +349,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<InversePair> sse_decode_list_inverse_pair(SseDeserializer deserializer);
 
   @protected
-  List<List<String>> sse_decode_list_list_String(SseDeserializer deserializer);
-
-  @protected
   List<PlotPoint> sse_decode_list_plot_point(SseDeserializer deserializer);
 
   @protected
@@ -417,11 +408,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<EigenPair>? sse_decode_opt_list_eigen_pair(SseDeserializer deserializer);
-
-  @protected
-  List<List<String>>? sse_decode_opt_list_list_String(
-    SseDeserializer deserializer,
-  );
 
   @protected
   PlotData sse_decode_plot_data(SseDeserializer deserializer);
@@ -622,12 +608,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  void sse_encode_list_list_String(
-    List<List<String>> self,
-    SseSerializer serializer,
-  );
-
-  @protected
   void sse_encode_list_plot_point(
     List<PlotPoint> self,
     SseSerializer serializer,
@@ -705,12 +685,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_opt_list_eigen_pair(
     List<EigenPair>? self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_opt_list_list_String(
-    List<List<String>>? self,
     SseSerializer serializer,
   );
 

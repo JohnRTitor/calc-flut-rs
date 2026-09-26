@@ -119,30 +119,33 @@ pub async fn symbolic_transform(
     bounds: Option<Bounds>,
     show_steps: bool,
 ) -> Result<SymbolicResult, SymbolicErrorInfo> {
-    let operation = SymbolicOperation::from_name(&operation)
-        .map_err(|e| SymbolicErrorInfo::from(&e))?;
+    let operation =
+        SymbolicOperation::from_name(&operation).map_err(|e| SymbolicErrorInfo::from(&e))?;
 
     evaluator::transform(
         &expression,
         operation,
         variable.as_deref(),
-        bounds.as_ref().map(|b| LimitRange::new(b.lower.clone(), b.upper.clone())).as_ref(),
+        bounds
+            .as_ref()
+            .map(|b| LimitRange::new(b.lower.clone(), b.upper.clone()))
+            .as_ref(),
         show_steps,
     )
-        .map(|outcome| SymbolicResult {
-            value: outcome.value,
-            alternate_forms: outcome
-                .alternate_forms
-                .into_iter()
-                .map(|form| AlternateForm {
-                    label: form.label,
-                    expression: form.expression,
-                })
-                .collect(),
-            details: outcome.details,
-            steps: outcome.steps,
-        })
-        .map_err(|e| SymbolicErrorInfo::from(&e))
+    .map(|outcome| SymbolicResult {
+        value: outcome.value,
+        alternate_forms: outcome
+            .alternate_forms
+            .into_iter()
+            .map(|form| AlternateForm {
+                label: form.label,
+                expression: form.expression,
+            })
+            .collect(),
+        details: outcome.details,
+        steps: outcome.steps,
+    })
+    .map_err(|e| SymbolicErrorInfo::from(&e))
 }
 
 /// How many solutions an equation has.
@@ -265,7 +268,10 @@ pub async fn symbolic_plot(
             points: data
                 .points
                 .into_iter()
-                .map(|point| PlotPoint { x: point.x, y: point.y })
+                .map(|point| PlotPoint {
+                    x: point.x,
+                    y: point.y,
+                })
                 .collect(),
             x_min: data.x_min,
             x_max: data.x_max,
@@ -276,10 +282,19 @@ pub async fn symbolic_plot(
 }
 
 /// A matrix of exact entries, as entered.
+///
+/// Flat, with the shape carried alongside, because flutter_rust_bridge cannot
+/// encode a nested vector. The grid widget holds a genuine two-dimensional
+/// structure and flattens it on the way out; nothing about the input is lost,
+/// only the wire format is narrower than the shape.
 #[frb]
 pub struct MatrixInput {
-    /// The cells, row-major. Every row must be the same length.
-    pub cells: Vec<Vec<String>>,
+    /// How many rows the matrix has.
+    pub rows: u32,
+    /// How many columns the matrix has.
+    pub columns: u32,
+    /// The cells, row-major. Length must be `rows * columns`.
+    pub cells: Vec<String>,
 }
 
 /// Everything worth knowing about a matrix, in one response.
@@ -295,10 +310,15 @@ pub struct MatrixAnalysisResponse {
     pub rank: u32,
     /// The trace, when the matrix is square.
     pub trace: Option<String>,
-    /// The inverse, row-major, when one exists.
-    pub inverse: Option<Vec<Vec<String>>>,
-    /// The reduced row-echelon form, row-major.
-    pub reduced: Vec<Vec<String>>,
+    /// The inverse, row-major and flattened, when one exists.
+    pub inverse: Option<Vec<String>>,
+    /// The reduced row-echelon form, row-major and flattened.
+    pub reduced: Vec<String>,
+    /// How many columns the flattened matrices have.
+    ///
+    /// Matrices cross as one flat list because a nested vector cannot be
+    /// encoded, so the width is carried alongside to recover the shape.
+    pub columns: u32,
     /// The eigenvalues, or `None` when they could not all be determined.
     ///
     /// Absent means "could not work it out", which is not the same as "there
@@ -337,13 +357,21 @@ pub struct EigenPair {
 pub async fn matrix_analyse(
     input: MatrixInput,
 ) -> Result<MatrixAnalysisResponse, SymbolicErrorInfo> {
-    crate::symbolic::matrix::analyse(&CoreMatrixSpec::new(input.cells))
+    let width = input.columns as usize;
+    if width == 0 || input.cells.len() != (input.rows as usize) * width {
+        let error = SymbolicError::RaggedMatrix { expected: width };
+        return Err(SymbolicErrorInfo::from(&error));
+    }
+    let cells = input.cells.chunks(width).map(|row| row.to_vec()).collect();
+
+    crate::symbolic::matrix::analyse(&CoreMatrixSpec::new(cells))
         .map(|analysis| MatrixAnalysisResponse {
             determinant: analysis.determinant,
             rank: analysis.rank as u32,
             trace: analysis.trace,
             inverse: analysis.inverse,
             reduced: analysis.reduced,
+            columns: analysis.columns as u32,
             eigenvalues: analysis.eigenvalues,
             eigenvectors: analysis.eigenvectors.map(|entries| {
                 entries
@@ -403,9 +431,7 @@ pub struct NumberAnalysisResponse {
 ///
 /// Runs off the UI thread; see the module docs.
 #[frb]
-pub async fn number_analyse(
-    number: String,
-) -> Result<NumberAnalysisResponse, SymbolicErrorInfo> {
+pub async fn number_analyse(number: String) -> Result<NumberAnalysisResponse, SymbolicErrorInfo> {
     crate::symbolic::ntheory::analyse(&number)
         .map(|analysis| NumberAnalysisResponse {
             is_prime: analysis.is_prime,
@@ -433,30 +459,18 @@ pub async fn number_analyse(
 
 /// The greatest common divisor of two integers. Never negative.
 #[frb]
-pub async fn number_gcd(
-    first: String,
-    second: String,
-) -> Result<String, SymbolicErrorInfo> {
-    crate::symbolic::ntheory::gcd(&first, &second)
-        .map_err(|e| SymbolicErrorInfo::from(&e))
+pub async fn number_gcd(first: String, second: String) -> Result<String, SymbolicErrorInfo> {
+    crate::symbolic::ntheory::gcd(&first, &second).map_err(|e| SymbolicErrorInfo::from(&e))
 }
 
 /// The least common multiple of two integers. Never negative.
 #[frb]
-pub async fn number_lcm(
-    first: String,
-    second: String,
-) -> Result<String, SymbolicErrorInfo> {
-    crate::symbolic::ntheory::lcm(&first, &second)
-        .map_err(|e| SymbolicErrorInfo::from(&e))
+pub async fn number_lcm(first: String, second: String) -> Result<String, SymbolicErrorInfo> {
+    crate::symbolic::ntheory::lcm(&first, &second).map_err(|e| SymbolicErrorInfo::from(&e))
 }
 
 /// Whether two integers share no common factor other than 1.
 #[frb]
-pub async fn number_coprime(
-    first: String,
-    second: String,
-) -> Result<bool, SymbolicErrorInfo> {
-    crate::symbolic::ntheory::coprime(&first, &second)
-        .map_err(|e| SymbolicErrorInfo::from(&e))
+pub async fn number_coprime(first: String, second: String) -> Result<bool, SymbolicErrorInfo> {
+    crate::symbolic::ntheory::coprime(&first, &second).map_err(|e| SymbolicErrorInfo::from(&e))
 }
