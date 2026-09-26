@@ -20,19 +20,24 @@ List<String> symbolicOperations() =>
 /// `operation` is one of `simplify`, `expand`, `factor` or `differentiate`.
 /// `variable` names the variable to act on for the operations that need one;
 /// pass an empty string (or `None`) when it is not needed or not yet chosen.
-/// `show_steps` mirrors the existing `modular_evaluate` parameter and is gated
-/// by Educational Mode.
+/// `lower_bound` and `upper_bound` are used by a definite integral and
+/// ignored by everything else. `show_steps` mirrors the existing
+/// `modular_evaluate` parameter and is gated by Educational Mode.
 ///
 /// Runs off the UI thread; see the module docs.
 Future<SymbolicResult> symbolicTransform({
   required String expression,
   required String operation,
   String? variable,
+  String? lowerBound,
+  String? upperBound,
   required bool showSteps,
 }) => RustLib.instance.api.crateBridgeSymbolicSymbolicTransform(
   expression: expression,
   operation: operation,
   variable: variable,
+  lowerBound: lowerBound,
+  upperBound: upperBound,
   showSteps: showSteps,
 );
 

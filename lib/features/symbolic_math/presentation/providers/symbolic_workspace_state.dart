@@ -59,6 +59,12 @@ class SymbolicWorkspaceState {
   /// The variable the next operation will act on.
   final String? selectedVariable;
 
+  /// Lower bound of a definite integral, as typed. Empty means not given.
+  final String lowerBound;
+
+  /// Upper bound of a definite integral, as typed. Empty means not given.
+  final String upperBound;
+
   /// The operation whose result is currently shown, or `null` before the first
   /// run.
   final SymbolicOperation? operation;
@@ -90,6 +96,8 @@ class SymbolicWorkspaceState {
     this.expression = '',
     this.variables = const [],
     this.selectedVariable,
+    this.lowerBound = '',
+    this.upperBound = '',
     this.operation,
     this.forms = const [],
     this.activeFormIndex = 0,
@@ -122,17 +130,32 @@ class SymbolicWorkspaceState {
   /// without any documentation.
   bool canRunOperation(SymbolicOperation candidate) {
     if (!canRun) return false;
-    if (!candidate.requiresVariable) return true;
-    // Factoring and differentiating need a variable, and must not silently
-    // pick one when the user has more than one in play.
-    return selectedVariable != null;
+    if (candidate.requiresVariable && selectedVariable == null) {
+      // Factoring, differentiating and integrating are all defined relative to
+      // a variable, and must not silently pick one when the user has more than
+      // one in play.
+      return false;
+    }
+    // Both bounds are required: defaulting a missing one to 0 would silently
+    // answer a different question than the one asked.
+    if (candidate.requiresBounds) return hasBounds;
+    return true;
   }
+
+  /// Whether both bounds of a definite integral have been given.
+  bool get hasBounds =>
+      lowerBound.trim().isNotEmpty && upperBound.trim().isNotEmpty;
 
   /// Why [candidate] is unavailable, or `null` when it is available.
   String? unavailableReason(SymbolicOperation candidate) {
     if (canRunOperation(candidate)) return null;
     if (isComputing) return 'Working on the previous result';
     if (expression.trim().isEmpty) return 'Enter an expression first';
+    if (candidate.requiresBounds && !hasBounds) {
+      return lowerBound.trim().isEmpty && upperBound.trim().isEmpty
+          ? 'Enter a lower and an upper bound'
+          : 'Enter both bounds, or clear them to integrate indefinitely';
+    }
     if (candidate.requiresVariable && selectedVariable == null) {
       // Distinguish "nothing to pick" from "not chosen yet". Counting on there
       // being several variables would claim there is no variable at all while
@@ -150,6 +173,8 @@ class SymbolicWorkspaceState {
     List<String>? variables,
     String? selectedVariable,
     bool clearSelectedVariable = false,
+    String? lowerBound,
+    String? upperBound,
     SymbolicOperation? operation,
     bool clearOperation = false,
     List<SymbolicForm>? forms,
@@ -169,6 +194,8 @@ class SymbolicWorkspaceState {
       selectedVariable: clearSelectedVariable
           ? null
           : (selectedVariable ?? this.selectedVariable),
+      lowerBound: lowerBound ?? this.lowerBound,
+      upperBound: upperBound ?? this.upperBound,
       operation: clearOperation ? null : (operation ?? this.operation),
       forms: forms ?? this.forms,
       activeFormIndex: activeFormIndex ?? this.activeFormIndex,

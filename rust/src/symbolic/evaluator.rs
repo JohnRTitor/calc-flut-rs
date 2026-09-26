@@ -46,6 +46,13 @@ pub enum SymbolicOperation {
     Differentiate,
     /// Find an antiderivative with respect to a variable.
     Integrate,
+    /// Evaluate the integral of an expression between two bounds.
+    ///
+    /// A separate operation from [Integrate] rather than a variant of it: the
+    /// two answers are different in kind. An indefinite integral is a family
+    /// of functions up to a constant, while a definite one is a single exact
+    /// value with no free parameter left in it.
+    IntegrateDefinite,
 }
 
 /// Operations that rewrite an expression into an equivalent one.
@@ -70,6 +77,7 @@ impl SymbolicOperation {
             SymbolicOperation::Factor => "Factored",
             SymbolicOperation::Differentiate => "Derivative",
             SymbolicOperation::Integrate => "Antiderivative",
+            SymbolicOperation::IntegrateDefinite => "Definite integral",
         }
     }
 
@@ -81,16 +89,18 @@ impl SymbolicOperation {
             SymbolicOperation::Factor => "Factor",
             SymbolicOperation::Differentiate => "Differentiate",
             SymbolicOperation::Integrate => "Integrate",
+            SymbolicOperation::IntegrateDefinite => "Integrate",
         }
     }
 
     /// Every supported operation, in presentation order.
-    pub const ALL: [SymbolicOperation; 5] = [
+    pub const ALL: [SymbolicOperation; 6] = [
         SymbolicOperation::Simplify,
         SymbolicOperation::Expand,
         SymbolicOperation::Factor,
         SymbolicOperation::Differentiate,
         SymbolicOperation::Integrate,
+        SymbolicOperation::IntegrateDefinite,
     ];
 
     /// Whether this operation rewrites an expression into an equivalent one.
@@ -110,7 +120,13 @@ impl SymbolicOperation {
             SymbolicOperation::Factor
                 | SymbolicOperation::Differentiate
                 | SymbolicOperation::Integrate
+                | SymbolicOperation::IntegrateDefinite
         )
+    }
+
+    /// Whether this operation needs lower and upper bounds.
+    pub fn requires_bounds(self) -> bool {
+        matches!(self, SymbolicOperation::IntegrateDefinite)
     }
 
     /// Parses an operation name coming from the bridge layer.
@@ -121,6 +137,7 @@ impl SymbolicOperation {
             "factor" | "factorise" | "factorize" => Ok(SymbolicOperation::Factor),
             "differentiate" | "diff" | "derivative" => Ok(SymbolicOperation::Differentiate),
             "integrate" | "int" | "antiderivative" => Ok(SymbolicOperation::Integrate),
+            "integrate_definite" | "area" => Ok(SymbolicOperation::IntegrateDefinite),
             _ => Err(SymbolicError::UnknownOperation(name.trim().to_string())),
         }
     }
@@ -135,6 +152,7 @@ impl SymbolicOperation {
         self,
         expr: &Ex,
         target: Option<&Ex>,
+        bounds: Option<(&Ex, &Ex)>,
         input: &str,
         show_steps: bool,
     ) -> Result<(Ex, Option<String>), SymbolicError> {
@@ -165,6 +183,14 @@ impl SymbolicOperation {
             SymbolicOperation::Integrate => {
                 let target = target.ok_or(SymbolicError::NoVariable)?;
                 Ok((expr.integrate(target), None))
+            }
+            SymbolicOperation::IntegrateDefinite => {
+                let target = target.ok_or(SymbolicError::NoVariable)?;
+                let (lower, upper) = bounds.ok_or(SymbolicError::NoBounds)?;
+                let value = expr
+                    .try_integrate_definite(target, lower, upper)
+                    .map_err(SymbolicError::from)?;
+                Ok((value, None))
             }        }
     }
 }
@@ -221,17 +247,21 @@ fn format_steps(steps: &[Step], input: &str, result: &str) -> String {
 /// Applies `operation` to `expression`.
 ///
 /// `variable` names the variable the operation acts on when it needs one
-/// (factoring, differentiating); it is ignored by operations that do not.
+/// (factoring, differentiating, integrating); it is ignored by operations that do
+/// not. `lower` and `upper` are the bounds a definite integral runs between, and
+/// are ignored by every other operation.
 ///
-/// The variable is taken as a *name* rather than a pre-built handle on purpose.
-/// Expression handles are bound to the [`Context`] that created them and the
-/// backend panics when handles from two contexts meet, so taking a name makes
-/// it structurally impossible for a caller to hand in a foreign handle — this
-/// function owns the only context involved.
+/// The variable and the bounds are taken as *names* rather than pre-built
+/// handles on purpose. Expression handles are bound to the [`Context`] that
+/// created them and the backend panics when handles from two contexts meet, so
+/// taking text makes it structurally impossible for a caller to hand in a
+/// foreign handle — this function owns the only context involved.
 pub fn transform(
     expression: &str,
     operation: SymbolicOperation,
     variable: Option<&str>,
+    lower: Option<&str>,
+    upper: Option<&str>,
     show_steps: bool,
 ) -> Result<TransformOutcome, SymbolicError> {
     let trimmed = expression.trim();
@@ -251,8 +281,8 @@ pub fn transform(
         .map_err(|e| SymbolicError::from(CommonError::InvalidExpression(e.to_string())))?;
 
     // Resolved here, in the same context as `parsed`. Operations that ignore
-    // the variable never look at it, so it is resolved lazily: asking for
-    // `simplify` never fails over a malformed name it would not have used.
+    // these never look at them, so they are resolved lazily: asking for
+    // `simplify` never fails over a malformed bound it would not have used.
     let target = match variable.map(str::trim).filter(|name| !name.is_empty()) {
         Some(name) => Some(
             ctx.try_symbol(name)
@@ -262,7 +292,23 @@ pub fn transform(
     };
     let target = target.as_ref();
 
-    let (value, steps) = operation.apply(&parsed, target, trimmed, show_steps)?;
+    let bounds = match (
+        lower.map(str::trim).filter(|b| !b.is_empty()),
+        upper.map(str::trim).filter(|b| !b.is_empty()),
+    ) {
+        (Some(low), Some(high)) => {
+            let parse_bound = |src: &str, name: &str| {
+                ctx.parse(src).map_err(|_| {
+                    SymbolicError::InvalidExpression(format!("'{}' is not a usable {name}", src))
+                })
+            };
+            Some((parse_bound(low, "lower bound")?, parse_bound(high, "upper bound")?))
+        }
+        _ => None,
+    };
+    let bounds = bounds.as_ref().map(|(low, high)| (low, high));
+
+    let (value, steps) = operation.apply(&parsed, target, bounds, trimmed, show_steps)?;
 
     // The backend signals "I could not actually do this" by returning the
     // request back unevaluated, e.g. `Integral(x!, x)` for the antiderivative of
@@ -337,7 +383,7 @@ fn alternate_forms(
         } else {
             None
         };
-        if let Ok((expr, _)) = operation.apply(parsed, op_target, "", false) {
+        if let Ok((expr, _)) = operation.apply(parsed, op_target, None, "", false) {
             forms.push(FormVariant {
                 label: operation.label().to_string(),
                 expression: expr.to_string(),
@@ -373,6 +419,7 @@ fn details_for(
         )),
         SymbolicOperation::Simplify
         | SymbolicOperation::Expand
-        | SymbolicOperation::Differentiate => None,
+        | SymbolicOperation::Differentiate
+        | SymbolicOperation::IntegrateDefinite => None,
     }
 }

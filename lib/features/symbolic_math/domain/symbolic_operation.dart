@@ -48,6 +48,19 @@ enum SymbolicOperation {
     label: 'Integrate',
     formLabel: 'Antiderivative',
     description: 'Find an antiderivative, up to an arbitrary constant',
+  ),
+
+  /// Evaluates the integral between two bounds.
+  ///
+  /// A separate operation from [integrate] rather than a variant of it, because
+  /// the two answers differ in kind: an indefinite integral is a family of
+  /// functions, while a definite one is a single exact value with no free
+  /// parameter left in it, and therefore no `+ C`.
+  integrateDefinite(
+    wireName: 'integrate_definite',
+    label: 'Integrate',
+    formLabel: 'Definite integral',
+    description: 'Evaluate the integral between a lower and an upper bound',
   );
 
   /// The name accepted by the Rust bridge.
@@ -77,7 +90,8 @@ enum SymbolicOperation {
   /// forms of the expression the user typed.
   bool get isForm =>
       this != SymbolicOperation.differentiate &&
-      this != SymbolicOperation.integrate;
+      this != SymbolicOperation.integrate &&
+      this != SymbolicOperation.integrateDefinite;
 
   /// Whether this operation needs to be told which variable to act on.
   ///
@@ -86,12 +100,16 @@ enum SymbolicOperation {
   bool get requiresVariable =>
       this == SymbolicOperation.factor ||
       this == SymbolicOperation.differentiate ||
-      this == SymbolicOperation.integrate;
+      this == SymbolicOperation.integrate ||
+      this == SymbolicOperation.integrateDefinite;
+
+  /// Whether this operation needs lower and upper bounds.
+  bool get requiresBounds => this == SymbolicOperation.integrateDefinite;
 
   /// Whether the answer is only determined up to an arbitrary constant.
   ///
-  /// The UI says so explicitly, and the backend's value already carries the
-  /// constant, so it cannot be missed.
+  /// Only the indefinite integral. A definite one is a single value, so adding
+  /// a constant to it would be nonsense rather than an omission.
   bool get isUpToAConstant => this == SymbolicOperation.integrate;
 
   /// The operations offered by the Algebra workspace, in presentation order.
@@ -108,5 +126,35 @@ enum SymbolicOperation {
   static const List<SymbolicOperation> calculusOperations = [
     SymbolicOperation.differentiate,
     SymbolicOperation.integrate,
+  ];
+}
+
+/// Which kind of integration the Calculus workspace is set up for.
+///
+/// The two are separate operations rather than one operation with an option,
+/// so the action row shows exactly one `Integrate` chip and the qualifier
+/// reports which kind produced the answer.
+enum IntegrationMode {
+  /// An antiderivative, up to an arbitrary constant.
+  indefinite(SymbolicOperation.integrate, 'Indefinite'),
+
+  /// The integral between a lower and an upper bound.
+  definite(SymbolicOperation.integrateDefinite, 'Definite');
+
+  /// The operation this mode runs.
+  final SymbolicOperation operation;
+
+  /// Short label for the mode switch.
+  final String label;
+
+  const IntegrationMode(this.operation, this.label);
+
+  /// The operations the Calculus workspace offers in this mode.
+  ///
+  /// Differentiation is always available; only the flavour of integration
+  /// changes, so it stays in both.
+  static List<SymbolicOperation> operationsFor(IntegrationMode mode) => [
+    SymbolicOperation.differentiate,
+    mode.operation,
   ];
 }

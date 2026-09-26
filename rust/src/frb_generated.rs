@@ -1120,6 +1120,8 @@ fn wire__crate__bridge__symbolic__symbolic_transform_impl(
             let api_expression = <String>::sse_decode(&mut deserializer);
             let api_operation = <String>::sse_decode(&mut deserializer);
             let api_variable = <Option<String>>::sse_decode(&mut deserializer);
+            let api_lower_bound = <Option<String>>::sse_decode(&mut deserializer);
+            let api_upper_bound = <Option<String>>::sse_decode(&mut deserializer);
             let api_show_steps = <bool>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
@@ -1129,6 +1131,8 @@ fn wire__crate__bridge__symbolic__symbolic_transform_impl(
                             api_expression,
                             api_operation,
                             api_variable,
+                            api_lower_bound,
+                            api_upper_bound,
                             api_show_steps,
                         )
                         .await?;

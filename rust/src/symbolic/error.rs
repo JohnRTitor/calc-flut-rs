@@ -18,6 +18,8 @@ pub enum SymbolicError {
     UnknownOperation(String),
     /// The operation needs a free variable to act on, but there was none.
     NoVariable,
+    /// A definite operation needs lower and upper bounds, but they were absent.
+    NoBounds,
     /// The input was an expression where an equation was required.
     NotEquation,
     /// The requested operation is valid but cannot be carried out as asked.
@@ -42,6 +44,9 @@ impl fmt::Display for SymbolicError {
                 write!(f, "Unsupported operation: {}", op)
             }
             SymbolicError::NoVariable => write!(f, "This expression has no variable to work with"),
+            SymbolicError::NoBounds => {
+                write!(f, "Give a lower and an upper bound to integrate between")
+            }
             SymbolicError::NotEquation => write!(
                 f,
                 "That is an expression, not an equation — put an '=' between two sides"
@@ -145,6 +150,7 @@ impl SymbolicError {
             }
             SymbolicError::UnknownOperation(_)
             | SymbolicError::NoVariable
+            | SymbolicError::NoBounds
             | SymbolicError::NotEquation
             | SymbolicError::NotSupported(_) => SymbolicErrorKind::Unsupported,
             SymbolicError::ComputationFailed(_) => SymbolicErrorKind::Computation,
@@ -166,6 +172,7 @@ impl SymbolicError {
             SymbolicError::NoVariable => {
                 Some("Include a letter, for example x^2 + 3*x".into())
             }
+            SymbolicError::NoBounds => Some("For example 0 and 1, or pi and 2*pi".into()),
             SymbolicError::NotEquation => Some("Try something like x^2 - 4 = 0".into()),
             SymbolicError::NotSupported(_) => None,
             SymbolicError::ComputationFailed(_) => {

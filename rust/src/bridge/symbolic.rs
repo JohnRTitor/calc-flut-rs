@@ -91,8 +91,9 @@ pub fn symbolic_operations() -> Vec<String> {
 /// `operation` is one of `simplify`, `expand`, `factor` or `differentiate`.
 /// `variable` names the variable to act on for the operations that need one;
 /// pass an empty string (or `None`) when it is not needed or not yet chosen.
-/// `show_steps` mirrors the existing `modular_evaluate` parameter and is gated
-/// by Educational Mode.
+/// `lower_bound` and `upper_bound` are used by a definite integral and
+/// ignored by everything else. `show_steps` mirrors the existing
+/// `modular_evaluate` parameter and is gated by Educational Mode.
 ///
 /// Runs off the UI thread; see the module docs.
 #[frb]
@@ -100,12 +101,21 @@ pub async fn symbolic_transform(
     expression: String,
     operation: String,
     variable: Option<String>,
+    lower_bound: Option<String>,
+    upper_bound: Option<String>,
     show_steps: bool,
 ) -> Result<SymbolicResult, SymbolicErrorInfo> {
     let operation = SymbolicOperation::from_name(&operation)
         .map_err(|e| SymbolicErrorInfo::from(&e))?;
 
-    evaluator::transform(&expression, operation, variable.as_deref(), show_steps)
+    evaluator::transform(
+        &expression,
+        operation,
+        variable.as_deref(),
+        lower_bound.as_deref(),
+        upper_bound.as_deref(),
+        show_steps,
+    )
         .map(|outcome| SymbolicResult {
             value: outcome.value,
             alternate_forms: outcome

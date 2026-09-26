@@ -214,6 +214,8 @@ abstract class RustLibApi extends BaseApi {
     required String expression,
     required String operation,
     String? variable,
+    String? lowerBound,
+    String? upperBound,
     required bool showSteps,
   });
 }
@@ -1111,6 +1113,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required String expression,
     required String operation,
     String? variable,
+    String? lowerBound,
+    String? upperBound,
     required bool showSteps,
   }) {
     return handler.executeNormal(
@@ -1120,6 +1124,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_String(expression, serializer);
           sse_encode_String(operation, serializer);
           sse_encode_opt_String(variable, serializer);
+          sse_encode_opt_String(lowerBound, serializer);
+          sse_encode_opt_String(upperBound, serializer);
           sse_encode_bool(showSteps, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
@@ -1133,7 +1139,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_symbolic_error_info,
         ),
         constMeta: kCrateBridgeSymbolicSymbolicTransformConstMeta,
-        argValues: [expression, operation, variable, showSteps],
+        argValues: [
+          expression,
+          operation,
+          variable,
+          lowerBound,
+          upperBound,
+          showSteps,
+        ],
         apiImpl: this,
       ),
     );
@@ -1142,7 +1155,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   TaskConstMeta get kCrateBridgeSymbolicSymbolicTransformConstMeta =>
       const TaskConstMeta(
         debugName: "symbolic_transform",
-        argNames: ["expression", "operation", "variable", "showSteps"],
+        argNames: [
+          "expression",
+          "operation",
+          "variable",
+          "lowerBound",
+          "upperBound",
+          "showSteps",
+        ],
       );
 
   @protected

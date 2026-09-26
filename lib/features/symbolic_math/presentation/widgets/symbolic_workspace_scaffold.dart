@@ -56,12 +56,21 @@ class SymbolicWorkspaceScaffold extends ConsumerStatefulWidget {
   /// The operations this tool offers, used by the reference dialog.
   final List<SymbolicOperation> operations;
 
+  /// Extra controls shown directly beneath the expression editor.
+  ///
+  /// A slot rather than a subclass, so a tool that needs one more input — the
+  /// Calculus workspace's integral bounds, say — does not have to copy this
+  /// whole layout. Deliberately a widget rather than a list of extra fields, so
+  /// the host decides what its inputs look like.
+  final Widget? extraControls;
+
   const SymbolicWorkspaceScaffold({
     super.key,
     required this.title,
     required this.hintText,
     required this.provider,
     required this.operations,
+    this.extraControls,
   });
 
   @override
@@ -225,6 +234,10 @@ class _SymbolicWorkspaceScaffoldState
                   onShowHelp: _showSupportedOperations,
                 ),
                 const SizedBox(height: 12),
+                if (widget.extraControls != null) ...[
+                  widget.extraControls!,
+                  const SizedBox(height: 12),
+                ],
                 SymbolicVariableSelector(
                   uiStyle: uiStyle,
                   variables: state.variables,

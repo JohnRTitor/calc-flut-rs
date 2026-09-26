@@ -17,6 +17,8 @@ SymbolicWorkspaceState _stateWith({
   String expression = 'x^2 - 4',
   List<String> variables = const ['x'],
   String? selectedVariable = 'x',
+  String lowerBound = '',
+  String upperBound = '',
   bool isComputing = false,
   List<SymbolicForm> forms = const [],
   int activeFormIndex = 0,
@@ -30,6 +32,8 @@ SymbolicWorkspaceState _stateWith({
     expression: expression,
     variables: variables,
     selectedVariable: selectedVariable,
+    lowerBound: lowerBound,
+    upperBound: upperBound,
     isComputing: isComputing,
     forms: forms,
     activeFormIndex: activeFormIndex,
@@ -535,6 +539,30 @@ void main() {
         expect(find.textContaining('Any constant added'), findsOneWidget);
       });
 
+      testWidgets('a definite integral carries no arbitrary constant ($uiStyle)', (
+        tester,
+      ) async {
+        // A definite integral is one exact value, so a constant here would be
+        // nonsense rather than an omission.
+        await tester.pumpWidget(
+          _host(
+            uiStyle,
+            SymbolicResultCard(
+              uiStyle: uiStyle,
+              state: _stateWith(
+                forms: const [
+                  SymbolicForm(label: 'Definite integral', expression: '1/3'),
+                ],
+                operation: SymbolicOperation.integrateDefinite,
+              ),
+            ),
+          ),
+        );
+
+        expect(find.text('1/3'), findsOneWidget);
+        expect(find.textContaining('+ C'), findsNothing);
+      });
+
       testWidgets('omits the steps block when there is none ($uiStyle)',
           (tester) async {
         await tester.pumpWidget(
@@ -608,9 +636,7 @@ void main() {
       // Guards the split itself: anything added later must be deliberately
       // classified, rather than defaulting into the wrong bucket.
       for (final operation in SymbolicOperation.values) {
-        final isTransform =
-            operation == SymbolicOperation.differentiate ||
-            operation == SymbolicOperation.integrate;
+        final isTransform = !operation.isForm;
         expect(
           operation.isForm,
           !isTransform,
@@ -627,8 +653,11 @@ void main() {
       expect(SymbolicOperation.expand.requiresVariable, isFalse);
     });
 
-    test('only integration is determined up to a constant', () {
+    test('only the indefinite integral is determined up to a constant', () {
       expect(SymbolicOperation.integrate.isUpToAConstant, isTrue);
+      // A definite integral is a single value, so a constant would be nonsense
+      // rather than an omission.
+      expect(SymbolicOperation.integrateDefinite.isUpToAConstant, isFalse);
       for (final operation in SymbolicOperation.values) {
         if (operation == SymbolicOperation.integrate) continue;
         expect(
@@ -637,6 +666,94 @@ void main() {
           reason: '$operation is fully determined',
         );
       }
+    });
+
+    test('only the definite integral needs bounds', () {
+      expect(SymbolicOperation.integrateDefinite.requiresBounds, isTrue);
+      for (final operation in SymbolicOperation.values) {
+        if (operation == SymbolicOperation.integrateDefinite) continue;
+        expect(
+          operation.requiresBounds,
+          isFalse,
+          reason: '$operation takes no bounds',
+        );
+      }
+    });
+
+    test('each integration mode offers one integration, plus differentiation', () {
+      for (final mode in IntegrationMode.values) {
+        final operations = IntegrationMode.operationsFor(mode);
+        expect(
+          operations,
+          contains(SymbolicOperation.differentiate),
+          reason: 'differentiating does not depend on the integration mode',
+        );
+        expect(operations, contains(mode.operation));
+        // Exactly one integration, or the chip row would show two identical
+        // "Integrate" buttons and the user would have to guess which was which.
+        expect(operations.where((o) => o.label == 'Integrate'), hasLength(1));
+        // And nothing from another tool.
+        expect(
+          operations,
+          isNot(contains(SymbolicOperation.simplify)),
+        );
+        expect(
+          operations,
+          isNot(contains(SymbolicOperation.factor)),
+        );
+      }
+    });
+
+    test('the two integration modes are distinguishable', () {
+      expect(
+        IntegrationMode.indefinite.operation,
+        SymbolicOperation.integrate,
+      );
+      expect(
+        IntegrationMode.definite.operation,
+        SymbolicOperation.integrateDefinite,
+      );
+      expect(IntegrationMode.definite.label, 'Definite');
+      expect(IntegrationMode.indefinite.label, 'Indefinite');
+    });
+
+    test('a definite integral needs both bounds, not one', () {
+      // Defaulting a missing bound to zero would answer a different question.
+      final neither = _stateWith(
+        operations: [SymbolicOperation.integrateDefinite],
+      );
+      expect(neither.canRunOperation(SymbolicOperation.integrateDefinite), isFalse);
+      expect(
+        neither.unavailableReason(SymbolicOperation.integrateDefinite),
+        'Enter a lower and an upper bound',
+      );
+
+      final lowerOnly = _stateWith(
+        operations: [SymbolicOperation.integrateDefinite],
+        lowerBound: '0',
+      );
+      expect(
+        lowerOnly.canRunOperation(SymbolicOperation.integrateDefinite),
+        isFalse,
+      );
+      expect(
+        lowerOnly.unavailableReason(SymbolicOperation.integrateDefinite),
+        'Enter both bounds, or clear them to integrate indefinitely',
+      );
+
+      final both = _stateWith(
+        operations: [SymbolicOperation.integrateDefinite],
+        lowerBound: '0',
+        upperBound: '1',
+      );
+      expect(both.hasBounds, isTrue);
+      expect(both.canRunOperation(SymbolicOperation.integrateDefinite), isTrue);
+    });
+
+    test('bounds are ignored by operations that take none', () {
+      final state = _stateWith(lowerBound: '0', upperBound: '1');
+      expect(state.canRunOperation(SymbolicOperation.simplify), isTrue);
+      expect(state.canRunOperation(SymbolicOperation.differentiate), isTrue);
     });
 
     test('each tool offers its own operations', () {
@@ -662,11 +779,24 @@ void main() {
       );
     });
 
-    test('every operation has a distinct bridge name and label', () {
+    test('every operation has a distinct bridge name', () {
+      // Two operations sharing a wire name would be indistinguishable to the
+      // backend, so the second would silently never run.
       final names = SymbolicOperation.values.map((o) => o.wireName).toSet();
       expect(names, hasLength(SymbolicOperation.values.length));
-      final labels = SymbolicOperation.values.map((o) => o.label).toSet();
-      expect(labels, hasLength(SymbolicOperation.values.length));
+    });
+
+    test('the two integrations share a label, as they are the same verb', () {
+      // The definite and indefinite integrals are the same action with
+      // different inputs, so they share the chip label. What tells them apart
+      // is the mode switch and the bounds, not the button.
+      expect(SymbolicOperation.integrate.label, 'Integrate');
+      expect(SymbolicOperation.integrateDefinite.label, 'Integrate');
+      // Their outputs are named differently, since they are different things.
+      expect(
+        SymbolicOperation.integrate.formLabel,
+        isNot(SymbolicOperation.integrateDefinite.formLabel),
+      );
     });
   });
 

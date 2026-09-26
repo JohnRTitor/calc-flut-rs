@@ -65,6 +65,24 @@ class SymbolicWorkspace extends Notifier<SymbolicWorkspaceState> {
     state = state.copyWith(selectedVariable: variable, clearError: true);
   }
 
+  /// Sets one of the definite integral's bounds.
+  void setBound({required bool isLower, required String text}) {
+    state = isLower
+        ? state.copyWith(lowerBound: text, clearError: true)
+        : state.copyWith(upperBound: text, clearError: true);
+  }
+
+  /// Replaces the set of operations this workspace offers.
+  ///
+  /// Used when a tool's operations depend on a mode the user switches between,
+  /// such as indefinite versus definite integration. Everything else — the
+  /// expression, the bounds, the result — is deliberately kept, so switching
+  /// does not throw away work in progress.
+  void setOperations(List<SymbolicOperation> operations) {
+    if (identical(operations, state.operations)) return;
+    state = state.copyWith(operations: operations);
+  }
+
   /// Shows a different known form of the current expression.
   ///
   /// Purely local: every form was computed in the same bridge call, so
@@ -96,6 +114,10 @@ class SymbolicWorkspace extends Notifier<SymbolicWorkspaceState> {
         expression: expressionAtRequest,
         operation: operation.wireName,
         variable: operation.requiresVariable ? variableAtRequest : null,
+        // Only a definite integral reads the bounds; sending them for anything
+        // else would make a typo in an unused field look like a failure.
+        lowerBound: operation.requiresBounds ? state.lowerBound : null,
+        upperBound: operation.requiresBounds ? state.upperBound : null,
         showSteps: showSteps,
       );
 

@@ -9,6 +9,7 @@ import 'package:calc_flut_rs/features/settings/presentation/providers/theme_prov
 import 'package:calc_flut_rs/features/symbolic_math/presentation/screens/algebra_screen.dart';
 import 'package:calc_flut_rs/features/symbolic_math/presentation/screens/calculus_screen.dart';
 import 'package:calc_flut_rs/features/symbolic_math/presentation/widgets/symbolic_action_row.dart';
+import 'package:calc_flut_rs/shared/widgets/pill_switcher.dart';
 
 /// Pumps [home] inside the app's real theme and provider scope.
 ///
@@ -82,6 +83,33 @@ void main() {
         for (final label in ['Simplify', 'Expand', 'Factor']) {
           expect(find.text(label), findsNothing);
         }
+      });
+
+      testWidgets('hides the bounds until definite is chosen ($uiStyle)', (
+        tester,
+      ) async {
+        // Bounds only exist in definite mode; showing them for an indefinite
+        // integral would imply they did something to the answer.
+        await _pump(tester, uiStyle, const CalculusScreen());
+
+        expect(find.text('From'), findsNothing);
+        expect(find.text('To'), findsNothing);
+      });
+
+      testWidgets('shows bounds in definite mode and offers one Integrate ($uiStyle)', (
+        tester,
+      ) async {
+        await _pump(tester, uiStyle, const CalculusScreen());
+
+        await tester.tap(find.byType(PillSwitcher));
+        await tester.pumpAndSettle();
+
+        expect(find.text('From'), findsOneWidget);
+        expect(find.text('To'), findsOneWidget);
+        // Exactly one Integrate: two identically-labelled buttons would leave
+        // the user guessing which was which.
+        expect(find.text('Integrate'), findsOneWidget);
+        expect(find.text('Differentiate'), findsOneWidget);
       });
     }
   });
