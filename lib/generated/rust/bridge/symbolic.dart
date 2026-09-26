@@ -17,10 +17,11 @@ List<String> symbolicOperations() =>
 
 /// Applies a symbolic operation to `expression`.
 ///
-/// `operation` is one of `simplify`, `expand` or `factor`. `variable` names the
-/// variable to act on for operations that need one; pass an empty string (or
-/// `None`) when it is not needed or not yet chosen. `show_steps` mirrors the
-/// existing `modular_evaluate` parameter and is gated by Educational Mode.
+/// `operation` is one of `simplify`, `expand`, `factor` or `differentiate`.
+/// `variable` names the variable to act on for the operations that need one;
+/// pass an empty string (or `None`) when it is not needed or not yet chosen.
+/// `show_steps` mirrors the existing `modular_evaluate` parameter and is gated
+/// by Educational Mode.
 ///
 /// Runs off the UI thread; see the module docs.
 Future<SymbolicResult> symbolicTransform({

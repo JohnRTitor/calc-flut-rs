@@ -14,5 +14,5 @@ pub mod evaluator;
 
 pub use error::{SymbolicError, SymbolicErrorKind};
 pub use evaluator::{
-    MAX_EXPRESSION_CHARS, SymbolicOperation, TransformOutcome, transform,
+    FORM_OPERATIONS, MAX_EXPRESSION_CHARS, SymbolicOperation, TransformOutcome, transform,
 };

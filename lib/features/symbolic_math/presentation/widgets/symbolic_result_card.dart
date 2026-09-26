@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:calc_flut_rs/app/theme/app_theme_extension.dart';
 import 'package:calc_flut_rs/app/theme/ui_style.dart';
-import 'package:calc_flut_rs/features/symbolic_math/presentation/providers/algebra_state.dart';
+import 'package:calc_flut_rs/features/symbolic_math/presentation/providers/symbolic_workspace_state.dart';
 import 'package:calc_flut_rs/shared/widgets/app_chip.dart';
 import 'package:calc_flut_rs/shared/widgets/glass_utils.dart';
 import 'package:calc_flut_rs/shared/widgets/math_expression_text.dart';
@@ -19,11 +19,11 @@ import 'package:calc_flut_rs/shared/widgets/math_expression_text.dart';
 ///
 /// A failure is a fourth, visually distinct state rather than a variation of
 /// the value: red body text, never styled as if it were an answer.
-class AlgebraResultCard extends StatelessWidget {
+class SymbolicResultCard extends StatelessWidget {
   final UiStyle uiStyle;
-  final AlgebraState state;
+  final SymbolicWorkspaceState state;
 
-  /// Copies [AlgebraState.displayValue] to the clipboard.
+  /// Copies [SymbolicWorkspaceState.displayValue] to the clipboard.
   final VoidCallback? onCopy;
 
   /// Switches the primary value to another known form.
@@ -32,7 +32,7 @@ class AlgebraResultCard extends StatelessWidget {
   /// Explains a practical limit, shown beside a `too_large` failure.
   final VoidCallback? onExplainLimit;
 
-  const AlgebraResultCard({
+  const SymbolicResultCard({
     super.key,
     required this.uiStyle,
     required this.state,
@@ -183,7 +183,7 @@ class AlgebraResultCard extends StatelessWidget {
   Widget _buildError(
     BuildContext context,
     ColorScheme colorScheme,
-    AlgebraError error,
+    SymbolicFailure error,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -215,7 +215,7 @@ class AlgebraResultCard extends StatelessWidget {
 /// A single alternate-form chip.
 class _FormChip extends StatelessWidget {
   final UiStyle uiStyle;
-  final AlgebraForm form;
+  final SymbolicForm form;
   final bool isActive;
   final VoidCallback? onTap;
 

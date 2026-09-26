@@ -8,7 +8,7 @@ import 'package:calc_flut_rs/features/calculator/presentation/providers/calculat
 import 'package:calc_flut_rs/features/calculator/presentation/providers/function_evaluator_provider.dart';
 import 'package:calc_flut_rs/features/calculator/presentation/providers/modular_arithmetic_workspace_provider.dart';
 import 'package:calc_flut_rs/features/settings/presentation/providers/theme_provider.dart';
-import 'package:calc_flut_rs/features/symbolic_math/presentation/providers/algebra_provider.dart';
+import 'package:calc_flut_rs/features/symbolic_math/presentation/providers/symbolic_workspace.dart';
 import 'package:calc_flut_rs/app/theme/ui_style.dart';
 import 'package:calc_flut_rs/shared/widgets/multi_pill_switcher.dart';
 import 'package:calc_flut_rs/shared/widgets/app_dialog.dart';
@@ -359,8 +359,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         break;
       case HistoryCategory.symbolic:
         ref.read(algebraProvider.notifier).restoreSnapshot(entry.snapshot);
-        break;
-    }
+        break;    }
     Navigator.pop(context, _selectedCategory);
   }
 

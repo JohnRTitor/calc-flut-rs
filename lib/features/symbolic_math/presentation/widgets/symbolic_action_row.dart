@@ -1,49 +1,29 @@
 import 'package:flutter/material.dart';
 
 import 'package:calc_flut_rs/app/theme/ui_style.dart';
-import 'package:calc_flut_rs/features/symbolic_math/presentation/providers/algebra_state.dart';
+import 'package:calc_flut_rs/features/symbolic_math/domain/symbolic_operation.dart';
+import 'package:calc_flut_rs/features/symbolic_math/presentation/providers/symbolic_workspace_state.dart';
 import 'package:calc_flut_rs/shared/widgets/app_chip.dart';
-
-/// Thresholds that govern when the workspace admits it is working.
-///
-/// Named rather than inlined so the feel can be tuned after release without
-/// hunting through build methods.
-class SymbolicComputeTimings {
-  const SymbolicComputeTimings._();
-
-  /// How long a call may run before a progress indicator appears.
-  ///
-  /// Almost every algebraic operation resolves in well under this, and a
-  /// spinner that flashes for 30ms reads as a glitch rather than as feedback.
-  /// Nothing is shown until a call is genuinely slow.
-  static const Duration indicatorDelay = Duration(milliseconds: 150);
-
-  /// How long a call may run before a reassurance line appears.
-  ///
-  /// Symbolic work has no hard upper bound, so past this point the user is told
-  /// it is still running rather than being left guessing whether the tap
-  /// registered.
-  static const Duration slowCallNotice = Duration(seconds: 8);
-}
 
 /// The row of operations that can be applied to the current expression.
 ///
-/// Appears only once there is an expression to act on, so nothing advanced is
-/// on screen until it is relevant. Scrolls horizontally rather than compressing
-/// when more operations are available than fit.
-class AlgebraActionRow extends StatelessWidget {
+/// Offers exactly the operations [SymbolicWorkspaceState.operations] lists, so
+/// the same widget serves every tool in the section. Which operation is
+/// in flight, and how long it has been, is owned by the workspace scaffold that
+/// hosts this row.
+class SymbolicActionRow extends StatelessWidget {
   final UiStyle uiStyle;
 
   /// The current workspace state, which decides what is enabled.
-  final AlgebraState state;
+  final SymbolicWorkspaceState state;
 
   /// Invoked with the chosen operation.
-  final ValueChanged<AlgebraOperation> onRun;
+  final ValueChanged<SymbolicOperation> onRun;
 
   /// The operation currently in flight, if any.
-  final AlgebraOperation? computingOperation;
+  final SymbolicOperation? computingOperation;
 
-  const AlgebraActionRow({
+  const SymbolicActionRow({
     super.key,
     required this.uiStyle,
     required this.state,
@@ -64,7 +44,7 @@ class AlgebraActionRow extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 3),
         children: [
-          for (final operation in AlgebraOperation.values) ...[
+          for (final operation in state.operations) ...[
             _buildChip(context, colorScheme, operation),
             const SizedBox(width: 6),
           ],
@@ -76,7 +56,7 @@ class AlgebraActionRow extends StatelessWidget {
   Widget _buildChip(
     BuildContext context,
     ColorScheme colorScheme,
-    AlgebraOperation operation,
+    SymbolicOperation operation,
   ) {
     final isEnabled = state.canRunOperation(operation);
     final isActive = state.operation == operation;

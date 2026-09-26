@@ -14,7 +14,7 @@ mod tests {
     /// Runs `operation` against `expression`, supplying `x` as the acting
     /// variable so the operation is never blocked on variable discovery.
     fn run(expression: &str, operation: SymbolicOperation) -> Result<String, SymbolicError> {
-        let needs_variable = matches!(operation, SymbolicOperation::Factor);
+        let needs_variable = operation.requires_variable();
         transform(
             expression,
             operation,
@@ -22,6 +22,18 @@ mod tests {
             false,
         )
         .map(|outcome| outcome.value)
+    }
+
+    /// Differentiates `expression` with respect to `variable`.
+    fn diff(expression: &str, variable: &str) -> String {
+        transform(
+            expression,
+            SymbolicOperation::Differentiate,
+            Some(variable),
+            false,
+        )
+        .expect("differentiation should succeed")
+        .value
     }
 
     // ---------- simplify ----------
@@ -139,6 +151,122 @@ mod tests {
         assert!(!labels.contains(&"Expanded"), "re-offered the chosen form");
         assert!(labels.contains(&"Simplified"));
         assert!(labels.contains(&"Factored"));
+    }
+
+    // ---------- differentiate ----------
+
+    #[test]
+    fn test_differentiate_power_rule() {
+        assert_eq!(diff("x^3 + x", "x"), "3*x^2 + 1");
+        assert_eq!(diff("(x + 1)^5", "x"), "5*(x + 1)^4");
+    }
+
+    #[test]
+    fn test_differentiate_reciprocal_and_root() {
+        assert_eq!(diff("1/x", "x"), "-x^(-2)");
+        assert_eq!(diff("sqrt(x)", "x"), "1/(2*sqrt(x))");
+    }
+
+    #[test]
+    fn test_differentiate_applies_the_product_and_chain_rules() {
+        // x^2*sin(x) needs both, and this exact value is the classic
+        // worked example for them.
+        assert_eq!(diff("x^2*sin(x)", "x"), "x^2*cos(x) + 2*x*sin(x)");
+        assert_eq!(diff("exp(x^2)", "x"), "2*x*exp(x^2)");
+    }
+
+    #[test]
+    fn test_differentiate_with_respect_to_one_of_several_variables() {
+        // These are partial derivatives: the other variable is a constant.
+        assert_eq!(diff("x^2*y^3", "x"), "2*x*y^3");
+        assert_eq!(diff("x^2*y^3", "y"), "3*x^2*y^2");
+    }
+
+    #[test]
+    fn test_differentiate_by_an_absent_variable_is_zero_not_an_error() {
+        // d/dy(x^2) is 0. Refusing this would be wrong, not cautious.
+        assert_eq!(diff("x^2", "y"), "0");
+    }
+
+    #[test]
+    fn test_differentiate_without_a_variable_is_refused() {
+        let error = transform("x^2", SymbolicOperation::Differentiate, None, false).unwrap_err();
+        assert!(matches!(error, SymbolicError::NoVariable));
+    }
+
+    #[test]
+    fn test_differentiate_refuses_what_it_cannot_do() {
+        // The derivative of a factorial has no symbolic form. The backend hands
+        // the request back unevaluated, which must become an explicit refusal
+        // rather than the notation `Derivative(x!, x)` reaching the UI.
+        let error =
+            transform("x!", SymbolicOperation::Differentiate, Some("x"), false).unwrap_err();
+        assert!(matches!(error, SymbolicError::NotSupported(_)));
+        assert_eq!(error.kind(), SymbolicErrorKind::Unsupported);
+        let message = error.to_string();
+        assert!(
+            !message.contains("Derivative("),
+            "unevaluated backend notation leaked into the message: {message}"
+        );
+    }
+
+    #[test]
+    fn test_derivative_is_not_offered_as_an_alternate_form() {
+        // The derivative is a different expression, not another way of writing
+        // the input, so it must never appear among the input's forms.
+        let outcome = transform(
+            "x^2 + 1",
+            SymbolicOperation::Differentiate,
+            Some("x"),
+            false,
+        )
+        .unwrap();
+        assert_eq!(outcome.value, "2*x");
+
+        let labels: Vec<&str> = outcome
+            .alternate_forms
+            .iter()
+            .map(|f| f.label.as_str())
+            .collect();
+        assert!(!labels.contains(&"Derivative"));
+
+        // What it does offer are forms of the original input.
+        for form in &outcome.alternate_forms {
+            assert_ne!(form.expression, outcome.value);
+        }
+    }
+
+    #[test]
+    fn test_form_operations_are_the_ones_offered_as_forms() {
+        // Guards the partition itself: anything added to ALL must be
+        // deliberately classified as a form or explicitly not.
+        let forms: Vec<&str> = crate::symbolic::evaluator::FORM_OPERATIONS
+            .iter()
+            .map(|op| op.label())
+            .collect();
+        assert_eq!(forms, vec!["Simplified", "Expanded", "Factored"]);
+        for operation in SymbolicOperation::ALL {
+            assert_eq!(
+                operation.is_form(),
+                !matches!(operation, SymbolicOperation::Differentiate),
+                "{operation:?} was not classified"
+            );
+        }
+    }
+
+    #[test]
+    fn test_operations_needing_a_variable_are_declared_consistently() {
+        for operation in SymbolicOperation::ALL {
+            let needs_variable = matches!(
+                operation,
+                SymbolicOperation::Factor | SymbolicOperation::Differentiate
+            );
+            assert_eq!(
+                operation.requires_variable(),
+                needs_variable,
+                "{operation:?} disagreed about needing a variable"
+            );
+        }
     }
 
     #[test]

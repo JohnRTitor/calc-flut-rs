@@ -4,25 +4,29 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:calc_flut_rs/app/theme/app_theme.dart';
 import 'package:calc_flut_rs/app/theme/ui_style.dart';
 import 'package:calc_flut_rs/features/settings/presentation/providers/theme_provider.dart';
-import 'package:calc_flut_rs/features/symbolic_math/presentation/providers/algebra_state.dart';
-import 'package:calc_flut_rs/features/symbolic_math/presentation/widgets/algebra_action_row.dart';
-import 'package:calc_flut_rs/features/symbolic_math/presentation/widgets/algebra_result_card.dart';
+import 'package:calc_flut_rs/features/symbolic_math/domain/symbolic_operation.dart';
+import 'package:calc_flut_rs/features/symbolic_math/presentation/providers/symbolic_workspace_state.dart';
+import 'package:calc_flut_rs/features/symbolic_math/presentation/widgets/symbolic_action_row.dart';
+import 'package:calc_flut_rs/features/symbolic_math/presentation/widgets/symbolic_result_card.dart';
+import 'package:calc_flut_rs/features/symbolic_math/presentation/widgets/symbolic_workspace_scaffold.dart';
 import 'package:calc_flut_rs/shared/widgets/app_chip.dart';
 
-/// Builds a state with one expression and no result.
-AlgebraState _stateWith({
+/// Builds a state for a given tool, with one expression and no result.
+SymbolicWorkspaceState _stateWith({
+  List<SymbolicOperation> operations = SymbolicOperation.algebraOperations,
   String expression = 'x^2 - 4',
   List<String> variables = const ['x'],
   String? selectedVariable = 'x',
   bool isComputing = false,
-  List<AlgebraForm> forms = const [],
+  List<SymbolicForm> forms = const [],
   int activeFormIndex = 0,
   String? details,
   String? steps,
-  AlgebraError? error,
-  AlgebraOperation? operation,
+  SymbolicFailure? error,
+  SymbolicOperation? operation,
 }) {
-  return AlgebraState(
+  return SymbolicWorkspaceState(
+    operations: operations,
     expression: expression,
     variables: variables,
     selectedVariable: selectedVariable,
@@ -44,10 +48,10 @@ Widget _host(UiStyle uiStyle, Widget child) {
 }
 
 void main() {
-  group('AlgebraState.canRunOperation', () {
+  group('SymbolicWorkspaceState.canRunOperation', () {
     test('needs an expression before anything can run', () {
       final state = _stateWith(expression: '   ');
-      for (final operation in AlgebraOperation.values) {
+      for (final operation in SymbolicOperation.values) {
         expect(
           state.canRunOperation(operation),
           isFalse,
@@ -58,14 +62,14 @@ void main() {
 
     test('simplify and expand need only an expression', () {
       final state = _stateWith(selectedVariable: null, variables: const []);
-      expect(state.canRunOperation(AlgebraOperation.simplify), isTrue);
-      expect(state.canRunOperation(AlgebraOperation.expand), isTrue);
+      expect(state.canRunOperation(SymbolicOperation.simplify), isTrue);
+      expect(state.canRunOperation(SymbolicOperation.expand), isTrue);
     });
 
     test('factor needs a variable, because it acts on one', () {
       final state = _stateWith(selectedVariable: null, variables: const ['x']);
       expect(
-        state.canRunOperation(AlgebraOperation.factor),
+        state.canRunOperation(SymbolicOperation.factor),
         isFalse,
         reason: 'factoring with no chosen variable would have to guess',
       );
@@ -73,22 +77,22 @@ void main() {
 
     test('factor is available once a variable is chosen', () {
       final state = _stateWith(selectedVariable: 'x');
-      expect(state.canRunOperation(AlgebraOperation.factor), isTrue);
+      expect(state.canRunOperation(SymbolicOperation.factor), isTrue);
     });
 
     test('nothing runs while a call is already in flight', () {
       final state = _stateWith(isComputing: true);
-      for (final operation in AlgebraOperation.values) {
+      for (final operation in SymbolicOperation.values) {
         expect(state.canRunOperation(operation), isFalse);
       }
     });
   });
 
-  group('AlgebraState.unavailableReason', () {
+  group('SymbolicWorkspaceState.unavailableReason', () {
     test('explains an empty expression', () {
       final state = _stateWith(expression: '');
       expect(
-        state.unavailableReason(AlgebraOperation.simplify),
+        state.unavailableReason(SymbolicOperation.simplify),
         'Enter an expression first',
       );
     });
@@ -99,31 +103,44 @@ void main() {
         selectedVariable: null,
       );
       expect(
-        state.unavailableReason(AlgebraOperation.factor),
-        'Pick which variable to factor with respect to',
+        state.unavailableReason(SymbolicOperation.factor),
+        'Pick which variable to act on',
+      );
+    });
+
+    test('asks to pick even when only one variable is listed', () {
+      // One unselected variable is still a choice not yet made, so claiming
+      // there is no variable to act on would be plainly wrong.
+      final state = _stateWith(
+        variables: const ['x'],
+        selectedVariable: null,
+      );
+      expect(
+        state.unavailableReason(SymbolicOperation.factor),
+        'Pick which variable to act on',
       );
     });
 
     test('says so when there is no variable at all', () {
       final state = _stateWith(variables: const [], selectedVariable: null);
       expect(
-        state.unavailableReason(AlgebraOperation.factor),
-        'This expression has no variable to factor with respect to',
+        state.unavailableReason(SymbolicOperation.factor),
+        'This expression has no variable to act on',
       );
     });
 
     test('has nothing to say for an available operation', () {
       final state = _stateWith();
-      expect(state.unavailableReason(AlgebraOperation.simplify), isNull);
+      expect(state.unavailableReason(SymbolicOperation.simplify), isNull);
     });
   });
 
-  group('AlgebraState forms', () {
-    const factored = AlgebraForm(
+  group('SymbolicWorkspaceState forms', () {
+    const factored = SymbolicForm(
       label: 'Factored',
       expression: '(x - 2)*(x + 2)',
     );
-    const expanded = AlgebraForm(label: 'Expanded', expression: 'x^2 - 4');
+    const expanded = SymbolicForm(label: 'Expanded', expression: 'x^2 - 4');
     const twoForms = [factored, expanded];
 
     test('a single form is not a choice', () {
@@ -147,13 +164,15 @@ void main() {
     });
   });
 
-  group('AlgebraActionRow', () {
+  group('SymbolicActionRow', () {
     for (final uiStyle in UiStyle.values) {
-      testWidgets('offers every operation ($uiStyle)', (tester) async {
+      testWidgets('offers exactly the operations its tool lists ($uiStyle)', (
+        tester,
+      ) async {
         await tester.pumpWidget(
           _host(
             uiStyle,
-            AlgebraActionRow(
+            SymbolicActionRow(
               uiStyle: uiStyle,
               state: _stateWith(),
               onRun: (_) {},
@@ -161,17 +180,40 @@ void main() {
           ),
         );
 
-        for (final operation in AlgebraOperation.values) {
+        for (final operation in SymbolicOperation.algebraOperations) {
           expect(find.text(operation.label), findsOneWidget);
         }
+        // Differentiation belongs to Calculus, so Algebra must not offer it.
+        expect(find.text('Differentiate'), findsNothing);
       });
 
-      testWidgets('runs the tapped operation ($uiStyle)', (tester) async {
-        final chosen = <AlgebraOperation>[];
+      testWidgets('a single-operation tool shows only that one ($uiStyle)', (
+        tester,
+      ) async {
         await tester.pumpWidget(
           _host(
             uiStyle,
-            AlgebraActionRow(
+            SymbolicActionRow(
+              uiStyle: uiStyle,
+              state: _stateWith(
+                operations: SymbolicOperation.calculusOperations,
+              ),
+              onRun: (_) {},
+            ),
+          ),
+        );
+
+        expect(find.text('Differentiate'), findsOneWidget);
+        expect(find.text('Simplify'), findsNothing);
+        expect(find.text('Factor'), findsNothing);
+      });
+
+      testWidgets('runs the tapped operation ($uiStyle)', (tester) async {
+        final chosen = <SymbolicOperation>[];
+        await tester.pumpWidget(
+          _host(
+            uiStyle,
+            SymbolicActionRow(
               uiStyle: uiStyle,
               state: _stateWith(),
               onRun: chosen.add,
@@ -182,18 +224,18 @@ void main() {
         await tester.tap(find.text('Expand'));
         await tester.pump();
 
-        expect(chosen, [AlgebraOperation.expand]);
+        expect(chosen, [SymbolicOperation.expand]);
       });
 
       testWidgets('keeps an unavailable operation visible but inert ($uiStyle)',
           (tester) async {
         // Hidden would make the capability undiscoverable; a dead chip that
         // explains itself is better than a missing one.
-        final chosen = <AlgebraOperation>[];
+        final chosen = <SymbolicOperation>[];
         await tester.pumpWidget(
           _host(
             uiStyle,
-            AlgebraActionRow(
+            SymbolicActionRow(
               uiStyle: uiStyle,
               state: _stateWith(variables: const [], selectedVariable: null),
               onRun: chosen.add,
@@ -220,7 +262,7 @@ void main() {
         await tester.pumpWidget(
           _host(
             uiStyle,
-            AlgebraActionRow(
+            SymbolicActionRow(
               uiStyle: uiStyle,
               state: _stateWith(),
               onRun: (_) {},
@@ -236,11 +278,11 @@ void main() {
         await tester.pumpWidget(
           _host(
             uiStyle,
-            AlgebraActionRow(
+            SymbolicActionRow(
               uiStyle: uiStyle,
               state: _stateWith(),
               onRun: (_) {},
-              computingOperation: AlgebraOperation.simplify,
+              computingOperation: SymbolicOperation.simplify,
             ),
           ),
         );
@@ -256,36 +298,36 @@ void main() {
           await tester.pumpWidget(
             _host(
               uiStyle,
-              AlgebraActionRow(
+              SymbolicActionRow(
                 uiStyle: uiStyle,
                 state: _stateWith(),
                 onRun: (_) {},
-                computingOperation: computing ? AlgebraOperation.simplify : null,
+                computingOperation: computing ? SymbolicOperation.simplify : null,
               ),
             ),
           );
           await tester.pump();
-          return tester.getSize(find.byType(AlgebraActionRow)).height;
+          return tester.getSize(find.byType(SymbolicActionRow)).height;
         }
 
         final idle = await rowHeightFor(computing: false);
         final busy = await rowHeightFor(computing: true);
 
         expect(busy, idle);
-        expect(idle, AlgebraActionRow.height);
+        expect(idle, SymbolicActionRow.height);
       });
     }
   });
 
-  group('AlgebraResultCard', () {
+  group('SymbolicResultCard', () {
     for (final uiStyle in UiStyle.values) {
       testWidgets('renders nothing before there is anything to say ($uiStyle)',
           (tester) async {
         await tester.pumpWidget(
-          _host(uiStyle, AlgebraResultCard(uiStyle: uiStyle, state: _stateWith())),
+          _host(uiStyle, SymbolicResultCard(uiStyle: uiStyle, state: _stateWith())),
         );
 
-        expect(find.byType(AlgebraResultCard), findsOneWidget);
+        expect(find.byType(SymbolicResultCard), findsOneWidget);
         expect(find.byType(Text), findsNothing);
       });
 
@@ -293,16 +335,16 @@ void main() {
         await tester.pumpWidget(
           _host(
             uiStyle,
-            AlgebraResultCard(
+            SymbolicResultCard(
               uiStyle: uiStyle,
               state: _stateWith(
                 forms: const [
-                  AlgebraForm(
+                  SymbolicForm(
                     label: 'Factored',
                     expression: '(x - 2)*(x + 2)',
                   ),
                 ],
-                operation: AlgebraOperation.factor,
+                operation: SymbolicOperation.factor,
               ),
             ),
           ),
@@ -318,10 +360,10 @@ void main() {
         await tester.pumpWidget(
           _host(
             uiStyle,
-            AlgebraResultCard(
+            SymbolicResultCard(
               uiStyle: uiStyle,
               state: _stateWith(
-                error: const AlgebraError(
+                error: const SymbolicFailure(
                   kind: 'input',
                   message: 'Invalid expression: unexpected end of input',
                   suggestion: 'Check for a missing operator',
@@ -337,10 +379,10 @@ void main() {
 
       testWidgets('offers Learn More only for a practical limit ($uiStyle)',
           (tester) async {
-        Future<void> pumpWith(AlgebraError error) => tester.pumpWidget(
+        Future<void> pumpWith(SymbolicFailure error) => tester.pumpWidget(
           _host(
             uiStyle,
-            AlgebraResultCard(
+            SymbolicResultCard(
               uiStyle: uiStyle,
               state: _stateWith(error: error),
               onExplainLimit: () {},
@@ -349,14 +391,14 @@ void main() {
         );
 
         await pumpWith(
-          const AlgebraError(kind: 'too_large', message: 'Expression is too large'),
+          const SymbolicFailure(kind: 'too_large', message: 'Expression is too large'),
         );
         await tester.pump();
         expect(find.text('Learn More'), findsOneWidget);
 
         // A plain input mistake is not a limitation, so it gets no banner.
         await pumpWith(
-          const AlgebraError(kind: 'input', message: 'Invalid expression'),
+          const SymbolicFailure(kind: 'input', message: 'Invalid expression'),
         );
         await tester.pump();
         expect(find.text('Learn More'), findsNothing);
@@ -367,11 +409,11 @@ void main() {
         await tester.pumpWidget(
           _host(
             uiStyle,
-            AlgebraResultCard(
+            SymbolicResultCard(
               uiStyle: uiStyle,
               state: _stateWith(
                 forms: const [
-                  AlgebraForm(label: 'Factored', expression: '(x-2)*(x+2)'),
+                  SymbolicForm(label: 'Factored', expression: '(x-2)*(x+2)'),
                 ],
               ),
             ),
@@ -382,12 +424,12 @@ void main() {
         await tester.pumpWidget(
           _host(
             uiStyle,
-            AlgebraResultCard(
+            SymbolicResultCard(
               uiStyle: uiStyle,
               state: _stateWith(
                 forms: const [
-                  AlgebraForm(label: 'Factored', expression: '(x-2)*(x+2)'),
-                  AlgebraForm(label: 'Expanded', expression: 'x^2 - 4'),
+                  SymbolicForm(label: 'Factored', expression: '(x-2)*(x+2)'),
+                  SymbolicForm(label: 'Expanded', expression: 'x^2 - 4'),
                 ],
               ),
             ),
@@ -402,12 +444,12 @@ void main() {
         await tester.pumpWidget(
           _host(
             uiStyle,
-            AlgebraResultCard(
+            SymbolicResultCard(
               uiStyle: uiStyle,
               state: _stateWith(
                 forms: const [
-                  AlgebraForm(label: 'Factored', expression: '(x-2)*(x+2)'),
-                  AlgebraForm(label: 'Expanded', expression: 'x^2 - 4'),
+                  SymbolicForm(label: 'Factored', expression: '(x-2)*(x+2)'),
+                  SymbolicForm(label: 'Expanded', expression: 'x^2 - 4'),
                 ],
               ),
               onShowForm: picked.add,
@@ -427,12 +469,12 @@ void main() {
         await tester.pumpWidget(
           _host(
             uiStyle,
-            AlgebraResultCard(
+            SymbolicResultCard(
               uiStyle: uiStyle,
               state: _stateWith(
                 isComputing: true,
                 forms: const [
-                  AlgebraForm(label: 'Simplified', expression: '5*x'),
+                  SymbolicForm(label: 'Simplified', expression: '5*x'),
                 ],
               ),
             ),
@@ -447,11 +489,11 @@ void main() {
         await tester.pumpWidget(
           _host(
             uiStyle,
-            AlgebraResultCard(
+            SymbolicResultCard(
               uiStyle: uiStyle,
               state: _stateWith(
                 forms: const [
-                  AlgebraForm(label: 'Simplified', expression: '5*x'),
+                  SymbolicForm(label: 'Simplified', expression: '5*x'),
                 ],
                 steps: 'as entered:  2*x + 3*x\nresult:      5*x',
               ),
@@ -467,11 +509,11 @@ void main() {
         await tester.pumpWidget(
           _host(
             uiStyle,
-            AlgebraResultCard(
+            SymbolicResultCard(
               uiStyle: uiStyle,
               state: _stateWith(
                 forms: const [
-                  AlgebraForm(label: 'Simplified', expression: '5*x'),
+                  SymbolicForm(label: 'Simplified', expression: '5*x'),
                 ],
               ),
             ),
@@ -486,11 +528,11 @@ void main() {
         await tester.pumpWidget(
           _host(
             uiStyle,
-            AlgebraResultCard(
+            SymbolicResultCard(
               uiStyle: uiStyle,
               state: _stateWith(
                 forms: const [
-                  AlgebraForm(label: 'Simplified', expression: '5*x'),
+                  SymbolicForm(label: 'Simplified', expression: '5*x'),
                 ],
               ),
               onCopy: () => copies++,
@@ -517,6 +559,104 @@ void main() {
         SymbolicComputeTimings.slowCallNotice,
         greaterThan(SymbolicComputeTimings.indicatorDelay),
       );
+    });
+  });
+
+  group('SymbolicOperation', () {
+    test('a transform is not a form of the input', () {
+      // The derivative of x^2 is not another way of writing x^2, so it must
+      // never be offered among the input's alternate forms.
+      expect(SymbolicOperation.differentiate.isForm, isFalse);
+      expect(SymbolicOperation.simplify.isForm, isTrue);
+      expect(SymbolicOperation.expand.isForm, isTrue);
+      expect(SymbolicOperation.factor.isForm, isTrue);
+    });
+
+    test('form and transform operations partition the enum', () {
+      // Guards the split itself: anything added later must be deliberately
+      // classified, rather than defaulting into the wrong bucket.
+      for (final operation in SymbolicOperation.values) {
+        final isTransform = operation == SymbolicOperation.differentiate;
+        expect(
+          operation.isForm,
+          !isTransform,
+          reason: '$operation was not classified',
+        );
+      }
+    });
+
+    test('the variable-taking operations are declared consistently', () {
+      expect(SymbolicOperation.factor.requiresVariable, isTrue);
+      expect(SymbolicOperation.differentiate.requiresVariable, isTrue);
+      expect(SymbolicOperation.simplify.requiresVariable, isFalse);
+      expect(SymbolicOperation.expand.requiresVariable, isFalse);
+    });
+
+    test('each tool offers its own operations', () {
+      expect(SymbolicOperation.algebraOperations, [
+        SymbolicOperation.simplify,
+        SymbolicOperation.expand,
+        SymbolicOperation.factor,
+      ]);
+      expect(SymbolicOperation.calculusOperations, [
+        SymbolicOperation.differentiate,
+      ]);
+    });
+
+    test('tool operation lists do not overlap or leak', () {
+      // Differentiation must not appear in both lists: Algebra has no business
+      // offering it, and sharing the enum must not blur that.
+      expect(
+        SymbolicOperation.algebraOperations
+            .toSet()
+            .intersection(SymbolicOperation.calculusOperations.toSet()),
+        isEmpty,
+      );
+    });
+
+    test('every operation has a distinct bridge name and label', () {
+      final names = SymbolicOperation.values.map((o) => o.wireName).toSet();
+      expect(names, hasLength(SymbolicOperation.values.length));
+      final labels = SymbolicOperation.values.map((o) => o.label).toSet();
+      expect(labels, hasLength(SymbolicOperation.values.length));
+    });
+  });
+
+  group('variable-taking operations', () {
+    test('differentiate is unavailable until a variable is chosen', () {
+      final state = _stateWith(
+        operations: SymbolicOperation.calculusOperations,
+        variables: const ['x'],
+        selectedVariable: null,
+      );
+      expect(state.canRunOperation(SymbolicOperation.differentiate), isFalse);
+      expect(
+        state.unavailableReason(SymbolicOperation.differentiate),
+        'Pick which variable to act on',
+      );
+    });
+
+    test('differentiate is available once a variable is chosen', () {
+      final state = _stateWith(
+        operations: SymbolicOperation.calculusOperations,
+        selectedVariable: 'x',
+      );
+      expect(state.canRunOperation(SymbolicOperation.differentiate), isTrue);
+      expect(
+        state.unavailableReason(SymbolicOperation.differentiate),
+        isNull,
+      );
+    });
+
+    test('a single variable is auto-selected, so calculus is usable at once', () {
+      // With only one variable there is no ambiguity to resolve, so requiring a
+      // tap before differentiating would be busywork.
+      final state = _stateWith(
+        operations: SymbolicOperation.calculusOperations,
+        variables: const ['x'],
+        selectedVariable: 'x',
+      );
+      expect(state.canRunOperation(SymbolicOperation.differentiate), isTrue);
     });
   });
 }

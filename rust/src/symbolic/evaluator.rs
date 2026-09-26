@@ -3,7 +3,7 @@ use std::fmt::Write as _;
 use symplex::prelude::{Context, Ex, SimplifyOpts, Step};
 
 use crate::shared::error::CommonError;
-use crate::symbolic::error::{SymbolicError, SymbolicErrorKind};
+use crate::symbolic::error::SymbolicError;
 
 /// Maximum input length accepted for a symbolic operation, in characters.
 ///
@@ -20,6 +20,13 @@ pub const MAX_EXPRESSION_CHARS: usize = 1000;
 /// the existing `modular_evaluate` convention) while the internals stay
 /// exhaustively typed: an unrecognised name becomes a typed error rather than
 /// silently doing nothing.
+///
+/// The split between [FORM_OPERATIONS] and everything else is load-bearing.
+/// A *form* operation rewrites one expression into an equivalent one, so its
+/// output can be offered to the user as "another way of writing this". A
+/// *transform* operation produces a genuinely different expression — the
+/// derivative is not another form of the original — and must never be listed
+/// among the alternate forms of the thing the user typed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SymbolicOperation {
     /// Combine like terms and reduce to a canonical form.
@@ -28,7 +35,18 @@ pub enum SymbolicOperation {
     Expand,
     /// Factorise over the integers.
     Factor,
+    /// Differentiate with respect to a variable.
+    Differentiate,
 }
+
+/// Operations that rewrite an expression into an equivalent one.
+///
+/// Only these may appear as alternate forms; see [SymbolicOperation].
+pub const FORM_OPERATIONS: [SymbolicOperation; 3] = [
+    SymbolicOperation::Simplify,
+    SymbolicOperation::Expand,
+    SymbolicOperation::Factor,
+];
 
 /// Labels used for the alternate-forms chips on the result card.
 ///
@@ -41,15 +59,45 @@ impl SymbolicOperation {
             SymbolicOperation::Simplify => "Simplified",
             SymbolicOperation::Expand => "Expanded",
             SymbolicOperation::Factor => "Factored",
+            SymbolicOperation::Differentiate => "Derivative",
+        }
+    }
+
+    /// The verb shown on the chip that triggers this operation.
+    pub const fn verb(self) -> &'static str {
+        match self {
+            SymbolicOperation::Simplify => "Simplify",
+            SymbolicOperation::Expand => "Expand",
+            SymbolicOperation::Factor => "Factor",
+            SymbolicOperation::Differentiate => "Differentiate",
         }
     }
 
     /// Every supported operation, in presentation order.
-    pub const ALL: [SymbolicOperation; 3] = [
+    pub const ALL: [SymbolicOperation; 4] = [
         SymbolicOperation::Simplify,
         SymbolicOperation::Expand,
         SymbolicOperation::Factor,
+        SymbolicOperation::Differentiate,
     ];
+
+    /// Whether this operation rewrites an expression into an equivalent one.
+    pub const fn is_form(self) -> bool {
+        matches!(
+            self,
+            SymbolicOperation::Simplify
+                | SymbolicOperation::Expand
+                | SymbolicOperation::Factor
+        )
+    }
+
+    /// Whether this operation needs to be told which variable to act on.
+    pub const fn requires_variable(self) -> bool {
+        matches!(
+            self,
+            SymbolicOperation::Factor | SymbolicOperation::Differentiate
+        )
+    }
 
     /// Parses an operation name coming from the bridge layer.
     pub fn from_name(name: &str) -> Result<Self, SymbolicError> {
@@ -57,6 +105,7 @@ impl SymbolicOperation {
             "simplify" => Ok(SymbolicOperation::Simplify),
             "expand" => Ok(SymbolicOperation::Expand),
             "factor" | "factorise" | "factorize" => Ok(SymbolicOperation::Factor),
+            "differentiate" | "diff" | "derivative" => Ok(SymbolicOperation::Differentiate),
             _ => Err(SymbolicError::UnknownOperation(name.trim().to_string())),
         }
     }
@@ -92,7 +141,12 @@ impl SymbolicOperation {
                 let target = target.ok_or(SymbolicError::NoVariable)?;
                 Ok((expr.factor(target), None))
             }
-        }
+            SymbolicOperation::Differentiate => {
+                // Differentiating with respect to a variable the expression does
+                // not contain is not an error: the derivative is genuinely 0.
+                let target = target.ok_or(SymbolicError::NoVariable)?;
+                Ok((expr.diff(target), None))
+            }        }
     }
 }
 
@@ -148,7 +202,7 @@ fn format_steps(steps: &[Step], input: &str, result: &str) -> String {
 /// Applies `operation` to `expression`.
 ///
 /// `variable` names the variable the operation acts on when it needs one
-/// (factoring); it is ignored by operations that do not.
+/// (factoring, differentiating); it is ignored by operations that do not.
 ///
 /// The variable is taken as a *name* rather than a pre-built handle on purpose.
 /// Expression handles are bound to the [`Context`] that created them and the
@@ -191,8 +245,21 @@ pub fn transform(
 
     let (value, steps) = operation.apply(&parsed, target, trimmed, show_steps)?;
 
+    // The backend signals "I could not actually do this" by returning the
+    // request back unevaluated, e.g. `Derivative(x!, x)` for the derivative of
+    // a factorial. Surfacing that verbatim would put backend notation in front
+    // of the user and read as an answer, so it becomes an explicit refusal.
+    if value.has_unevaluated() {
+        return Err(SymbolicError::NotSupported(format!(
+            "{} has no symbolic form here",
+            operation.verb().to_lowercase()
+        )));
+    }
+
     Ok(TransformOutcome {
         value: value.to_string(),
+        // A transform produces a different expression, so its "other forms" are
+        // the forms of the original input, not of the transform's result.
         alternate_forms: alternate_forms(&parsed, operation, target),
         details: details_for(operation, &parsed, target),
         steps,
@@ -202,8 +269,11 @@ pub fn transform(
 /// Computes the forms the user did *not* ask for, so the result card can offer
 /// them as tappable chips without another bridge call.
 ///
-/// A form that cannot be produced (for example factoring when no variable was
-/// chosen) is simply absent rather than reported as an error: these are
+/// Only [FORM_OPERATIONS] are considered. A transform such as differentiation
+/// is *not* an alternative way of writing the input — offering it here would
+/// put a different expression on screen under a chip claiming it is the same
+/// one. A form that cannot be produced (for example factoring when no variable
+/// was chosen) is simply absent rather than reported as an error: these are
 /// conveniences, not the answer.
 fn alternate_forms(
     parsed: &Ex,
@@ -212,12 +282,12 @@ fn alternate_forms(
 ) -> Vec<FormVariant> {
     let mut forms = Vec::new();
 
-    for operation in SymbolicOperation::ALL {
+    for operation in FORM_OPERATIONS {
         if operation == chosen {
             continue;
         }
-        // Factoring is the only alternate form that needs the variable.
-        let op_target = if operation == SymbolicOperation::Factor {
+        // Factoring is the only form that needs the variable.
+        let op_target = if operation.requires_variable() {
             target
         } else {
             None
@@ -252,11 +322,8 @@ fn details_for(
                 None
             }
         }
-        SymbolicOperation::Simplify | SymbolicOperation::Expand => None,
+        SymbolicOperation::Simplify
+        | SymbolicOperation::Expand
+        | SymbolicOperation::Differentiate => None,
     }
-}
-
-/// Classifies an error for the bridge layer.
-pub const fn kind_of(error: &SymbolicError) -> SymbolicErrorKind {
-    error.kind()
 }

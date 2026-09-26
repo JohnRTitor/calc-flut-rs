@@ -1,48 +1,22 @@
-/// The symbolic operations the Algebra workspace can run.
-///
-/// Mirrors the operations the Rust side accepts, but lives here as a closed
-/// enum so the UI cannot offer an action the backend would reject. The
-/// [wireName] is what crosses the bridge.
-enum AlgebraOperation {
-  simplify('simplify', 'Simplify', 'Combine like terms and reduce to a canonical form'),
-  expand('expand', 'Expand', 'Multiply out every product'),
-  factor('factor', 'Factor', 'Factorise over the integers, with respect to one variable');
-
-  /// The name sent to the Rust bridge.
-  final String wireName;
-
-  /// The chip label shown to the user.
-  final String label;
-
-  /// One-line explanation, used as the chip's tooltip.
-  final String description;
-
-  const AlgebraOperation(this.wireName, this.label, this.description);
-
-  /// Whether this operation needs to know which variable to act on.
-  ///
-  /// Only factoring does: it is defined relative to a variable, and a constant
-  /// has nothing to factor.
-  bool get requiresVariable => this == AlgebraOperation.factor;
-}
+import 'package:calc_flut_rs/features/symbolic_math/domain/symbolic_operation.dart';
 
 /// One representation of the current expression.
-class AlgebraForm {
+class SymbolicForm {
   /// The form's name, e.g. `Simplified` or `Expanded`.
   final String label;
 
   /// The expression written in that form.
   final String expression;
 
-  const AlgebraForm({required this.label, required this.expression});
+  const SymbolicForm({required this.label, required this.expression});
 }
 
 /// A failed symbolic operation, flattened from the bridge's error envelope.
 ///
-/// The three parts are kept apart because the UI presents them differently: the
+/// The parts are kept apart because the UI presents them differently: the
 /// message is the error, the suggestion is a quieter follow-up hint, and the
 /// kind decides whether the "Learn More" limitation banner is shown.
-class AlgebraError {
+class SymbolicFailure {
   /// Category from the backend: `input`, `unsupported`, `computation` or
   /// `too_large`.
   final String kind;
@@ -53,7 +27,7 @@ class AlgebraError {
   /// An optional short follow-up hint.
   final String? suggestion;
 
-  const AlgebraError({
+  const SymbolicFailure({
     required this.kind,
     required this.message,
     this.suggestion,
@@ -66,8 +40,16 @@ class AlgebraError {
   bool get isLimitation => kind == 'too_large';
 }
 
-/// The state of the Algebra workspace.
-class AlgebraState {
+/// The state of a symbolic workspace.
+///
+/// Shared by every tool in the Symbolic Math section. Which operations are
+/// available is part of the state rather than a property of the screen, so the
+/// enable/disable rules can be unit tested without pumping a widget, and so a
+/// widget never has to be told which tool it is hosting.
+class SymbolicWorkspaceState {
+  /// The operations this tool offers, in presentation order.
+  final List<SymbolicOperation> operations;
+
   /// The expression as typed.
   final String expression;
 
@@ -79,10 +61,10 @@ class AlgebraState {
 
   /// The operation whose result is currently shown, or `null` before the first
   /// run.
-  final AlgebraOperation? operation;
+  final SymbolicOperation? operation;
 
   /// Every known form of the current expression, the requested one first.
-  final List<AlgebraForm> forms;
+  final List<SymbolicForm> forms;
 
   /// Index into [forms] of the form being displayed.
   final int activeFormIndex;
@@ -94,7 +76,7 @@ class AlgebraState {
   final String? steps;
 
   /// The last failure, or `null` when the last run succeeded.
-  final AlgebraError? error;
+  final SymbolicFailure? error;
 
   /// Whether a symbolic call is in flight.
   ///
@@ -103,7 +85,8 @@ class AlgebraState {
   /// legitimately still doing.
   final bool isComputing;
 
-  const AlgebraState({
+  const SymbolicWorkspaceState({
+    required this.operations,
     this.expression = '',
     this.variables = const [],
     this.selectedVariable,
@@ -117,7 +100,8 @@ class AlgebraState {
   });
 
   /// The expression currently on display.
-  String get displayValue => forms.isEmpty ? '' : forms[activeFormIndex].expression;
+  String get displayValue =>
+      forms.isEmpty ? '' : forms[activeFormIndex].expression;
 
   /// Whether any operation has produced a result.
   bool get hasResult => forms.isNotEmpty;
@@ -136,45 +120,50 @@ class AlgebraState {
   /// An operation that is contextually inapplicable is reported as disabled
   /// rather than hidden, so the feature's capabilities stay discoverable
   /// without any documentation.
-  bool canRunOperation(AlgebraOperation candidate) {
+  bool canRunOperation(SymbolicOperation candidate) {
     if (!canRun) return false;
     if (!candidate.requiresVariable) return true;
-    // Factoring needs a variable, and must not silently pick one when the user
-    // has more than one in play.
+    // Factoring and differentiating need a variable, and must not silently
+    // pick one when the user has more than one in play.
     return selectedVariable != null;
   }
 
   /// Why [candidate] is unavailable, or `null` when it is available.
-  String? unavailableReason(AlgebraOperation candidate) {
+  String? unavailableReason(SymbolicOperation candidate) {
     if (canRunOperation(candidate)) return null;
     if (isComputing) return 'Working on the previous result';
     if (expression.trim().isEmpty) return 'Enter an expression first';
     if (candidate.requiresVariable && selectedVariable == null) {
-      return variables.length > 1
-          ? 'Pick which variable to factor with respect to'
-          : 'This expression has no variable to factor with respect to';
+      // Distinguish "nothing to pick" from "not chosen yet". Counting on there
+      // being several variables would claim there is no variable at all while
+      // one sits listed and unselected.
+      return variables.isEmpty
+          ? 'This expression has no variable to act on'
+          : 'Pick which variable to act on';
     }
     return null;
   }
 
-  AlgebraState copyWith({
+  SymbolicWorkspaceState copyWith({
+    List<SymbolicOperation>? operations,
     String? expression,
     List<String>? variables,
     String? selectedVariable,
     bool clearSelectedVariable = false,
-    AlgebraOperation? operation,
+    SymbolicOperation? operation,
     bool clearOperation = false,
-    List<AlgebraForm>? forms,
+    List<SymbolicForm>? forms,
     int? activeFormIndex,
     String? details,
     bool clearDetails = false,
     String? steps,
     bool clearSteps = false,
-    AlgebraError? error,
+    SymbolicFailure? error,
     bool clearError = false,
     bool? isComputing,
   }) {
-    return AlgebraState(
+    return SymbolicWorkspaceState(
+      operations: operations ?? this.operations,
       expression: expression ?? this.expression,
       variables: variables ?? this.variables,
       selectedVariable: clearSelectedVariable
