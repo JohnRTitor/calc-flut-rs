@@ -83,9 +83,9 @@ void main() {
     final styleName = uiStyle == UiStyle.material ? 'material' : 'liquidGlass';
 
     group('the expanded-width history panel ($styleName)', () {
-      // AC-7 / IA-5: this is the one thing the app does with a desktop-class
-      // window that it cannot do on a phone, so the threshold is worth pinning
-      // in both directions.
+      // This is the one thing the app does with a desktop-class window that it
+      // cannot do on a phone, so the threshold is worth pinning in both
+      // directions.
       testWidgets('appears on a desktop-class window', (tester) async {
         tester.view.devicePixelRatio = 1.0;
         tester.view.physicalSize = const Size(1200, 800);

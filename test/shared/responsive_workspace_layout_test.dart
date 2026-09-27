@@ -217,10 +217,10 @@ void main() {
   });
 
   group('widths', () {
-    // AC-7: the three shell breakpoints must all lay out cleanly. With no side
-    // panel the layout has no width-dependent behaviour of its own, but it is
-    // the container every migrated screen sits in, so an overflow at any of
-    // these widths is worth pinning. The panel's own width rule is below.
+    // The three shell breakpoints must all lay out cleanly. With no side panel
+    // the layout has no width-dependent behaviour of its own, but it is the
+    // container every migrated screen sits in, so an overflow at any of these
+    // widths is worth pinning. The panel's own width rule is below.
     const widths = {
       'compact (< 600)': 360.0,
       'medium (600-840)': 720.0,
@@ -242,9 +242,9 @@ void main() {
   });
 
   group('side panel', () {
-    // IA-5. The panel is the one part of the layout that *is* width-dependent,
-    // and it is the whole of the expanded-width story, so its threshold is
-    // pinned here rather than left to whichever screen passes a panel first.
+    // A desktop-class window is the one place this layout is width-dependent,
+    // and the threshold is not simply "expanded": the panel has to fit *and*
+    // leave the workspace a usable width. Both directions are pinned.
     testWidgets('sits beside the workspace on a desktop-class window', (
       tester,
     ) async {
