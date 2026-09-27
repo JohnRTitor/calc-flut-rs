@@ -42,7 +42,6 @@ class _StructureExplorerState extends ConsumerState<StructureExplorer> {
   Widget build(BuildContext context) {
     final state = ref.watch(modularArithmeticWorkspaceProvider);
     final uiStyle = ref.watch(uiStyleProvider);
-    final theme = Theme.of(context);
 
     String currentLabel;
     switch (state.explorerType) {
@@ -104,50 +103,90 @@ class _StructureExplorerState extends ConsumerState<StructureExplorer> {
       // odd one out: a fixed 64px footer pinned below an `Expanded` result
       // region that was itself a box-scroll nested inside a sliver, so the
       // button never moved and the results never scrolled with the content.
-      controls: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildResultArea(context, state, uiStyle, theme),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: LayoutMetrics.standard.buttonHeight + 8,
-            child: AppCalcButton(
-              text: state.explorerResult == null
-                  ? 'Analyze Structure'
-                  : 'Analyze Again',
-              type: ButtonType.equals,
-              uiStyle: uiStyle,
-              onPressed: () {
-                ref
-                    .read(modularArithmeticWorkspaceProvider.notifier)
-                    .analyzeStructure();
-                return true;
-              },
-              icon: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.analytics, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    state.explorerResult == null
-                        ? 'Analyze Structure'
-                        : 'Analyze Again',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+      controls: _buildControls(context, state, uiStyle),
       // Same panel as the Evaluator tab, one switch away — the two tabs are one
       // workspace and should offer the same thing.
       sidePanel: RecentHistoryPanel(
         category: HistoryCategory.modularArithmetic,
       ),
+    );
+  }
+
+  /// The result area and the action, sized to whichever shape the shared layout
+  /// hands over.
+  ///
+  /// The layout is not consistent about this, and the difference is the whole
+  /// reason this is a `LayoutBuilder`. Normally the control area is unbounded
+  /// and the page scrolls as one surface, so the result takes its own height and
+  /// the action follows it. On a short screen the same layout instead hands over
+  /// a *fixed box* — a bounded height it picked — because a control area built
+  /// on `Expanded`, like the calculator's keypad, has no height of its own and
+  /// must be given one.
+  ///
+  /// A fixed box is a ceiling, not a floor, and this screen's result is not
+  /// bounded: an analysis grid of a large ring is far taller than any box the
+  /// layout would choose, which overflowed the box and pushed the action out of
+  /// the viewport instead of scrolling. So where there is a box, the result
+  /// scrolls inside it and the action stays put; where there is not, the result
+  /// is left to size itself. Reading the constraint rather than being told which
+  /// case it is in keeps the decision with the layout that already knows.
+  Widget _buildControls(
+    BuildContext context,
+    ModularArithmeticWorkspaceState state,
+    UiStyle uiStyle,
+  ) {
+    final theme = Theme.of(context);
+    final result = _buildResultArea(context, state, uiStyle, theme);
+
+    final action = SizedBox(
+      height: LayoutMetrics.standard.buttonHeight + 8,
+      child: AppCalcButton(
+        text: state.explorerResult == null
+            ? 'Analyze Structure'
+            : 'Analyze Again',
+        type: ButtonType.equals,
+        uiStyle: uiStyle,
+        onPressed: () {
+          ref.read(modularArithmeticWorkspaceProvider.notifier).analyzeStructure();
+          return true;
+        },
+        icon: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.analytics, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              state.explorerResult == null
+                  ? 'Analyze Structure'
+                  : 'Analyze Again',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (!constraints.hasBoundedHeight) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [result, const SizedBox(height: 16), action],
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(child: SingleChildScrollView(child: result)),
+            const SizedBox(height: 16),
+            action,
+          ],
+        );
+      },
     );
   }
 

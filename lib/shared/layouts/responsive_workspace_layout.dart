@@ -139,6 +139,11 @@ class ResponsiveWorkspaceLayout extends StatelessWidget {
     if (constraints.isShortScreen) {
       // Constrained height: fall back to one scroll so the controls keep a
       // readable size instead of being squeezed by the display area.
+      //
+      // A fixed box, not a `minHeight` floor: a control area built on `Expanded`
+      // — the calculator's keypad — has no height of its own and must be given
+      // one. A screen whose controls size to their own content still has to fit
+      // inside it, which is what [controlsMinHeight] is for.
       return SingleChildScrollView(
         padding: padding,
         child: Column(

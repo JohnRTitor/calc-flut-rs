@@ -19,6 +19,15 @@ class _Box extends StatelessWidget {
   );
 }
 
+/// The side panel's stand-in, identified by colour like [_Box].
+class _Panel extends StatelessWidget {
+  const _Panel();
+
+  @override
+  Widget build(BuildContext context) =>
+      const ColoredBox(color: Color(0xFF0000FF));
+}
+
 void main() {
   /// Sizes the test surface to [width] x [height].
   ///
@@ -38,6 +47,8 @@ void main() {
     required bool pinControls,
     double displayHeight = 100,
     double controlsHeight = 60,
+    Widget? sidePanel,
+    double sidePanelWidth = 320,
   }) {
     return MaterialApp(
       home: Scaffold(
@@ -50,6 +61,8 @@ void main() {
             pinControls: pinControls,
             controlsMinHeight: 200,
             gap: const SizedBox(height: 8),
+            sidePanel: sidePanel,
+            sidePanelWidth: sidePanelWidth,
           ),
         ),
       ),
@@ -60,6 +73,7 @@ void main() {
       find.byWidgetPredicate((w) => w is _Box && w.color == 0xFF00FF00);
   Finder controls() =>
       find.byWidgetPredicate((w) => w is _Box && w.color == 0xFFFF0000);
+  Finder panel() => find.byType(_Panel);
 
   group('pinned controls', () {
     // The calculator's arrangement: the keys stay under the thumb and the
@@ -203,10 +217,10 @@ void main() {
   });
 
   group('widths', () {
-    // AC-7: the three shell breakpoints must all lay out cleanly. The layout
-    // has no width-dependent behaviour of its own yet, but it is the container
-    // every migrated screen sits in, so an overflow at any of these widths is
-    // worth pinning.
+    // AC-7: the three shell breakpoints must all lay out cleanly. With no side
+    // panel the layout has no width-dependent behaviour of its own, but it is
+    // the container every migrated screen sits in, so an overflow at any of
+    // these widths is worth pinning. The panel's own width rule is below.
     const widths = {
       'compact (< 600)': 360.0,
       'medium (600-840)': 720.0,
@@ -224,6 +238,114 @@ void main() {
         expect(display(), findsOneWidget);
         expect(controls(), findsOneWidget);
       });
+    });
+  });
+
+  group('side panel', () {
+    // IA-5. The panel is the one part of the layout that *is* width-dependent,
+    // and it is the whole of the expanded-width story, so its threshold is
+    // pinned here rather than left to whichever screen passes a panel first.
+    testWidgets('sits beside the workspace on a desktop-class window', (
+      tester,
+    ) async {
+      useSurface(tester, 1200, 700);
+      await tester.pumpWidget(
+        host(
+          width: 1200,
+          height: 700,
+          pinControls: false,
+          sidePanel: const _Panel(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(panel(), findsOneWidget);
+      expect(
+        tester.getSize(panel()).width,
+        320,
+        reason: 'the panel occupies the width the caller declared',
+      );
+      // Beside, not below: the panel is what makes this layout different from
+      // "the phone layout, but wider".
+      expect(
+        tester.getTopLeft(panel()).dx,
+        greaterThan(tester.getTopLeft(display()).dx),
+      );
+      expect(tester.getTopLeft(panel()).dy, tester.getTopLeft(display()).dy);
+    });
+
+    // The panel comes out of the width the workspace would otherwise have had.
+    // `expandedMinWidth` alone is not the threshold: at 900 the layout is
+    // already "expanded", but spending 320dp on the panel would leave the
+    // workspace 580dp — narrower than a phone, which is a bad trade.
+    testWidgets('stays out of the way while the workspace would be too narrow', (
+      tester,
+    ) async {
+      const width = 900.0;
+      expect(
+        width,
+        greaterThanOrEqualTo(AppBreakpoints.expandedMinWidth),
+        reason: 'precondition: the window counts as expanded',
+      );
+      useSurface(tester, width, 700);
+      await tester.pumpWidget(
+        host(
+          width: width,
+          height: 700,
+          pinControls: false,
+          sidePanel: const _Panel(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        panel(),
+        findsNothing,
+        reason:
+            'taking 320dp here would leave ${width - 320}dp of workspace, under '
+            'the ${AppBreakpoints.compactMaxWidth}dp floor',
+      );
+      expect(display(), findsOneWidget);
+    });
+
+    for (final entry in {'compact (< 600)': 400.0, 'medium (600-840)': 720.0}
+        .entries) {
+      testWidgets('is not rendered at all at ${entry.key}', (tester) async {
+        useSurface(tester, entry.value, 700);
+        await tester.pumpWidget(
+          host(
+            width: entry.value,
+            height: 700,
+            pinControls: false,
+            sidePanel: const _Panel(),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Absent from the tree, not merely collapsed: on a phone that width
+        // belongs to the workspace, and a header promising a panel that is not
+        // there is worse than no header.
+        expect(panel(), findsNothing);
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    testWidgets('leaves the workspace full width when none is offered', (
+      tester,
+    ) async {
+      useSurface(tester, 1200, 700);
+      await tester.pumpWidget(
+        host(width: 1200, height: 700, pinControls: false),
+      );
+      await tester.pumpAndSettle();
+
+      expect(panel(), findsNothing);
+      expect(
+        tester.getSize(display()).width,
+        1200,
+        reason: 'a screen that offers no panel gets the whole window',
+      );
     });
   });
 
