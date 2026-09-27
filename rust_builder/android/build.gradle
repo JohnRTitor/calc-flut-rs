@@ -1,19 +1,22 @@
 // The Android Gradle Plugin builds the native code with the Android NDK.
+//
+// Migrated to AGP 9 / Gradle 9. Three changes were required, all of them
+// things AGP 9 stops accepting rather than preferences:
+//
+//  1. The `buildscript` block pinning AGP 7.3.0 is gone. That AGP cannot run on
+//     Gradle 9 at all, and when this plugin is built as part of an app the root
+//     project's pluginManagement already supplies the plugin. Modern Flutter
+//     plugin templates do not declare one either.
+//  2. `compileSdkVersion` and `minSdkVersion` are replaced by the `compileSdk`
+//     and `minSdk` properties. The `compileSdk` form works on AGP 8 and 9 alike,
+//     so this is not tied to the upgrade.
+//  3. The Java target moves off 8, which AGP 9 no longer accepts.
+//
+// This is vendored cargokit, tracked in this repository, so the AGP 9 migration
+// is ours to make. A future cargokit upgrade will need this re-applied.
 
 group 'com.flutter_rust_bridge.calc_flut_core'
 version '1.0'
-
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-    }
-
-    dependencies {
-        // The Android Gradle Plugin knows how to build native code with the NDK.
-        classpath 'com.android.tools.build:gradle:7.3.0'
-    }
-}
 
 rootProject.allprojects {
     repositories {
@@ -25,13 +28,12 @@ rootProject.allprojects {
 apply plugin: 'com.android.library'
 
 android {
-    if (project.android.hasProperty("namespace")) {
-        namespace 'com.flutter_rust_bridge.calc_flut_core'
-    }
+    namespace 'com.flutter_rust_bridge.calc_flut_core'
 
-    // Bumping the plugin compileSdkVersion requires all clients of this plugin
-    // to bump the version in their app.
-    compileSdkVersion 33
+    // AGP 9 requires a library's consumers to compile against the same or a
+    // higher compile SDK, so this tracks the app rather than trailing it. The
+    // app compiles against 36 (Flutter's own `compileSdkVersion`).
+    compileSdk 36
 
     // Use the NDK version
     // declared in /android/app/build.gradle file of the Flutter project.
@@ -40,12 +42,14 @@ android {
     ndkVersion android.ndkVersion
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
     }
 
     defaultConfig {
-        minSdkVersion 19
+        // Kept below the app's own minimum so the library stays consumable; a
+        // library may not require a higher floor than its consumer.
+        minSdk 21
     }
 }
 
